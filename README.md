@@ -35,6 +35,11 @@
 | `conflict-arbiter.md` | PM | 共享文件仲裁流程（申请→四维评估→结论→记录，含 Hotfix 处理） |
 | `fe-be-handoff.md` | FE/BE | 前后端交接标准化（FE/BE 交接清单模板 + Mock 方案 + 集成验证清单） |
 
+### 4. 🧭 Design (落地范式与工具接入)
+提供公司级研发范式、OpenSpec、Figma MCP 等跨项目落地指南：
+- **`development-paradigm-openspec-guide.md`**：公司研发范式 + OpenSpec 落地指南。说明如何把本规则库、OpenSpec、Codex/Cursor/Qoder/OpenCode 和项目模板组合成统一开发链路。
+- **`figma-mcp-skills-guide.md`**：Figma MCP + Skills 通用使用说明。说明设计读取、设计转代码、设计系统规则沉淀和 Code Connect 映射流程。
+
 ## 🔄 核心工作流理念
 
 本中枢要求任意系统开发迭代不仅生成代码，更强制遵循工程纪律上的阶段卡点推进：
@@ -55,3 +60,4 @@
 建议作为知识基座在团队协同工程中进行应用：
 - **AI 提示词挂载**：直接将此仓库的规则复制到 AI 智能编辑器目录下的 `.rules` 或全局 System Prompt。由于其使用纯文本强制描述约束，所有 LLM 可直接无损耗接收并转入 Team Agent 模拟态投入全时工作。 
 - **Submodule 规范基石**：将其作为 `git submodule` 集成在大型复杂工程库的独立存放点作为约束性资产规范，配合代码审批流长期守护项目全生命周期的产品需求与技术一致边界。
+- **OpenSpec 规格层**：参考 [公司研发范式 + OpenSpec 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路。

@@ -15,7 +15,8 @@
 - [6. Skills 使用说明](#6-skills-使用说明)
 - [7. 工作流全景图](#7-工作流全景图)
 - [8. 集成方式](#8-集成方式)
-- [9. 常见问题 FAQ](#9-常见问题-faq)
+- [9. OpenSpec 与多工具统一范式](#9-openspec-与多工具统一范式)
+- [10. 常见问题 FAQ](#10-常见问题-faq)
 
 ---
 
@@ -355,7 +356,81 @@ cp Skills/code-investigator.md your-project/.ai-rules/
 
 ---
 
-## 9. 常见问题 FAQ
+## 9. OpenSpec 与多工具统一范式
+
+如果团队同时使用 Codex、Cursor、Qoder、OpenCode 等不同 AI 编码工具，建议在业务项目中引入 OpenSpec 作为统一规格层。
+
+推荐阅读：
+
+- [Design/development-paradigm-openspec-guide.md](./Design/development-paradigm-openspec-guide.md)：公司研发范式 + OpenSpec 落地指南。
+
+### 9.1 推荐项目分层
+
+```text
+your-project/
+├── ai-rules/Team-Intelligence-Center/ # 公司规则层
+├── openspec/                          # OpenSpec 规格层
+├── ai-harness/                        # 项目适配与记忆
+├── docs/                              # PRD、契约、设计、外部服务
+└── <业务工程目录>/                      # 后端、前端、后台等实现
+```
+
+### 9.2 安装与初始化
+
+```bash
+npm install -g @fission-ai/openspec@latest
+cd your-project
+openspec init --tools codex,cursor,qoder,opencode --force
+```
+
+生成后重启对应 IDE 或 AI 工具。
+
+### 9.3 终端与 AI 工具的区别
+
+`opsx` 不是终端命令。终端使用：
+
+```bash
+openspec list
+openspec show <change-name>
+openspec validate --all --no-interactive
+```
+
+AI 工具中使用 `/opsx:*`：
+
+```text
+/opsx:explore
+/opsx:propose
+/opsx:apply
+/opsx:archive
+```
+
+不需要每次对话都输入 `/opsx`。只有探索、立项、实现、归档等阶段切换时使用；普通沟通和小修小改可直接和 AI 对话。
+
+### 9.4 与本规则库的关系
+
+- `Team-Intelligence-Center` 定义角色、流程、Prompts、Skills 和工程纪律。
+- OpenSpec 定义 proposal、specs、design、tasks、archive 等规格工件。
+- 项目 `docs/` 保存长期 PRD、API 契约、外部服务和设计资料。
+- 项目 `ai-harness/` 保存项目适配、长期记忆、决策和 runbook。
+
+### 9.5 老项目接入
+
+老项目不要求使用公司推荐的 go-zero、admin-template 或 Unibest 模板，也不要求先迁移技术栈。
+
+推荐方式：
+
+1. 保留现有代码结构。
+2. 接入 `ai-rules/Team-Intelligence-Center/`。
+3. 执行 `openspec init --tools codex,cursor,qoder,opencode --force`。
+4. 新建 `ai-harness/`，记录真实项目现状、决策和 runbook。
+5. 用 `ai-prd-editor`、`code-investigator`、`candidate-rule-extractor` 反向梳理存量业务。
+6. 从新需求开始走 `/opsx:propose -> /opsx:apply -> /opsx:archive`。
+
+详细说明见 [老项目接入模式](./Design/development-paradigm-openspec-guide.md#9-老项目接入模式)。
+
+---
+
+## 10. 常见问题 FAQ
 
 ### Q1：AI 没有按照角色协议工作怎么办？
 
