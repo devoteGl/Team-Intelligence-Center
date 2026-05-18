@@ -57,7 +57,8 @@ Team-Intelligence-Center/
     ├── candidate-rule-extractor.md     #    [CI/BE] 候选规则抽取
     ├── task-decomposer.md              #    [PM] 任务拆解方法
     ├── conflict-arbiter.md             #    [PM] 共享文件仲裁
-    └── fe-be-handoff.md                #    [FE/BE] 前后端交接
+    ├── fe-be-handoff.md                #    [FE/BE] 前后端交接
+    └── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
 ```
 
 ### 三层架构关系
@@ -203,6 +204,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 | `task-decomposer` | PM | 新任务开始时拆解 | P2 |
 | `conflict-arbiter` | PM | FE/BE 需修改共享文件时 | P2 |
 | `fe-be-handoff` | FE/BE | 契约冻结后开始实现前 | P2 |
+| `project-governance-bootstrap` | PM/DS | 项目首次接入公司范式 | P0 |
 
 ### 6.2 如何在对话中引用 Skill
 
@@ -217,6 +219,9 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 
 # 方式三：角色触发
 "切换到 CI 角色开始调研" → AI 自动匹配 code-investigator
+
+# 方式四：项目接入
+"请按照 project-governance-bootstrap 技能初始化本项目 AI 治理入口"
 ```
 
 ### 6.3 Skill 在工作流中的位置
@@ -336,6 +341,13 @@ echo ".ai-rules" >> .gitignore
 **优点**：多项目共享统一规范，版本可控
 **适用**：团队协作、多项目场景
 
+添加子模块后，可让 AI 执行项目治理接入技能：
+
+```text
+请读取 ai-rules/Team-Intelligence-Center/Skills/project-governance-bootstrap.md，
+按该技能初始化本项目的 AGENTS、ai-rules-usage、ai-harness 和 openspec。
+```
+
 ### 8.3 方式三：按需复制
 
 将需要的文件手动复制到项目中：
@@ -425,6 +437,8 @@ AI 工具中使用 `/opsx:*`：
 4. 新建 `ai-harness/`，记录真实项目现状、决策和 runbook。
 5. 用 `ai-prd-editor`、`code-investigator`、`candidate-rule-extractor` 反向梳理存量业务。
 6. 从新需求开始走 `/opsx:propose -> /opsx:apply -> /opsx:archive`。
+
+也可以直接让 AI 执行 `project-governance-bootstrap`，自动生成上述基础入口，再由人补齐 TODO。
 
 详细说明见 [老项目接入模式](./Design/development-paradigm-openspec-guide.md#9-老项目接入模式)。
 

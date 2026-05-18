@@ -83,6 +83,13 @@ cd your-project
 openspec init --tools codex,cursor,qoder,opencode --force
 ```
 
+如果业务项目已经以 submodule 引入本仓库，推荐先让 AI 执行接入技能，自动生成项目根入口和治理目录：
+
+```text
+请读取 ai-rules/Team-Intelligence-Center/Skills/project-governance-bootstrap.md，
+按该技能初始化本项目的 AI 治理入口。
+```
+
 如果项目暂时只想初始化 OpenSpec 目录，不生成 AI 工具命令：
 
 ```bash
@@ -199,6 +206,7 @@ OpenSpec 负责“规格和变更工件”，`Team-Intelligence-Center` 负责�
 | API 契约 | `Skills/api-contract-freezer.md` |
 | 验收 | `Skills/prd-review-checklist.md` |
 | 归档 | `Skills/changelog-writer.md`、`Skills/session-snapshot-manager.md` |
+| 项目接入 | `Skills/project-governance-bootstrap.md` |
 
 落地项目不应复制或改写公司规则原文。推荐作为 submodule 接入：
 
@@ -251,7 +259,14 @@ legacy-project/
    openspec init --tools codex,cursor,qoder,opencode --force
    ```
 
-3. 新建项目适配层：
+3. 执行项目治理接入 Skill：
+
+   ```text
+   请读取 ai-rules/Team-Intelligence-Center/Skills/project-governance-bootstrap.md，
+   按该技能初始化本项目的 AI 治理入口。
+   ```
+
+4. 新建或校准项目适配层：
 
    ```text
    ai-harness/
@@ -262,19 +277,19 @@ legacy-project/
        └── runbooks.md
    ```
 
-4. 反向梳理项目现状：
+5. 反向梳理项目现状：
 
    - 使用 `Prompts/ai-prd-editor.rules.md` 整理存量 PRD 和业务事实。
    - 使用 `Skills/code-investigator.md` 调研目录、技术栈、模块边界。
    - 使用 `Skills/candidate-rule-extractor.md` 从代码中抽取候选业务规则。
 
-5. 建立第一版主规格：
+6. 建立第一版主规格：
 
    - 确定的现状写入 `openspec/specs/`。
    - 不确定的现状写入候选清单，不直接写成稳定事实。
    - 接口、字段、枚举、错误码写入 `docs/api-contracts/`。
 
-6. 从新需求开始执行标准链路：
+7. 从新需求开始执行标准链路：
 
    ```text
    /opsx:propose -> 契约冻结 -> /opsx:apply -> 验证 -> /opsx:archive
@@ -313,6 +328,7 @@ legacy-project/
 新项目接入完成前，至少检查：
 
 - `ai-rules/Team-Intelligence-Center/` 已存在并固定版本。
+- `Skills/project-governance-bootstrap.md` 已执行，或等价治理入口已人工补齐。
 - `openspec/config.yaml` 已包含项目上下文。
 - `openspec/specs/` 至少有一个工作区或核心领域 spec。
 - `openspec validate --all --no-interactive` 能通过。
