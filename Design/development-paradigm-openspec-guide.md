@@ -1,21 +1,22 @@
-# 公司研发范式 + OpenSpec 落地指南
+# 公司研发范式 + OpenSpec / Superpowers 落地指南
 
-本文面向公司内所有业务项目，说明如何把 `Team-Intelligence-Center`、OpenSpec、项目模板和不同 AI 编码工具组合成统一研发范式。
+本文面向公司内所有业务项目，说明如何把 `Team-Intelligence-Center`、OpenSpec、Superpowers、项目模板和不同 AI 编码工具组合成统一研发范式。
 
-结论先行：这套组合可以作为公司的统一开发范式。关键不是绑定某一个 AI 工具，而是让所有工具共同遵守同一套规则、规格、契约、验证和归档链路。
+结论先行：这套组合可以作为公司的统一开发范式。关键不是绑定某一个 AI 工具，而是让所有工具共同遵守同一套规则、规格、契约、验证和归档链路。OpenSpec 是规格事实源，Superpowers 是可选但推荐的 Agent 执行方法层。
 
 ## 1. 范式分层
 
-推荐每个项目按四层组织：
+推荐每个项目按五层组织：
 
 | 层级 | 目录建议 | 职责 |
 | --- | --- | --- |
 | 公司规则层 | `ai-rules/Team-Intelligence-Center/` | 通用角色、流程、Prompts、Skills、提交纪律 |
 | OpenSpec 规格层 | `openspec/` | 活跃变更、稳定规格、设计说明、任务清单、归档 |
+| Superpowers 执行层 | AI 工具插件 / `.superpowers/` | 头脑风暴、计划、TDD、调试、代码审查、子代理执行 |
 | 项目适配层 | `ai-harness/` | 当前项目的角色映射、记忆、决策、runbook |
 | 长期文档层 | `docs/` | PRD、API 契约、外部服务、设计资料、验收记录 |
 
-业务代码仍然放在各项目自己的工程目录。范式只管协作链路和产物边界，不替代业务工程本身。
+业务代码仍然放在各项目自己的工程目录。范式只管协作链路和产物边界，不替代业务工程本身。`.superpowers/` 是运行态辅助目录，默认不作为长期规格来源。
 
 ## 2. 模板组合
 
@@ -27,12 +28,13 @@
 | 管理后台 | [NexusAI/admin-template](https://ycbl.xadazhihui.cn:18443/NexusAI/admin-template) | 运营后台、权限、配置、数据看板 |
 | 用户前端 | [Unibest](https://unibest.tech/) | H5、小程序、移动端交互、端侧状态流 |
 
-模板决定工程起点，OpenSpec 和公司规则决定交付过程。一个推荐项目结构如下：
+模板决定工程起点，OpenSpec、Superpowers 和公司规则决定交付过程。一个推荐项目结构如下：
 
 ```text
 your-project/
 ├── ai-rules/Team-Intelligence-Center/ # 公司规则子模块
 ├── openspec/                          # OpenSpec 规格层
+├── .superpowers/                       # Superpowers 本地运行态，可加入 .gitignore
 ├── ai-harness/                        # 当前项目适配与记忆
 ├── docs/                              # PRD、契约、设计、外部服务
 ├── backend/                           # go-zero 服务端
@@ -50,7 +52,8 @@ your-project/
   -> /opsx:propose       # 生成 OpenSpec 变更工件
   -> docs/PRD            # 必要时沉淀 PRD
   -> docs/api-contracts  # 跨端需求先冻结契约
-  -> /opsx:apply         # 按 tasks 实现
+  -> /opsx:apply         # 按 tasks 进入实现阶段
+  -> Superpowers         # 可选：计划、TDD、调试、review、子代理开发
   -> 验证                # 测试、构建、联调、人工验收
   -> openspec/specs      # 稳定行为同步为主规格
   -> ai-harness/memory   # 稳定事实、决策、踩坑回写
@@ -64,11 +67,11 @@ your-project/
 | 需求拆解 | PM / Tech Lead | proposal、PRD、验收标准 |
 | 现状调研 | CI | 影响范围、候选规则、风险清单 |
 | 契约冻结 | PM + FE + BE | API 契约、字段、错误码、Mock fixture |
-| 并行实现 | FE / BE | 各端代码、交接清单、自测记录 |
+| 并行实现 | FE / BE + Superpowers | 各端代码、交接清单、自测记录、TDD / review 证据 |
 | 验收 | QA | 测试结果、回归风险、缺陷记录 |
 | 归档 | DS | specs、Changelog、memory、archive |
 
-## 4. OpenSpec 安装方案
+## 4. OpenSpec 与 Superpowers 安装方案
 
 OpenSpec 官方要求 Node.js 20.19.0 或更高版本。推荐全局安装：
 
@@ -82,6 +85,27 @@ npm install -g @fission-ai/openspec@latest
 cd your-project
 openspec init --tools codex,cursor,qoder,opencode --force
 ```
+
+Superpowers 按 AI 工具分别安装，不由 OpenSpec 初始化命令生成。执行 `project-governance-bootstrap` 时应自动检测并尽力安装 Superpowers；如果当前工具只支持图形插件市场或交互式命令，则在接入报告中留下人工步骤。
+
+| 工具 | 安装方式 |
+| --- | --- |
+| Codex App | 图形插件市场搜索 `Superpowers`，通常需人工点击安装 |
+| Codex CLI | 打开 `/plugins`，搜索 `superpowers` 并安装，通常需交互 |
+| Claude Code | 在 Claude Code 内执行 `/plugin install superpowers@claude-plugins-official` |
+| Gemini CLI | 可尝试 `gemini extensions install https://github.com/obra/superpowers` |
+| Factory Droid | 可尝试 `droid plugin marketplace add https://github.com/obra/superpowers` 后 `droid plugin install superpowers@superpowers` |
+| GitHub Copilot CLI | 可尝试 `copilot plugin marketplace add obra/superpowers-marketplace` 后 `copilot plugin install superpowers@superpowers-marketplace` |
+| Cursor | 在 Agent chat 执行 `/add-plugin superpowers` 或插件市场安装 |
+| OpenCode | 按 OpenCode 插件机制读取官方安装说明 |
+
+如果团队使用 Superpowers，建议在业务项目 `.gitignore` 中加入：
+
+```gitignore
+.superpowers/
+```
+
+确需保留的执行计划、复盘或验收记录，应转写到 `docs/`、`ai-harness/memory/` 或对应 OpenSpec change 中，不直接把 `.superpowers/` 当长期文档库。Superpowers 安装失败不应阻塞项目治理接入，但必须在最终报告中记录失败原因和人工补救步骤。
 
 如果业务项目已经以 submodule 引入本仓库，推荐先让 AI 执行接入技能，自动生成项目根入口和治理目录：
 
@@ -131,10 +155,12 @@ context: |
   Governance: company AI rules live in ai-rules/Team-Intelligence-Center/
   Project adaptation: ai-harness/ stores project memory, decisions, and runbooks
   Documentation: docs/ stores PRDs, API contracts, vendor docs, and design notes
+  Agent execution: Superpowers may be used for brainstorming, planning, TDD, debugging, code review, and subagent-driven development.
   Change process: proposal -> specs -> design -> tasks -> implement -> verify -> archive
   Collaboration:
     - Codex, Cursor, Qoder, and OpenCode must follow the same artifact flow
     - tools may differ, but specs, contracts, review gates, and archive steps must stay consistent
+    - OpenSpec remains the source of truth for specs; Superpowers execution artifacts must reference the OpenSpec change when one exists
 
 rules:
   proposal:
@@ -150,6 +176,7 @@ rules:
   tasks:
     - Split work by role and subproject.
     - Include verification steps for each surface.
+    - If using Superpowers, bind execution plans and reviews to the OpenSpec change id.
 ```
 
 ## 6. AI 工具入口
@@ -217,26 +244,67 @@ git submodule update --init --recursive
 
 升级公司规则时，只提交 submodule 指针变更，并在项目变更说明里记录升级影响。
 
-## 9. 老项目接入模式
+## 9. 与 Superpowers 的接合
+
+Superpowers 负责“Agent 如何把任务做扎实”，不负责替代 OpenSpec 规格层。推荐把它接在 OpenSpec 的 `tasks.md` 后面，用于计划、TDD、调试、review 和子代理并行执行。
+
+| Superpowers 能力 | 推荐接合点 | 产物归属 |
+| --- | --- | --- |
+| brainstorming | `/opsx:explore` 前后，需求仍不清楚时 | 结论写回 proposal 或 `docs/PRD/` |
+| writing-plans | `openspec/changes/<id>/tasks.md` 已有后 | 计划必须引用 change id；长期计划归 `docs/` |
+| test-driven-development | `/opsx:apply` 实现阶段 | 测试代码和验证记录归业务仓库 |
+| systematic-debugging | bug 修复或回归定位 | 复现条件写回 spec、runbook 或缺陷记录 |
+| requesting-code-review | 实现完成、验收前 | review 结论进入验收记录或 change 备注 |
+| subagent-driven-development | 多端、多模块可并行任务 | 子任务必须按 OpenSpec tasks 或明确计划拆分 |
+
+### 9.1 协作原则
+
+- OpenSpec 是规格事实源；Superpowers 是执行方法层。
+- 有 OpenSpec change 时，Superpowers 的计划、调试、review 产物必须引用该 change id。
+- `docs/superpowers/specs/` 不能成为第二套主规格；稳定行为应同步回 `openspec/specs/`。
+- `.superpowers/` 默认视为本地运行态目录，除非团队明确要求，不提交。
+- 小修、小 bug 可以直接用 Superpowers 的 TDD / debugging，不强制创建 OpenSpec change。
+- 跨端、跨模块、接口契约变化仍必须先 `/opsx:propose`。
+
+### 9.2 推荐组合链路
+
+```text
+需求 / 问题
+  -> OpenSpec /opsx:explore 或 /opsx:propose
+  -> openspec/changes/<change-id>/
+  -> Superpowers writing-plans / TDD / debugging / code review
+  -> 测试、构建、联调、人工验收
+  -> OpenSpec /opsx:sync 或 /opsx:archive
+```
+
+### 9.3 不建议的做法
+
+- 先写 `docs/superpowers/specs/`，再让 OpenSpec 被动补录。
+- 把 Superpowers 的临时头脑风暴材料当成已确认需求。
+- 绕过 OpenSpec 直接修改跨端契约。
+- 把同一需求同时维护在 OpenSpec specs 和另一套 Superpowers spec 中。
+
+## 10. 老项目接入模式
 
 老项目不要求使用 go-zero、admin-template 或 Unibest，也不要求先做技术栈迁移。
 
 接入目标是把现有项目纳入统一的规则、规格、契约、验证和归档链路。不要为了接入范式而重构业务代码。
 
-### 9.1 接入原则
+### 10.1 接入原则
 
 - 保留现有技术栈和目录结构。
 - 先记录真实现状，不先写理想架构。
-- 先接入规则层和规格层，再逐步补文档。
+- 先接入规则层和规格层；Superpowers 执行层可按团队工具现状启用。
 - 新需求从接入日起走新链路，历史债务分批治理。
-- 不因接入 OpenSpec 触发大规模重构。
+- 不因接入 OpenSpec 或 Superpowers 触发大规模重构。
 
-### 9.2 推荐落地结构
+### 10.2 推荐落地结构
 
 ```text
 legacy-project/
 ├── ai-rules/Team-Intelligence-Center/ # 公司规则子模块
 ├── openspec/                          # 从当前真实行为开始沉淀
+├── .superpowers/                       # 可选，本地运行态，默认 gitignore
 ├── ai-harness/                        # 老项目适配、记忆、决策、runbook
 ├── docs/                              # 补齐 PRD、契约、外部服务说明
 └── <legacy-code>/                      # 原有业务代码，保持现状
@@ -244,7 +312,7 @@ legacy-project/
 
 如果老项目无法调整根目录，也可以把 `ai-rules/`、`openspec/`、`ai-harness/`、`docs/` 放在仓库根目录下的治理目录中，但需要在 README 里写清楚位置。
 
-### 9.3 老项目接入步骤
+### 10.3 老项目接入步骤
 
 1. 添加公司规则：
 
@@ -259,14 +327,16 @@ legacy-project/
    openspec init --tools codex,cursor,qoder,opencode --force
    ```
 
-3. 执行项目治理接入 Skill：
+3. 如团队使用 Superpowers，执行项目治理接入 Skill 时自动检测并尽力安装；不能自动安装的工具按报告中的人工步骤处理，并将 `.superpowers/` 加入 `.gitignore`。
+
+4. 执行项目治理接入 Skill：
 
    ```text
    请读取 ai-rules/Team-Intelligence-Center/Skills/project-governance-bootstrap.md，
    按该技能初始化本项目的 AI 治理入口。
    ```
 
-4. 新建或校准项目适配层：
+5. 新建或校准项目适配层：
 
    ```text
    ai-harness/
@@ -277,25 +347,25 @@ legacy-project/
        └── runbooks.md
    ```
 
-5. 反向梳理项目现状：
+6. 反向梳理项目现状：
 
    - 使用 `Prompts/ai-prd-editor.rules.md` 整理存量 PRD 和业务事实。
    - 使用 `Skills/code-investigator.md` 调研目录、技术栈、模块边界。
    - 使用 `Skills/candidate-rule-extractor.md` 从代码中抽取候选业务规则。
 
-6. 建立第一版主规格：
+7. 建立第一版主规格：
 
    - 确定的现状写入 `openspec/specs/`。
    - 不确定的现状写入候选清单，不直接写成稳定事实。
    - 接口、字段、枚举、错误码写入 `docs/api-contracts/`。
 
-7. 从新需求开始执行标准链路：
+8. 从新需求开始执行标准链路：
 
    ```text
-   /opsx:propose -> 契约冻结 -> /opsx:apply -> 验证 -> /opsx:archive
+   /opsx:propose -> 契约冻结 -> /opsx:apply -> Superpowers 执行 -> 验证 -> /opsx:archive
    ```
 
-### 9.4 老项目现状可信度
+### 10.4 老项目现状可信度
 
 存量项目常有“代码、文档、线上行为不一致”的问题。建议按可信度标记事实：
 
@@ -306,7 +376,7 @@ legacy-project/
 | S3 | 老文档、注释、历史需求单 | 先写入候选规则，等待确认 |
 | S4 | 口头描述、AI 推测、无法复现的行为 | 不写入稳定规格，只做风险记录 |
 
-### 9.5 老项目改造边界
+### 10.5 老项目改造边界
 
 老项目接入时默认禁止：
 
@@ -323,7 +393,7 @@ legacy-project/
 - 每次接口变动都更新 `docs/api-contracts/`。
 - 每次踩坑都回写 `ai-harness/memory/runbooks.md` 或 `decision-log.md`。
 
-## 10. 上手检查清单
+## 11. 上手检查清单
 
 新项目接入完成前，至少检查：
 
@@ -333,6 +403,8 @@ legacy-project/
 - `openspec/specs/` 至少有一个工作区或核心领域 spec。
 - `openspec validate --all --no-interactive` 能通过。
 - Codex、Cursor、Qoder、OpenCode 中至少团队实际使用的工具已生成 `/opsx:*` 入口。
+- 如果团队启用 Superpowers，bootstrap 已检测并尝试安装；不能自动安装的工具已有人工待办，且 `.superpowers/` 已按团队约定处理。
+- Superpowers 产物边界已写明：OpenSpec 是规格事实源，Superpowers 是执行方法层。
 - `docs/` 已声明 PRD、API 契约、外部服务文档位置。
 - `ai-harness/` 已声明项目角色映射、记忆和 runbook 位置。
 - README 已说明如何启动、验证、提交和归档。
@@ -345,7 +417,7 @@ legacy-project/
 - 不确定规则没有写入稳定 spec。
 - 新需求已开始使用 OpenSpec change 流程。
 
-## 11. 常见问题
+## 12. 常见问题
 
 ### Q1：为什么终端执行 `opsx` 报 command not found？
 
@@ -359,11 +431,15 @@ legacy-project/
 
 不会。OpenSpec 管活跃变更和稳定规格；PRD 仍然放在项目 `docs/PRD/`。复杂需求通常先 OpenSpec，再沉淀 PRD。
 
-### Q4：已有老项目能接吗？
+### Q4：Superpowers 会替代 OpenSpec 吗？
 
-可以。先把公司规则作为 submodule 接入，再 `openspec init --tools ...`，最后用 `ai-prd-editor` 和 `code-investigator` 反向梳理现状，逐步把稳定行为写入 `openspec/specs/`。
+不会。Superpowers 负责让 Agent 更稳地执行计划、测试、调试和 review；OpenSpec 仍然负责变更规格和稳定行为事实。两者冲突时，以 OpenSpec 和项目人工确认事实为准。
 
-### Q5：不同工具生成的命令数量不一致怎么办？
+### Q5：已有老项目能接吗？
+
+可以。先把公司规则作为 submodule 接入，再 `openspec init --tools ...`，如团队使用 Superpowers 则安装对应插件，最后用 `ai-prd-editor` 和 `code-investigator` 反向梳理现状，逐步把稳定行为写入 `openspec/specs/`。
+
+### Q6：不同工具生成的命令数量不一致怎么办？
 
 先执行：
 
@@ -374,13 +450,14 @@ openspec update --force
 
 命令数量由 OpenSpec profile、workflow 和 delivery mode 决定，不要求所有工具文件数量完全相同；要求的是团队遵守同一套 OpenSpec 工件和公司规则。
 
-### Q6：老项目一定要迁移到公司推荐模板吗？
+### Q7：老项目一定要迁移到公司推荐模板吗？
 
 不需要。老项目优先接入规则层、规格层、项目适配层和文档层。技术栈迁移应作为独立变更评估，不应作为接入范式的前置条件。
 
-## 12. 参考资料
+## 13. 参考资料
 
 - [OpenSpec README](https://github.com/Fission-AI/OpenSpec)
 - [OpenSpec OPSX Workflow](https://github.com/Fission-AI/OpenSpec/blob/main/docs/opsx.md)
 - [OpenSpec Supported Tools](https://github.com/Fission-AI/OpenSpec/blob/main/docs/supported-tools.md)
 - [OpenSpec Commands](https://github.com/Fission-AI/OpenSpec/blob/main/docs/commands.md)
+- [Superpowers README](https://github.com/obra/superpowers)

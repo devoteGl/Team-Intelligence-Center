@@ -21,7 +21,7 @@
 - **`ai-prd-editor.rules.md` (Production Version - 存量重构梳理)**：AI-PRD 深度重构编辑器规范。这套规则重点处理无文档的老项目问题，限制 AI 的自我发挥（强制将反推信息评定可信度 S1~S4级别），强约束跨模型间的结构一致性（强制双层 Changelog 以防结构漂移），让庞大甚至腐化的系统重新长出“记忆”。
 
 ### 3. ⚡ Skills (可复用执行能力模块)
-封装各角色在具体执行场景下的标准化操作方法论与输出模板，共 10 个 Skill：
+封装各角色在具体执行场景下的标准化操作方法论与输出模板，共 13 个 Skill：
 
 | Skill 文件 | 服务角色 | 核心能力 |
 |-----------|---------|--------|
@@ -34,11 +34,14 @@
 | `task-decomposer.md` | PM | 任务拆解方法论（三维拆解 + 依赖链标注 + 质量自检） |
 | `conflict-arbiter.md` | PM | 共享文件仲裁流程（申请→四维评估→结论→记录，含 Hotfix 处理） |
 | `fe-be-handoff.md` | FE/BE | 前后端交接标准化（FE/BE 交接清单模板 + Mock 方案 + 集成验证清单） |
-| `project-governance-bootstrap.md` | PM/DS | 项目首次接入公司范式时，生成 AGENTS、AI 规则说明、ai-harness 与 OpenSpec 基础治理文件 |
+| `project-governance-bootstrap.md` | PM/DS | 项目首次接入公司范式时，生成 AGENTS、AI 规则说明、ai-harness、OpenSpec 基础治理文件，并声明 Superpowers 协作边界 |
+| `release-ops-handoff.md` | PM/Release Manager/DS | 单个功能或单个跨项目变更的运维发版、运营使用、QA 验收和反馈闭环交付卡 |
+| `git-flow-operator.md` | PM/Release Manager | Git Flow 分支创建、release/hotfix 合并、tag、push 与回灌门禁 |
+| `release-train-handoff.md` | PM/Release Manager/DS | 全量/多项目发版总控包、服务卡、数据库/脚本 manifest、冒烟、回滚与证据归档 |
 
 ### 4. 🧭 Design (落地范式与工具接入)
-提供公司级研发范式、OpenSpec、Figma MCP 等跨项目落地指南：
-- **`development-paradigm-openspec-guide.md`**：公司研发范式 + OpenSpec 落地指南。说明如何把本规则库、OpenSpec、Codex/Cursor/Qoder/OpenCode 和项目模板组合成统一开发链路。
+提供公司级研发范式、OpenSpec、Superpowers、Figma MCP 等跨项目落地指南：
+- **`development-paradigm-openspec-guide.md`**：公司研发范式 + OpenSpec / Superpowers 落地指南。说明如何把本规则库、OpenSpec、Superpowers、Codex/Cursor/Qoder/OpenCode 和项目模板组合成统一开发链路。
 - **`figma-mcp-skills-guide.md`**：Figma MCP + Skills 通用使用说明。说明设计读取、设计转代码、设计系统规则沉淀和 Code Connect 映射流程。
 
 ## 🔄 核心工作流理念
@@ -61,5 +64,6 @@
 建议作为知识基座在团队协同工程中进行应用：
 - **AI 提示词挂载**：直接将此仓库的规则复制到 AI 智能编辑器目录下的 `.rules` 或全局 System Prompt。由于其使用纯文本强制描述约束，所有 LLM 可直接无损耗接收并转入 Team Agent 模拟态投入全时工作。 
 - **Submodule 规范基石**：将其作为 `git submodule` 集成在大型复杂工程库的独立存放点作为约束性资产规范，配合代码审批流长期守护项目全生命周期的产品需求与技术一致边界。
-- **OpenSpec 规格层**：参考 [公司研发范式 + OpenSpec 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路。
-- **项目一键接入**：业务项目引入本仓库后，让 AI 执行 [project-governance-bootstrap](./Skills/project-governance-bootstrap.md)，自动补齐 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/` 与 `openspec/` 基础入口。
+- **OpenSpec 规格层**：参考 [公司研发范式 + OpenSpec / Superpowers 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路。
+- **Superpowers 执行方法层**：在已启用 Superpowers 的 AI 工具中，用 brainstorming、planning、TDD、debugging、code review、subagent-driven development 等能力承接 OpenSpec tasks；OpenSpec 仍是规格事实源。
+- **项目一键接入**：业务项目引入本仓库后，让 AI 执行 [project-governance-bootstrap](./Skills/project-governance-bootstrap.md)，自动补齐 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/` 与 `openspec/` 基础入口，并自动检测/尽力安装 Superpowers；无法静默安装的工具会写入人工待办。

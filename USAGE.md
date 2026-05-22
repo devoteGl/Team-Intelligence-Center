@@ -15,7 +15,7 @@
 - [6. Skills 使用说明](#6-skills-使用说明)
 - [7. 工作流全景图](#7-工作流全景图)
 - [8. 集成方式](#8-集成方式)
-- [9. OpenSpec 与多工具统一范式](#9-openspec-与多工具统一范式)
+- [9. OpenSpec、Superpowers 与多工具统一范式](#9-openspecsuperpowers-与多工具统一范式)
 - [10. 常见问题 FAQ](#10-常见问题-faq)
 
 ---
@@ -58,7 +58,10 @@ Team-Intelligence-Center/
     ├── task-decomposer.md              #    [PM] 任务拆解方法
     ├── conflict-arbiter.md             #    [PM] 共享文件仲裁
     ├── fe-be-handoff.md                #    [FE/BE] 前后端交接
-    └── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
+    ├── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
+    ├── release-ops-handoff.md          #    [PM/Release/DS] 单变更发版交接
+    ├── git-flow-operator.md            #    [PM/Release] Git Flow 分支、合并、tag、回灌
+    └── release-train-handoff.md        #    [PM/Release/DS] 全量多项目发版总控
 ```
 
 ### 三层架构关系
@@ -205,6 +208,9 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 | `conflict-arbiter` | PM | FE/BE 需修改共享文件时 | P2 |
 | `fe-be-handoff` | FE/BE | 契约冻结后开始实现前 | P2 |
 | `project-governance-bootstrap` | PM/DS | 项目首次接入公司范式 | P0 |
+| `release-ops-handoff` | PM/Release/DS | 单个功能或单个跨项目变更发版交接 | P0 |
+| `git-flow-operator` | PM/Release | 新需求开分支、release/hotfix 合并、tag、回灌 | P0 |
+| `release-train-handoff` | PM/Release/DS | 全量发版、多项目联动、SQL/脚本发版交付包 | P0 |
 
 ### 6.2 如何在对话中引用 Skill
 
@@ -368,13 +374,13 @@ cp Skills/code-investigator.md your-project/.ai-rules/
 
 ---
 
-## 9. OpenSpec 与多工具统一范式
+## 9. OpenSpec、Superpowers 与多工具统一范式
 
-如果团队同时使用 Codex、Cursor、Qoder、OpenCode 等不同 AI 编码工具，建议在业务项目中引入 OpenSpec 作为统一规格层。
+如果团队同时使用 Codex、Cursor、Qoder、OpenCode 等不同 AI 编码工具，建议在业务项目中引入 OpenSpec 作为统一规格层。若团队已启用 Superpowers，可把它作为执行方法层，与 OpenSpec 搭配使用。
 
 推荐阅读：
 
-- [Design/development-paradigm-openspec-guide.md](./Design/development-paradigm-openspec-guide.md)：公司研发范式 + OpenSpec 落地指南。
+- [Design/development-paradigm-openspec-guide.md](./Design/development-paradigm-openspec-guide.md)：公司研发范式 + OpenSpec / Superpowers 落地指南。
 
 ### 9.1 推荐项目分层
 
@@ -382,10 +388,13 @@ cp Skills/code-investigator.md your-project/.ai-rules/
 your-project/
 ├── ai-rules/Team-Intelligence-Center/ # 公司规则层
 ├── openspec/                          # OpenSpec 规格层
+├── .superpowers/                       # Superpowers 临时执行状态，可加入 .gitignore
 ├── ai-harness/                        # 项目适配与记忆
 ├── docs/                              # PRD、契约、设计、外部服务
 └── <业务工程目录>/                      # 后端、前端、后台等实现
 ```
+
+`.superpowers/` 只用于 Superpowers 运行过程中的临时状态、头脑风暴材料或本地辅助产物。除非团队明确要保留某类输出，否则建议加入 `.gitignore`。
 
 ### 9.2 安装与初始化
 
@@ -396,6 +405,8 @@ openspec init --tools codex,cursor,qoder,opencode --force
 ```
 
 生成后重启对应 IDE 或 AI 工具。
+
+Superpowers 按 AI 工具分别安装。执行 `project-governance-bootstrap` 时会自动检测并尽力安装；Codex App、Codex CLI、Cursor 等需要图形插件市场或交互式命令的环境，会在接入报告中留下人工安装步骤。Gemini CLI、Factory Droid、GitHub Copilot CLI 等存在明确 CLI 命令时，可由 bootstrap 尝试执行。
 
 ### 9.3 终端与 AI 工具的区别
 
@@ -418,14 +429,44 @@ AI 工具中使用 `/opsx:*`：
 
 不需要每次对话都输入 `/opsx`。只有探索、立项、实现、归档等阶段切换时使用；普通沟通和小修小改可直接和 AI 对话。
 
-### 9.4 与本规则库的关系
+### 9.4 OpenSpec 与 Superpowers 的分工
+
+| 层级 | 工具 / 目录 | 职责 |
+| --- | --- | --- |
+| 公司规则层 | `Team-Intelligence-Center` | 角色、流程、Prompts、Skills、提交纪律 |
+| 规格事实源 | `openspec/` | proposal、specs、design、tasks、archive |
+| 执行方法层 | Superpowers | brainstorming、planning、TDD、debugging、code review、subagent-driven development |
+| 长期文档层 | `docs/` | PRD、API 契约、外部服务、设计资料 |
+| 项目适配层 | `ai-harness/` | 项目记忆、决策、runbook |
+
+推荐链路：
+
+```text
+需求 / 问题
+  -> /opsx:explore 或 /opsx:propose
+  -> openspec/changes/<change-id>/
+  -> Superpowers 执行计划、TDD、调试、review、并行开发
+  -> 测试 / 构建 / 验证
+  -> /opsx:sync 或 /opsx:archive
+```
+
+协作约束：
+
+- 大需求、跨端、跨模块、接口契约变化：先走 OpenSpec。
+- Superpowers 的计划、调试和 review 产物必须引用 OpenSpec change id 或任务来源。
+- 稳定规格最终回写 `openspec/specs/`，不要把 `docs/superpowers/specs/` 当主事实源。
+- 小修、小 bug 可直接用 Superpowers 的 TDD 或 debugging，不强制开 OpenSpec change。
+- Superpowers 产生的临时状态默认不提交；确需保留的计划或复盘应归入 `docs/` 或 `ai-harness/memory/`。
+
+### 9.5 与本规则库的关系
 
 - `Team-Intelligence-Center` 定义角色、流程、Prompts、Skills 和工程纪律。
 - OpenSpec 定义 proposal、specs、design、tasks、archive 等规格工件。
+- Superpowers 定义 Agent 执行方法，例如计划、测试驱动、系统化调试、代码审查和子代理开发。
 - 项目 `docs/` 保存长期 PRD、API 契约、外部服务和设计资料。
 - 项目 `ai-harness/` 保存项目适配、长期记忆、决策和 runbook。
 
-### 9.5 老项目接入
+### 9.6 老项目接入
 
 老项目不要求使用公司推荐的 go-zero、admin-template 或 Unibest 模板，也不要求先迁移技术栈。
 
@@ -434,13 +475,14 @@ AI 工具中使用 `/opsx:*`：
 1. 保留现有代码结构。
 2. 接入 `ai-rules/Team-Intelligence-Center/`。
 3. 执行 `openspec init --tools codex,cursor,qoder,opencode --force`。
-4. 新建 `ai-harness/`，记录真实项目现状、决策和 runbook。
-5. 用 `ai-prd-editor`、`code-investigator`、`candidate-rule-extractor` 反向梳理存量业务。
-6. 从新需求开始走 `/opsx:propose -> /opsx:apply -> /opsx:archive`。
+4. 如团队已启用 Superpowers，让 `project-governance-bootstrap` 自动检测并尽力安装；不能自动安装的工具按报告人工处理，并把 `.superpowers/` 加入 `.gitignore`。
+5. 新建 `ai-harness/`，记录真实项目现状、决策和 runbook。
+6. 用 `ai-prd-editor`、`code-investigator`、`candidate-rule-extractor` 反向梳理存量业务。
+7. 从新需求开始走 `/opsx:propose -> Superpowers 执行 -> /opsx:archive`。
 
 也可以直接让 AI 执行 `project-governance-bootstrap`，自动生成上述基础入口，再由人补齐 TODO。
 
-详细说明见 [老项目接入模式](./Design/development-paradigm-openspec-guide.md#9-老项目接入模式)。
+详细说明见 [老项目接入模式](./Design/development-paradigm-openspec-guide.md#10-老项目接入模式)。
 
 ---
 
@@ -467,7 +509,11 @@ AI 工具中使用 `/opsx:*`：
 - Skills 依赖这些角色定义来确定「谁在什么时候执行」
 - 缺少 Global-Rules 的约束，Skills 的执行时机和输出格式会失去一致性保障
 
-### Q4：如何为自己的项目定制新的 Skill？
+### Q4：Superpowers 会替代 OpenSpec 吗？
+
+**A**：不会。OpenSpec 是规格事实源，Superpowers 是执行方法层。大需求、跨端、跨模块、接口契约变化仍先走 `/opsx:propose`；Superpowers 用于计划、TDD、调试、代码审查和子代理执行。
+
+### Q5：如何为自己的项目定制新的 Skill？
 
 **A**：参考现有 Skill 的结构，每个 Skill 应包含：
 1. **技能用途**：服务角色、触发时机、输出物
@@ -477,7 +523,7 @@ AI 工具中使用 `/opsx:*`：
 5. **自检清单**：执行后的质量自查
 6. **上下游衔接**：与其他角色的交接关系
 
-### Q5：SESSION SNAPSHOT 丢失了怎么办？
+### Q6：SESSION SNAPSHOT 丢失了怎么办？
 
 **A**：如果无法恢复快照：
 1. PM 需要重新评估当前项目状态
@@ -485,7 +531,7 @@ AI 工具中使用 `/opsx:*`：
 3. 如有 PRD 文档，从文档中恢复任务上下文
 4. 重新拆解任务（可能需要再次调研）
 
-### Q6：这套规则适用于哪些 AI 编辑器？
+### Q7：这套规则适用于哪些 AI 编辑器？
 
 **A**：任何支持 System Prompt 或项目级规则文件的 AI 编辑器，包括但不限于：
 - Cursor（`.cursorrules`）
