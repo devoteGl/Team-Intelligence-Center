@@ -1,0 +1,73 @@
+{
+  "package": "Team_Intelligence_Center",
+  "version": "0.1.0",
+  "package_id": "Team_Intelligence_Center_0.1.0",
+  "type": "lightweight_rules_automation",
+  "purpose": "Install a small, tool-neutral AI collaboration rules entrypoint into business projects.",
+  "automation_policy": {
+    "default_install_mode": "minimal",
+    "tool_neutral": true,
+    "principle": "SDD + TDD",
+    "openspec_integration": "optional_spec_carrier_for_standard_and_critical_changes",
+    "risk_routing": [
+      "consulting",
+      "micro",
+      "standard",
+      "critical"
+    ],
+    "no_vendor_assets": true,
+    "no_git_hooks_by_default": true,
+    "git_workflow_advice_only": true,
+    "no_forced_full_flow_for_readonly_or_micro_tasks": true,
+    "sdd_tdd_required_for_standard_and_critical": true,
+    "no_codex_only_constraint": true
+  },
+  "source_assets": {
+    "global_rules": [
+      "Global-Rules/coding-rules.md"
+    ],
+    "prompts": [
+      "Prompts/ai-prd-generator.rules.md",
+      "Prompts/ai-prd-editor.rules.md"
+    ],
+    "skills_dir": "Skills",
+    "design_dir": "Design"
+  },
+  "templates": [
+    "templates/AGENTS.md",
+    "templates/docs/ai-rules-usage.md",
+    "templates/ai-harness/project-adapter.md"
+  ],
+  "tools": [
+    "tools/bootstrap-project.ps1",
+    "tools/bootstrap-project.sh",
+    "tools/git-advice.ps1",
+    "tools/git-advice.sh",
+    "tools/validate-pack.sh"
+  ],
+  "generated_project_files": [
+    "AGENTS.md",
+    ".tic-rules.lock",
+    "docs/ai-rules-usage.md",
+    "ai-harness/project-adapter.md"
+  ],
+  "borrowed_from_codex_project": [
+    "manifest based versioning",
+    "idempotent project bootstrap",
+    "marker bounded AGENTS merge",
+    "dry-run first installation",
+    "minimal lock file for diagnostics",
+    "risk based task routing"
+  ],
+  "intentionally_excluded": [
+    "Codex-only workflow binding",
+    "full/patch distribution complexity",
+    "vendored binaries",
+    "default Git hooks",
+    "automatic Git branch/commit/push/merge/tag execution",
+    "RTK requirement",
+    "project PRD history packaging",
+    "forced SDD/Plan/Approval for readonly and micro tasks",
+    "branch lifecycle automation"
+  ]
+}

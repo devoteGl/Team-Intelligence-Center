@@ -16,7 +16,8 @@
 - [7. 工作流全景图](#7-工作流全景图)
 - [8. 集成方式](#8-集成方式)
 - [9. OpenSpec、Superpowers 与多工具统一范式](#9-openspecsuperpowers-与多工具统一范式)
-- [10. 常见问题 FAQ](#10-常见问题-faq)
+- [10. 轻量自动化接入](#10-轻量自动化接入)
+- [11. 常见问题 FAQ](#11-常见问题-faq)
 
 ---
 
@@ -40,6 +41,8 @@ Team-Intelligence-Center/
 │
 ├── README.md                           # 项目说明
 ├── USAGE.md                            # 本使用指南
+├── VERSION                             # 规则包版本
+├── manifest.json                       # 轻量自动化资产清单
 │
 ├── Global-Rules/                       # 🔒 全局约束层（不可违反的底线）
 │   └── coding-rules.md                 #    Git 规范 + AI Agent Team 多角色协议
@@ -48,20 +51,35 @@ Team-Intelligence-Center/
 │   ├── ai-prd-generator.rules.md       #    新需求 PRD 生成器
 │   └── ai-prd-editor.rules.md          #    存量项目 PRD 编辑器
 │
-└── Skills/                             # ⚡ 能力层（可复用执行模块）
-    ├── code-investigator.md            #    [CI] 代码调研方法论
-    ├── api-contract-freezer.md         #    [PM] 接口契约冻结流程
-    ├── changelog-writer.md             #    [DS] 双层 Changelog 编写
-    ├── prd-review-checklist.md         #    [QA] PRD 质量审查框架
-    ├── session-snapshot-manager.md      #    [PM] 会话快照管理
-    ├── candidate-rule-extractor.md     #    [CI/BE] 候选规则抽取
-    ├── task-decomposer.md              #    [PM] 任务拆解方法
-    ├── conflict-arbiter.md             #    [PM] 共享文件仲裁
-    ├── fe-be-handoff.md                #    [FE/BE] 前后端交接
-    ├── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
-    ├── release-ops-handoff.md          #    [PM/Release/DS] 单变更发版交接
-    ├── git-flow-operator.md            #    [PM/Release] Git Flow 分支、合并、tag、回灌
-    └── release-train-handoff.md        #    [PM/Release/DS] 全量多项目发版总控
+├── Skills/                             # ⚡ 能力层（可复用执行模块）
+│   ├── code-investigator.md            #    [CI] 代码调研方法论
+│   ├── api-contract-freezer.md         #    [PM] 接口契约冻结流程
+│   ├── changelog-writer.md             #    [DS] 双层 Changelog 编写
+│   ├── prd-review-checklist.md         #    [QA] PRD 质量审查框架
+│   ├── session-snapshot-manager.md      #    [PM] 会话快照管理
+│   ├── candidate-rule-extractor.md     #    [CI/BE] 候选规则抽取
+│   ├── task-decomposer.md              #    [PM] 任务拆解方法
+│   ├── conflict-arbiter.md             #    [PM] 共享文件仲裁
+│   ├── fe-be-handoff.md                #    [FE/BE] 前后端交接
+│   ├── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
+│   ├── release-ops-handoff.md          #    [PM/Release/DS] 单变更发版交接
+│   ├── git-flow-operator.md            #    [PM/Release] Git Flow 分支、合并、tag、回灌
+│   └── release-train-handoff.md        #    [PM/Release/DS] 全量多项目发版总控
+│
+├── templates/                          # 🧩 业务项目最小接入模板
+│   ├── AGENTS.md
+│   ├── docs/ai-rules-usage.md
+│   └── ai-harness/project-adapter.md
+│
+├── tools/                              # 🛠️ 轻量自动化脚本
+│   ├── bootstrap-project.sh
+│   ├── bootstrap-project.ps1
+│   ├── git-advice.sh
+│   ├── git-advice.ps1
+│   └── validate-pack.sh
+│
+└── docs/
+    └── automation.md                   # 自动化取舍说明
 ```
 
 ### 三层架构关系
@@ -107,13 +125,56 @@ Team-Intelligence-Center/
 ```bash
 # 方式一：作为 Git Submodule 引入
 cd your-project
-git submodule add https://your-repo/Team-Intelligence-Center.git .ai-rules
+git submodule add https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
+git submodule update --init --recursive
 
-# 方式二：直接复制到项目中
-cp -r Team-Intelligence-Center/ your-project/.ai-rules/
+# 方式二：开发者本机单独 clone
+git clone https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Center.git
 ```
 
-然后在 AI 编辑器的配置中引用 `.ai-rules/` 目录下的规则文件。
+长期业务项目推荐 submodule，因为可以锁定规则版本、随业务仓库 review 和升级；个人本地试用或维护规则库时直接 `git clone` 即可。然后在 AI 编辑器的配置中引用 `.ai-rules/Team-Intelligence-Center/` 或本机 clone 目录下的规则文件。
+
+### 3.3 轻量自动化接入（推荐试点）
+
+**适用场景**：希望把 TIC 接入业务项目，但不想复制重流程包、vendor、Git hooks 或历史 PRD。
+
+先在本仓库自检：
+
+```bash
+bash tools/validate-pack.sh
+```
+
+再预览要写入业务项目的文件：
+
+```bash
+bash tools/bootstrap-project.sh --dry-run /path/to/project
+```
+
+确认后写入：
+
+```bash
+bash tools/bootstrap-project.sh --yes /path/to/project
+```
+
+Windows 原生 PowerShell：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -DryRun -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -Yes -ProjectRoot C:\path\to\project
+```
+
+默认只生成或合并：
+
+```text
+AGENTS.md
+.tic-rules.lock
+docs/ai-rules-usage.md
+ai-harness/project-adapter.md
+```
+
+它不会默认安装 Git hooks、不会复制 `tools/` 到业务项目、不会绑定 Codex-only，也不会要求咨询和 micro 任务走完整 PRD/SDD 流程。
+
+原则上，standard / critical 任务仍然执行 **SDD + TDD**：先明确行为规格和验收标准，再写或更新测试，最后实现和验证。项目已有 `openspec/` 时，SDD 应写入或关联 OpenSpec change；没有 OpenSpec 时，使用 `docs/sdd/` 或项目约定位置。
 
 ---
 
@@ -486,7 +547,62 @@ AI 工具中使用 `/opsx:*`：
 
 ---
 
-## 10. 常见问题 FAQ
+## 10. 轻量自动化接入
+
+### 10.1 自动化目标
+
+本项目的自动化目标是“一条命令把 TIC 规则接入任意业务项目，但 TIC 本身保持轻量、可读、跨工具”。它吸收自动接入、manifest、marker 合并和 dry-run 的优点，不复制重型分发包。
+
+### 10.2 从 Codex_Project 吸收什么
+
+- `manifest.json` 记录版本、资产、模板和安装产物。
+- `bootstrap-project.sh` 支持 `--dry-run`、幂等写入和 marker-bounded `AGENTS.md` 合并。
+- `.tic-rules.lock` 记录规则版本、安装时间和规则源路径，便于诊断。
+- 任务按 `consulting / micro / standard / critical` 分级，简单事保持简单，高风险才升级流程。
+- standard / critical 任务坚持 SDD + TDD；OpenSpec 是可选规格承载层，不是每次对话的强制流程。
+
+### 10.3 明确不吸收什么
+
+- 不绑定 Codex-only。
+- 不默认安装 Git hooks。
+- 不引入 RTK、vendor 二进制或离线包。
+- 不复制历史 PRD、tests、docs、tools 到业务仓库。
+- 不要求只读咨询、解释、微小非行为改动走完整 SDD/Plan/Approval。
+- 不默认接管分支生命周期、release 合并和 tag。
+
+### 10.4 脚本说明
+
+`tools/bootstrap-project.sh` 常用参数：
+
+| 参数 | 作用 |
+| --- | --- |
+| `--dry-run` | 只预览，不写文件 |
+| `--yes` / `-y` | 跳过交互确认 |
+| `--force` | 覆盖已有 `docs/ai-rules-usage.md` 和 `ai-harness/project-adapter.md`，覆盖前备份 |
+| `--rules-dir PATH` | 指定业务项目中记录的 TIC 规则源路径 |
+
+Windows PowerShell 使用同名参数：`-DryRun`、`-Yes`、`-Force`、`-RulesDir`、`-ProjectRoot`。
+
+可选 Git 建议脚本只读检查仓库状态并给出分支/提交建议，不执行任何 Git 变更：
+
+```bash
+bash tools/git-advice.sh --type feature "lightweight automation"
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lightweight automation"
+```
+
+`tools/validate-pack.sh` 会检查：
+
+- `VERSION` 与 `manifest.json` 版本一致。
+- 核心规则、Prompts、Skills、Design、templates 和 tools 存在。
+- Skill 文件保留标准标题和 `## 技能用途` 结构。
+- 自动化策略仍声明“不默认 Git hooks”和“不强制 micro/consulting 全流程”。
+
+---
+
+## 11. 常见问题 FAQ
 
 ### Q1：AI 没有按照角色协议工作怎么办？
 

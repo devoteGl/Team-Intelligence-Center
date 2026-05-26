@@ -44,6 +44,17 @@
 - **`development-paradigm-openspec-guide.md`**：公司研发范式 + OpenSpec / Superpowers 落地指南。说明如何把本规则库、OpenSpec、Superpowers、Codex/Cursor/Qoder/OpenCode 和项目模板组合成统一开发链路。
 - **`figma-mcp-skills-guide.md`**：Figma MCP + Skills 通用使用说明。说明设计读取、设计转代码、设计系统规则沉淀和 Code Connect 映射流程。
 
+### 5. 🛠️ Automation (轻量自动化层)
+提供最小可用的规则接入与自检工具，吸收自动化思想但不复制重流程包：
+- **`manifest.json` / `VERSION`**：声明规则包版本、资产清单、安装产物与刻意排除项。
+- **`templates/`**：项目侧最小入口模板，包括 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`。
+- **`tools/bootstrap-project.sh`**：幂等接入业务项目，默认只合并最小规则入口和轻量 lock，不安装 Git hooks、不复制历史 PRD、不绑定 Codex-only。
+- **`tools/git-advice.sh` / `tools/git-advice.ps1`**：只读 Git 副驾，输出分支和提交建议，不执行 Git 变更。
+- **`tools/validate-pack.sh`**：校验规则包文件、版本、Skill 结构和轻量化约束。
+- **`docs/automation.md`**：记录从 Codex_Project 吸收的有益机制，以及明确剔除的冗余部分。
+
+自动化默认原则是 **SDD + TDD**：standard / critical 任务先明确行为规格，再从验收标准推导测试或验证；OpenSpec 可作为规格承载层，但不强制咨询和 micro 任务进入重流程。
+
 ## 🔄 核心工作流理念
 
 本中枢要求任意系统开发迭代不仅生成代码，更强制遵循工程纪律上的阶段卡点推进：
@@ -64,6 +75,8 @@
 建议作为知识基座在团队协同工程中进行应用：
 - **AI 提示词挂载**：直接将此仓库的规则复制到 AI 智能编辑器目录下的 `.rules` 或全局 System Prompt。由于其使用纯文本强制描述约束，所有 LLM 可直接无损耗接收并转入 Team Agent 模拟态投入全时工作。 
 - **Submodule 规范基石**：将其作为 `git submodule` 集成在大型复杂工程库的独立存放点作为约束性资产规范，配合代码审批流长期守护项目全生命周期的产品需求与技术一致边界。
+- **轻量自动化接入**：执行 `bash tools/bootstrap-project.sh --dry-run /path/to/project` 预览，再执行 `bash tools/bootstrap-project.sh --yes /path/to/project` 写入最小入口。
+- **Windows 原生接入**：PowerShell 环境执行 `powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -Yes -ProjectRoot C:\path\to\project`。
 - **OpenSpec 规格层**：参考 [公司研发范式 + OpenSpec / Superpowers 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路。
 - **Superpowers 执行方法层**：在已启用 Superpowers 的 AI 工具中，用 brainstorming、planning、TDD、debugging、code review、subagent-driven development 等能力承接 OpenSpec tasks；OpenSpec 仍是规格事实源。
 - **项目一键接入**：业务项目引入本仓库后，让 AI 执行 [project-governance-bootstrap](./Skills/project-governance-bootstrap.md)，自动补齐 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/` 与 `openspec/` 基础入口，并自动检测/尽力安装 Superpowers；无法静默安装的工具会写入人工待办。
