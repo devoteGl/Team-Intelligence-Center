@@ -1,55 +1,55 @@
-# Team-Intelligence-Center Lightweight Rules
+# Team-Intelligence-Center 轻量规则
 
-This project uses Team-Intelligence-Center as a lightweight AI collaboration rules layer.
+本项目使用 Team-Intelligence-Center 作为轻量 AI 协作规则层。
 
-Rules source: `{{TIC_RULES_DIR}}`
-Rules version: `{{TIC_VERSION}}`
+规则来源：`{{TIC_RULES_DIR}}`
+规则版本：`{{TIC_VERSION}}`
 
-## Operating Principles
+## 工作原则
 
-- Keep simple tasks simple. Do not run a full PRD/SDD/Plan process for consulting, read-only lookup, explanation, or tiny non-behavioral edits.
-- Use SDD + TDD for standard and critical changes. Clarify the behavior spec first, then write or update tests against that spec before implementation.
-- Use OpenSpec when this project has `openspec/` or the task crosses modules, APIs, data models, or long-lived product behavior. If OpenSpec is not present, keep the SDD in `docs/sdd/` or the nearest project-approved spec location.
-- Escalate by risk, not by keyword. Payment, auth, data migration, production config, security, deletion, and cross-module contracts require stricter handling.
-- Read local project context before changing code. Prefer existing patterns, commands, tests, and documentation.
-- Verify before claiming completion. Report commands run, what passed, what was not tested, and remaining risks.
-- Do not invent business facts. Mark inferred behavior and candidate rules with confidence before turning them into requirements.
-- Do not overwrite human work. Preserve existing project rules and user changes.
+- 简单任务保持简单。咨询、只读查询、代码解释、微小非行为改动，不走完整 PRD/SDD/Plan 流程。
+- standard / critical 任务执行 SDD + TDD。先明确行为规格，再基于验收标准编写或更新测试，最后实现。
+- 项目已有 `openspec/`，或任务涉及跨模块、API、数据模型、长期产品行为时，优先用 OpenSpec 承载规格；没有 OpenSpec 时，把 SDD 放到 `docs/sdd/` 或项目约定位置。
+- 按风险升级，而不是按关键词升级。支付、认证、数据迁移、生产配置、安全、删除、跨模块契约需要更严格处理。
+- 改代码前先读本项目上下文，优先复用现有模式、命令、测试和文档。
+- 完成前必须验证。最终说明要写清楚跑了哪些命令、哪些通过、哪些未测、还有什么风险。
+- 不编造业务事实。反推到的行为要标注可信度，候选规则确认前不得写成正式需求。
+- 不覆盖人的工作。保留项目已有规则和用户未提交改动。
 
-## Task Routing
+## 任务分级
 
-| Tier | Use When | Required Handling |
+| 档位 | 适用场景 | 处理要求 |
 | --- | --- | --- |
-| consulting | Explanation, comparison, read-only review, process discussion | Answer directly with evidence. Do not modify files. |
-| micro | Copy, comments, documentation, tiny non-behavioral edits | Make the narrow change and run the smallest meaningful verification. |
-| standard | New feature, behavior change, API/UI contract, cross-module work | Write or update an SDD, derive TDD tests from acceptance criteria, implement, then verify. |
-| critical | Payment, auth, security, production config, destructive migration, data loss risk | Require explicit human confirmation, SDD + TDD evidence, rollback thinking, stronger verification, and clear release notes. |
+| consulting | 解释、对比、只读 review、流程讨论 | 直接回答并给证据，不改文件。 |
+| micro | 文案、注释、文档、微小非行为改动 | 做窄改动，跑最小有意义验证。 |
+| standard | 新功能、行为变化、API/UI 契约、跨模块改动 | 写或更新 SDD，从验收标准推导 TDD 测试，实现后验证。 |
+| critical | 支付、认证、安全、生产配置、破坏性迁移、数据丢失风险 | 需要明确人工确认、SDD + TDD 证据、回滚思路、更强验证和清晰发版说明。 |
 
-## SDD + TDD Principle
+## SDD + TDD 原则
 
-- SDD defines the intended behavior, scope, non-goals, acceptance criteria, and edge cases.
-- TDD turns those acceptance criteria into failing tests or explicit verification checks before implementation.
-- Implementation should stay traceable to the SDD and the tests.
-- OpenSpec may be the storage and lifecycle format for SDD artifacts, but it is not required for consulting or micro tasks.
-- Do not treat undocumented inference as confirmed behavior. Use confidence labels and candidate rules for reconstructed legacy behavior.
+- SDD 定义目标行为、范围、不做什么、验收标准和边界场景。
+- TDD 把 SDD 的验收标准转成失败测试或明确验证项，再进入实现。
+- 实现必须能追溯到 SDD 和测试。
+- OpenSpec 可以作为 SDD 的存储和生命周期承载方式，但 consulting 和 micro 任务不强制使用 OpenSpec。
+- 不把未确认的代码反推当成既定业务事实；老项目反推规则要使用可信度标签和候选规则机制。
 
-## Recommended TIC Assets
+## 推荐使用的 TIC 资产
 
-- Global behavior rules: `Global-Rules/coding-rules.md`
-- New requirements: `Prompts/ai-prd-generator.rules.md`
-- Legacy reconstruction: `Prompts/ai-prd-editor.rules.md`
-- OpenSpec / Superpowers integration: `Design/development-paradigm-openspec-guide.md`
-- Investigation: `Skills/code-investigator.md`
-- Task breakdown: `Skills/task-decomposer.md`
-- API contract freeze: `Skills/api-contract-freezer.md`
-- Candidate rule extraction: `Skills/candidate-rule-extractor.md`
-- Release handoff: `Skills/release-ops-handoff.md` and `Skills/release-train-handoff.md`
+- 全局行为规则：`Global-Rules/coding-rules.md`
+- 新需求生成：`Prompts/ai-prd-generator.rules.md`
+- 老项目补文档：`Prompts/ai-prd-editor.rules.md`
+- OpenSpec / Superpowers 接合：`Design/development-paradigm-openspec-guide.md`
+- 代码调研：`Skills/code-investigator.md`
+- 任务拆解：`Skills/task-decomposer.md`
+- API 契约冻结：`Skills/api-contract-freezer.md`
+- 候选规则抽取：`Skills/candidate-rule-extractor.md`
+- 发版交接：`Skills/release-ops-handoff.md` 和 `Skills/release-train-handoff.md`
 
-## Completion Report
+## 完成报告
 
-For code or documentation changes, final reports should include:
+涉及代码或文档改动时，最终报告应包含：
 
-- Changed files.
-- Simplifications or decisions made.
-- Verification commands and results.
-- Known gaps or remaining risks.
+- 修改了哪些文件。
+- 做了哪些简化或关键决策。
+- 执行了哪些验证命令和结果。
+- 未覆盖的验证和剩余风险。

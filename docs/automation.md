@@ -1,32 +1,32 @@
-# Lightweight Automation Design
+# 轻量自动化设计
 
-Team-Intelligence-Center remains a rules and skills knowledge base. The automation layer only installs a small project entrypoint and validates that the rules package is complete.
+Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负责安装一个很小的项目入口，并校验规则包是否完整。
 
-## Adopted From Codex_Project
+## 从 Codex_Project 吸收的部分
 
-- Manifest-based versioning.
-- Idempotent project bootstrap.
-- Marker-bounded `AGENTS.md` merge.
-- `--dry-run` installation preview.
-- Lightweight lock file for diagnostics.
-- Risk-based task routing.
-- SDD + TDD as the default engineering principle for standard and critical changes.
-- OpenSpec as an optional spec carrier when the project already uses it or the change needs durable behavior tracking.
+- 基于 `manifest.json` 的版本和资产声明。
+- 可重复执行的项目 bootstrap。
+- 用 marker 边界合并 `AGENTS.md`。
+- `--dry-run` 安装预览。
+- 用轻量 lock 文件辅助诊断。
+- 按风险分级处理任务。
+- standard / critical 任务默认执行 SDD + TDD。
+- OpenSpec 作为可选规格承载层，用于已启用 OpenSpec 或需要长期行为追踪的变更。
 
-## Deliberately Excluded
+## 明确排除的部分
 
-- Codex-only workflow binding.
-- Vendored binaries or runtime dependencies.
-- Default Git hooks.
-- RTK or other wrapper requirements.
-- Full/patch distribution packaging.
-- Historical PRD/test/docs payloads.
-- Forced SDD/Plan/Approval for consulting, read-only, or micro tasks.
-- Branch lifecycle automation and default Git mutation.
+- 不绑定 Codex-only。
+- 不引入 vendor 二进制或运行时依赖。
+- 不默认安装 Git hooks。
+- 不要求 RTK 或其它命令包装器。
+- 不做 full / patch 复杂分发包。
+- 不打包历史 PRD、测试和文档资产。
+- 不要求咨询、只读、micro 任务走完整 SDD/Plan/Approval。
+- 不接管分支生命周期，也不默认执行 Git 变更。
 
-## Installed Files
+## 安装产物
 
-The bootstrap script writes only:
+bootstrap 脚本只写入：
 
 ```text
 AGENTS.md
@@ -35,9 +35,11 @@ docs/ai-rules-usage.md
 ai-harness/project-adapter.md
 ```
 
-`AGENTS.md` is merged inside a marker block so project-owned instructions can coexist with TIC rules.
+`AGENTS.md` 会写入 marker 块中，方便项目已有规则和 TIC 轻量规则共存。
 
-## Intended Workflow
+## 推荐使用流程
+
+macOS / Linux / WSL：
 
 ```bash
 bash tools/validate-pack.sh
@@ -45,68 +47,68 @@ bash tools/bootstrap-project.sh --dry-run /path/to/project
 bash tools/bootstrap-project.sh --yes /path/to/project
 ```
 
-Windows PowerShell:
+Windows PowerShell：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -DryRun -ProjectRoot C:\path\to\project
 powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -Yes -ProjectRoot C:\path\to\project
 ```
 
-The default install is intentionally minimal. Teams can still use the deeper TIC skills manually when a task justifies the extra structure.
+默认安装保持轻量。任务确实需要更多结构时，再手动使用更深入的 TIC 技能。
 
-## SDD + TDD And OpenSpec
+## SDD + TDD 与 OpenSpec
 
-The lightweight automation does not force every conversation through OpenSpec. The rule is:
+轻量自动化不会让每次对话都进入 OpenSpec。规则是：
 
-- Consulting and micro tasks stay direct.
-- Standard and critical changes require SDD + TDD.
-- If the business project has `openspec/`, store or link the SDD in the OpenSpec change.
-- If OpenSpec is not present, use `docs/sdd/` or the project-approved spec location.
-- Tests or explicit verification checks should be derived from the SDD acceptance criteria before implementation.
+- consulting 和 micro 任务保持直接。
+- standard 和 critical 任务必须执行 SDD + TDD。
+- 业务项目已有 `openspec/` 时，把 SDD 写入或关联 OpenSpec change。
+- 没有 OpenSpec 时，使用 `docs/sdd/` 或项目认可的规格位置。
+- 测试或明确验证项应从 SDD 的验收标准推导出来，再进入实现。
 
-OpenSpec is therefore integrated as a spec carrier, not as a mandatory heavy workflow for every task.
+因此，OpenSpec 是规格承载层，不是每个任务都必须启动的重流程。
 
-## Optional Git Advice
+## 可选 Git 建议
 
-TIC provides read-only Git advice scripts for developers who want help naming branches and commits without letting automation mutate repository state.
+TIC 提供只读 Git 建议脚本，帮助研发命名分支和提交，但不让自动化修改仓库状态。
 
-macOS / Linux / WSL:
+macOS / Linux / WSL：
 
 ```bash
 bash tools/git-advice.sh --type feature "lightweight automation"
 ```
 
-Windows PowerShell:
+Windows PowerShell：
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lightweight automation"
 ```
 
-These scripts only inspect:
+脚本只检查：
 
-- Current repository root, branch, upstream, and changed file count.
-- Whether the current branch looks long-lived.
-- Suggested short branch name and commit title.
-- Local/runtime file risk reminders.
+- 当前仓库根目录、分支、上游和变更文件数量。
+- 当前分支是否像长期分支。
+- 建议的短分支名和提交标题。
+- 本地运行态文件、密钥和本地配置风险。
 
-They never run `git switch`, `git add`, `git commit`, `git push`, `git merge`, `git tag`, or branch deletion.
+脚本不会执行 `git switch`、`git add`、`git commit`、`git push`、`git merge`、`git tag` 或删除分支。
 
-## How Developers Pull The Rules
+## 研发如何拉取规则
 
-Use Git as the distribution boundary.
+以 Git 作为分发边界。
 
-For a developer-local rules checkout:
+研发本机维护或试用规则库：
 
 ```bash
 git clone https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Center.git
 git pull --ff-only
 ```
 
-For a business project that should pin the rules version, prefer a submodule:
+业务项目需要锁定规则版本时，推荐使用 submodule：
 
 ```bash
 git submodule add https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
 git submodule update --init --recursive
 ```
 
-Then run the bootstrap from the checked-out rules directory and pass the business project path.
+然后在已拉取的规则目录中执行 bootstrap，并传入业务项目路径。

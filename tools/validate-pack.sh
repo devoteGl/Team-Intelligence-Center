@@ -101,6 +101,12 @@ else
   fail "missing SDD + TDD principle or OpenSpec integration declaration"
 fi
 
+if grep -q '轻量规则' templates/AGENTS.md && grep -q 'AI 规则使用说明' templates/docs/ai-rules-usage.md && grep -q '项目适配说明' templates/ai-harness/project-adapter.md && grep -q '轻量自动化设计' docs/automation.md; then
+  pass "generated Markdown templates are Chinese-first"
+else
+  fail "generated Markdown templates must be Chinese-first"
+fi
+
 if grep -q 'no_git_hooks_by_default' manifest.json && grep -q 'no_forced_full_flow_for_readonly_or_micro_tasks' manifest.json; then
   pass "manifest records lightweight exclusions"
 else

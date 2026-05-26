@@ -1,51 +1,51 @@
-# Project Adapter
+# 项目适配说明
 
-Fill this file with facts about the current project. Keep it short and factual.
+本文件用于记录当前项目的事实信息。保持简短、具体、可验证。
 
-## Project Profile
+## 项目画像
 
-- Product / service:
-- Main users:
-- Tech stack:
-- Entry points:
-- Deployment target:
+- 产品 / 服务：
+- 主要用户：
+- 技术栈：
+- 主要入口：
+- 部署目标：
 
-## Common Commands
+## 常用命令
 
 ```bash
-# install
+# 安装依赖
 
 # lint
 
-# typecheck
+# 类型检查
 
-# test
+# 测试
 
-# build
+# 构建
 ```
 
-## Module Map
+## 模块地图
 
-| Area | Path | Notes |
+| 区域 | 路径 | 说明 |
 | --- | --- | --- |
-| frontend |  |  |
-| backend |  |  |
-| tests |  |  |
-| docs |  |  |
+| 前端 |  |  |
+| 后端 |  |  |
+| 测试 |  |  |
+| 文档 |  |  |
 
-## Risk Boundaries
+## 风险边界
 
-List areas that require extra care, human confirmation, or rollback planning:
+列出需要额外谨慎、人工确认或回滚方案的区域：
 
-- Auth / permissions:
-- Payment / finance:
-- Data migration:
-- Production config:
-- External integrations:
+- 认证 / 权限：
+- 支付 / 资金：
+- 数据迁移：
+- 生产配置：
+- 外部集成：
 
-## Local Decisions
+## 本地决策
 
-Record project-specific decisions that future AI sessions should preserve:
+记录未来 AI 会话必须延续的项目级决策：
 
-- 
+-
 
