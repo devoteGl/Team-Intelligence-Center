@@ -115,6 +115,12 @@ else
   fail "CodeGraph helper must remain optional and non-core"
 fi
 
+if grep -q 'ui_visual_verification' manifest.json && grep -q 'UI 验证规则' templates/AGENTS.md && grep -q 'Playwright' templates/AGENTS.md && grep -q 'Computer Use' templates/AGENTS.md && grep -q 'UI 变更验证' docs/automation.md; then
+  pass "UI changes require real interface verification when risk warrants"
+else
+  fail "missing UI visual verification policy"
+fi
+
 if grep -q '轻量规则' templates/AGENTS.md && grep -q 'AI 规则使用说明' templates/docs/ai-rules-usage.md && grep -q '项目适配说明' templates/ai-harness/project-adapter.md && grep -q '轻量自动化设计' docs/automation.md; then
   pass "generated Markdown templates are Chinese-first"
 else

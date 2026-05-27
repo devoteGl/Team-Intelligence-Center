@@ -18,6 +18,8 @@
 - standard 任务：使用相关 TIC 技能，执行 SDD + TDD，并完成验证。
 - critical 任务：需要明确人工确认、回滚思路和更强验证。
 
+UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归相关变更，应优先核对真实界面。能运行本地应用时，优先使用 Playwright、浏览器截图、Computer Use 或 Chrome；无法自动核对时，在最终报告中说明替代验证和剩余 UI 风险。
+
 ## 规则来源
 
 Team-Intelligence-Center 源路径：
@@ -27,4 +29,3 @@ Team-Intelligence-Center 源路径：
 ```
 
 请把源规则库作为稳定知识基座。除非团队明确决定，不要把大型流程包、vendor 资产或历史 PRD 档案复制进业务项目。
-

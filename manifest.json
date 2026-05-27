@@ -11,6 +11,7 @@
     "openspec_integration": "optional_spec_carrier_for_standard_and_critical_changes",
     "auto_project_profile": true,
     "codegraph_optional": true,
+    "ui_visual_verification": "use_playwright_browser_screenshots_computer_use_or_chrome_when_ui_risk_requires_real_interface_checks",
     "risk_routing": [
       "consulting",
       "micro",
@@ -63,6 +64,7 @@
     "minimal lock file for diagnostics",
     "auto-generated project adapter",
     "optional CodeGraph helper for context and impact analysis",
+    "UI visual verification rule for real interface checks",
     "risk based task routing"
   ],
   "intentionally_excluded": [
@@ -72,6 +74,7 @@
     "default Git hooks",
     "automatic Git branch/commit/push/merge/tag execution",
     "mandatory CodeGraph installation or initialization",
+    "mandatory full end-to-end browser flow for every UI micro task",
     "RTK requirement",
     "project PRD history packaging",
     "forced SDD/Plan/Approval for readonly and micro tasks",

@@ -13,6 +13,7 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - 按风险分级处理任务。
 - standard / critical 任务默认执行 SDD + TDD。
 - OpenSpec 作为可选规格承载层，用于已启用 OpenSpec 或需要长期行为追踪的变更。
+- UI 相关变更优先核对真实界面，可使用 Playwright、浏览器截图、Computer Use 或 Chrome。
 
 ## 明确排除的部分
 
@@ -24,6 +25,7 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - 不做 full / patch 复杂分发包。
 - 不打包历史 PRD、测试和文档资产。
 - 不要求咨询、只读、micro 任务走完整 SDD/Plan/Approval。
+- 不要求所有 UI micro 任务跑完整端到端流程。
 - 不接管分支生命周期，也不默认执行 Git 变更。
 
 ## 安装产物
@@ -79,6 +81,16 @@ powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -Yes -Proje
 - 测试或明确验证项应从 SDD 的验收标准推导出来，再进入实现。
 
 因此，OpenSpec 是规格承载层，不是每个任务都必须启动的重流程。
+
+## UI 变更验证
+
+UI 相关任务的验证重点是真实界面，而不是只看代码。
+
+- 本地应用可运行时，优先使用 Playwright、浏览器截图、Computer Use 或 Chrome 打开页面并核对。
+- 涉及登录、桌面 App、用户本机状态、浏览器插件或真实账号态时，可以使用 Computer Use / Chrome。
+- 默认核对页面是否可打开、核心流程是否可操作、样式是否错位、桌面/移动端是否异常、控制台是否有关键错误。
+- micro 级纯文案或无行为样式微调，可做最小截图、局部检查或说明级验证。
+- 无法运行或自动核对界面时，最终报告必须说明原因、替代验证和剩余 UI 风险。
 
 ## 可选 Git 建议
 
