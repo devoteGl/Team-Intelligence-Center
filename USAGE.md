@@ -74,6 +74,8 @@ Team-Intelligence-Center/
 ├── tools/                              # 🛠️ 轻量自动化脚本
 │   ├── bootstrap-project.sh
 │   ├── bootstrap-project.ps1
+│   ├── codegraph-helper.sh
+│   ├── codegraph-helper.ps1
 │   ├── git-advice.sh
 │   ├── git-advice.ps1
 │   └── validate-pack.sh
@@ -594,6 +596,20 @@ bash tools/git-advice.sh --type feature "lightweight automation"
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lightweight automation"
+```
+
+可选 CodeGraph helper 用于老项目、monorepo、跨模块改动或重构前的上下文和影响面分析。它不默认安装 CodeGraph，也不默认初始化 `.codegraph/`：
+
+```bash
+bash tools/codegraph-helper.sh status --project /path/to/project
+bash tools/codegraph-helper.sh init --project /path/to/project
+bash tools/codegraph-helper.sh impact --project /path/to/project src/order/service.ts
+```
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command status -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command init -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command impact -ProjectRoot C:\path\to\project src\order\service.ts
 ```
 
 `tools/validate-pack.sh` 会检查：

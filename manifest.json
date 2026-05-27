@@ -10,6 +10,7 @@
     "principle": "SDD + TDD",
     "openspec_integration": "optional_spec_carrier_for_standard_and_critical_changes",
     "auto_project_profile": true,
+    "codegraph_optional": true,
     "risk_routing": [
       "consulting",
       "micro",
@@ -42,6 +43,8 @@
   "tools": [
     "tools/bootstrap-project.ps1",
     "tools/bootstrap-project.sh",
+    "tools/codegraph-helper.ps1",
+    "tools/codegraph-helper.sh",
     "tools/git-advice.ps1",
     "tools/git-advice.sh",
     "tools/validate-pack.sh"
@@ -59,6 +62,7 @@
     "dry-run first installation",
     "minimal lock file for diagnostics",
     "auto-generated project adapter",
+    "optional CodeGraph helper for context and impact analysis",
     "risk based task routing"
   ],
   "intentionally_excluded": [
@@ -67,6 +71,7 @@
     "vendored binaries",
     "default Git hooks",
     "automatic Git branch/commit/push/merge/tag execution",
+    "mandatory CodeGraph installation or initialization",
     "RTK requirement",
     "project PRD history packaging",
     "forced SDD/Plan/Approval for readonly and micro tasks",

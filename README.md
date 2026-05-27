@@ -49,6 +49,7 @@
 - **`manifest.json` / `VERSION`**：声明规则包版本、资产清单、安装产物与刻意排除项。
 - **`templates/`**：项目侧最小入口模板，包括 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`。
 - **`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1`**：幂等接入业务项目，默认只合并最小规则入口、轻量 lock，并自动生成项目画像；不安装 Git hooks、不复制历史 PRD、不绑定 Codex-only。
+- **`tools/codegraph-helper.sh` / `tools/codegraph-helper.ps1`**：可选 CodeGraph 上下文增强入口，帮助老项目和跨模块任务分析影响面；不默认安装或初始化。
 - **`tools/git-advice.sh` / `tools/git-advice.ps1`**：只读 Git 副驾，输出分支和提交建议，不执行 Git 变更。
 - **`tools/validate-pack.sh`**：校验规则包文件、版本、Skill 结构和轻量化约束。
 - **`docs/automation.md`**：记录从 Codex_Project 吸收的有益机制，以及明确剔除的冗余部分。

@@ -20,6 +20,7 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - 不引入 vendor 二进制或运行时依赖。
 - 不默认安装 Git hooks。
 - 不要求 RTK 或其它命令包装器。
+- 不强制安装或初始化 CodeGraph。
 - 不做 full / patch 复杂分发包。
 - 不打包历史 PRD、测试和文档资产。
 - 不要求咨询、只读、micro 任务走完整 SDD/Plan/Approval。
@@ -103,6 +104,32 @@ powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lig
 - 本地运行态文件、密钥和本地配置风险。
 
 脚本不会执行 `git switch`、`git add`、`git commit`、`git push`、`git merge`、`git tag` 或删除分支。
+
+## 可选 CodeGraph 上下文增强
+
+CodeGraph 只作为上下文增强层，帮助 AI 在老项目、monorepo、跨模块改动或重构前理解调用关系和影响面。它不替代 SDD + TDD，也不是 bootstrap 的默认产物。
+
+TIC 不打包 CodeGraph，也不自动安装。研发需要时先按 `colbymchenry/codegraph` 官方说明安装 CLI，然后使用 helper：
+
+macOS / Linux / WSL：
+
+```bash
+bash tools/codegraph-helper.sh status --project /path/to/project
+bash tools/codegraph-helper.sh init --project /path/to/project
+bash tools/codegraph-helper.sh context --project /path/to/project "订单状态流转"
+bash tools/codegraph-helper.sh impact --project /path/to/project src/order/service.ts
+```
+
+Windows PowerShell：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command status -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command init -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command context -ProjectRoot C:\path\to\project "订单状态流转"
+powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command impact -ProjectRoot C:\path\to\project src\order\service.ts
+```
+
+`status` 是只读检查；只有显式执行 `init` 才可能在业务项目生成 `.codegraph/`。原始 `.codegraph/` 是否提交由业务项目决定，不确定时只保留人工整理后的摘要。
 
 ## 研发如何拉取规则
 

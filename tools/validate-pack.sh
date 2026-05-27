@@ -47,6 +47,8 @@ require_file templates/ai-harness/project-adapter.md
 require_file docs/automation.md
 require_file tools/bootstrap-project.ps1
 require_file tools/bootstrap-project.sh
+require_file tools/codegraph-helper.ps1
+require_file tools/codegraph-helper.sh
 require_file tools/git-advice.ps1
 require_file tools/git-advice.sh
 require_file tools/validate-pack.sh
@@ -75,7 +77,7 @@ while IFS= read -r skill_file; do
   fi
 done < <(find Skills -maxdepth 1 -type f -name '*.md' | sort)
 
-for script in tools/bootstrap-project.sh tools/git-advice.sh tools/validate-pack.sh; do
+for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/validate-pack.sh; do
   if [ -x "$script" ]; then
     pass "script executable: $script"
   else
@@ -105,6 +107,12 @@ if grep -q 'auto_project_profile' manifest.json && grep -q 'package.json' tools/
   pass "bootstrap generates project adapter profile"
 else
   fail "bootstrap must generate project adapter profile"
+fi
+
+if grep -q 'codegraph_optional' manifest.json && grep -q 'does not install CodeGraph' tools/codegraph-helper.sh && grep -q '不替代 SDD + TDD' tools/codegraph-helper.sh && grep -q '不替代 SDD + TDD' tools/codegraph-helper.ps1; then
+  pass "CodeGraph helper is optional and non-core"
+else
+  fail "CodeGraph helper must remain optional and non-core"
 fi
 
 if grep -q '轻量规则' templates/AGENTS.md && grep -q 'AI 规则使用说明' templates/docs/ai-rules-usage.md && grep -q '项目适配说明' templates/ai-harness/project-adapter.md && grep -q '轻量自动化设计' docs/automation.md; then
