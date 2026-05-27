@@ -101,6 +101,12 @@ else
   fail "missing SDD + TDD principle or OpenSpec integration declaration"
 fi
 
+if grep -q 'auto_project_profile' manifest.json && grep -q 'package.json' tools/bootstrap-project.sh && grep -q 'package.json' tools/bootstrap-project.ps1 && grep -q '项目画像' tools/bootstrap-project.sh && grep -q '项目画像' tools/bootstrap-project.ps1; then
+  pass "bootstrap generates project adapter profile"
+else
+  fail "bootstrap must generate project adapter profile"
+fi
+
 if grep -q '轻量规则' templates/AGENTS.md && grep -q 'AI 规则使用说明' templates/docs/ai-rules-usage.md && grep -q '项目适配说明' templates/ai-harness/project-adapter.md && grep -q '轻量自动化设计' docs/automation.md; then
   pass "generated Markdown templates are Chinese-first"
 else

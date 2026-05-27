@@ -179,6 +179,267 @@ install_template_file() {
   fi
 }
 
+detect_package_manager() {
+  if [ -f "$PROJECT_ROOT/pnpm-lock.yaml" ]; then
+    printf 'pnpm'
+  elif [ -f "$PROJECT_ROOT/yarn.lock" ]; then
+    printf 'yarn'
+  elif [ -f "$PROJECT_ROOT/package-lock.json" ]; then
+    printf 'npm'
+  elif [ -f "$PROJECT_ROOT/bun.lockb" ] || [ -f "$PROJECT_ROOT/bun.lock" ]; then
+    printf 'bun'
+  elif [ -f "$PROJECT_ROOT/package.json" ]; then
+    printf 'npm 或项目约定'
+  else
+    printf '未检测到 Node 包管理器'
+  fi
+}
+
+detect_stack_files() {
+  local files=(
+    "package.json"
+    "pnpm-workspace.yaml"
+    "turbo.json"
+    "vite.config.ts"
+    "vite.config.js"
+    "next.config.js"
+    "nuxt.config.ts"
+    "tsconfig.json"
+    "pyproject.toml"
+    "requirements.txt"
+    "go.mod"
+    "pom.xml"
+    "build.gradle"
+    "Cargo.toml"
+    "Dockerfile"
+    "docker-compose.yml"
+  )
+  local found=()
+  local file
+  for file in "${files[@]}"; do
+    if [ -e "$PROJECT_ROOT/$file" ]; then
+      found+=("\`$file\`")
+    fi
+  done
+  if [ "${#found[@]}" -eq 0 ]; then
+    printf '未检测到常见技术栈文件'
+  else
+    local IFS='、'
+    printf '%s' "${found[*]}"
+  fi
+}
+
+detect_common_dirs() {
+  local dirs=(src app apps packages components pages router routes api server backend frontend web admin miniapp tests test docs config scripts)
+  local found=()
+  local dir
+  for dir in "${dirs[@]}"; do
+    if [ -d "$PROJECT_ROOT/$dir" ]; then
+      found+=("\`$dir/\`")
+    fi
+  done
+  if [ "${#found[@]}" -eq 0 ]; then
+    printf '未检测到常见模块目录'
+  else
+    local IFS='、'
+    printf '%s' "${found[*]}"
+  fi
+}
+
+node_version_summary() {
+  local parts=()
+  if [ -f "$PROJECT_ROOT/.nvmrc" ]; then
+    parts+=(".nvmrc=$(tr -d '[:space:]' < "$PROJECT_ROOT/.nvmrc")")
+  fi
+  if [ -f "$PROJECT_ROOT/.node-version" ]; then
+    parts+=(".node-version=$(tr -d '[:space:]' < "$PROJECT_ROOT/.node-version")")
+  fi
+  if command -v node >/dev/null 2>&1 && [ -f "$PROJECT_ROOT/package.json" ]; then
+    local engines
+    engines="$(PROJECT_ROOT="$PROJECT_ROOT" node <<'NODE'
+const fs = require('fs');
+const path = require('path');
+try {
+  const pkg = JSON.parse(fs.readFileSync(path.join(process.env.PROJECT_ROOT, 'package.json'), 'utf8'));
+  process.stdout.write(pkg.engines && pkg.engines.node ? `package.json engines.node=${pkg.engines.node}` : '');
+} catch (_) {}
+NODE
+)"
+    if [ -n "$engines" ]; then
+      parts+=("$engines")
+    fi
+  fi
+  if [ "${#parts[@]}" -eq 0 ]; then
+    printf '未声明；请在项目中补充 .nvmrc、.node-version 或 package.json engines.node'
+  else
+    local IFS='；'
+    printf '%s' "${parts[*]}"
+  fi
+}
+
+package_json_section() {
+  if [ ! -f "$PROJECT_ROOT/package.json" ]; then
+    cat <<'EOF'
+未检测到 `package.json`。如果本项目不是 Node 项目，请在“常用命令”和“模块地图”中补充真实技术栈信息。
+EOF
+    return
+  fi
+
+  if ! command -v node >/dev/null 2>&1; then
+    cat <<'EOF'
+检测到 `package.json`，但当前环境没有可用 `node` 命令，bootstrap 未解析依赖详情。请研发手工补充 scripts、dependencies 和工作区关系。
+EOF
+    return
+  fi
+
+  PROJECT_ROOT="$PROJECT_ROOT" node <<'NODE'
+const fs = require('fs');
+const path = require('path');
+const root = process.env.PROJECT_ROOT;
+const pkg = JSON.parse(fs.readFileSync(path.join(root, 'package.json'), 'utf8'));
+const names = (obj, limit = 40) => {
+  const list = Object.keys(obj || {}).sort();
+  if (!list.length) return '无';
+  const shown = list.slice(0, limit).map((name) => `\`${name}\``).join('、');
+  return list.length > limit ? `${shown} 等 ${list.length} 项` : shown;
+};
+const scripts = Object.entries(pkg.scripts || {});
+const scriptLines = scripts.length
+  ? scripts.map(([name, value]) => `| \`${name}\` | \`${value}\` |`).join('\n')
+  : '| 未声明 |  |';
+let workspaces = '未声明';
+if (Array.isArray(pkg.workspaces)) {
+  workspaces = pkg.workspaces.map((item) => `\`${item}\``).join('、') || '未声明';
+} else if (pkg.workspaces && Array.isArray(pkg.workspaces.packages)) {
+  workspaces = pkg.workspaces.packages.map((item) => `\`${item}\``).join('、') || '未声明';
+}
+const packageManager = pkg.packageManager ? `\`${pkg.packageManager}\`` : '未声明';
+const name = pkg.name ? `\`${pkg.name}\`` : '未声明';
+const version = pkg.version ? `\`${pkg.version}\`` : '未声明';
+const type = pkg.type ? `\`${pkg.type}\`` : '未声明';
+console.log(`- package name：${name}`);
+console.log(`- package version：${version}`);
+console.log(`- package type：${type}`);
+console.log(`- packageManager 字段：${packageManager}`);
+console.log(`- workspaces：${workspaces}`);
+console.log('');
+console.log('### package scripts');
+console.log('');
+console.log('| script | command |');
+console.log('| --- | --- |');
+console.log(scriptLines);
+console.log('');
+console.log('### dependencies');
+console.log('');
+console.log(`- dependencies：${names(pkg.dependencies)}`);
+console.log(`- devDependencies：${names(pkg.devDependencies)}`);
+console.log(`- peerDependencies：${names(pkg.peerDependencies)}`);
+NODE
+}
+
+generate_project_adapter_content() {
+  local package_manager stack_files common_dirs node_versions generated_at
+  package_manager="$(detect_package_manager)"
+  stack_files="$(detect_stack_files)"
+  common_dirs="$(detect_common_dirs)"
+  node_versions="$(node_version_summary)"
+  generated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+
+  cat <<EOF
+# 项目适配说明
+
+本文件由 Team-Intelligence-Center bootstrap 自动生成，用于让 AI 快速了解当前项目。请研发按真实情况补充业务背景、风险边界和缺失命令。
+
+生成时间：$generated_at
+项目路径：\`$PROJECT_ROOT\`
+
+## 项目画像
+
+- 产品 / 服务：待补充
+- 主要用户：待补充
+- 技术栈文件：$stack_files
+- 主要模块目录：$common_dirs
+- 包管理器推断：$package_manager
+- Node 版本声明：$node_versions
+- 部署目标：待补充
+
+## Node / 前端项目详情
+
+$(package_json_section)
+
+## 项目关系
+
+- OpenSpec：$([ -d "$PROJECT_ROOT/openspec" ] && printf '已检测到 `openspec/`' || printf '未检测到 `openspec/`')
+- Monorepo 线索：$([ -f "$PROJECT_ROOT/pnpm-workspace.yaml" ] && printf '检测到 `pnpm-workspace.yaml`；' || true)$([ -d "$PROJECT_ROOT/apps" ] && printf '检测到 `apps/`；' || true)$([ -d "$PROJECT_ROOT/packages" ] && printf '检测到 `packages/`；' || true)
+- 规则入口：bootstrap 会生成或更新项目根 \`AGENTS.md\`
+
+## 常用命令
+
+请以项目真实命令为准。若上方 package scripts 已列出命令，优先使用其中的 lint、typecheck、test、build。
+
+\`\`\`bash
+# 安装依赖
+
+# lint
+
+# 类型检查
+
+# 测试
+
+# 构建
+\`\`\`
+
+## 模块地图
+
+| 区域 | 路径 | 说明 |
+| --- | --- | --- |
+| 前端 | 待补充 |  |
+| 后端 | 待补充 |  |
+| 测试 | 待补充 |  |
+| 文档 | 待补充 |  |
+
+## 风险边界
+
+列出需要额外谨慎、人工确认或回滚方案的区域：
+
+- 认证 / 权限：待补充
+- 支付 / 资金：待补充
+- 数据迁移：待补充
+- 生产配置：待补充
+- 外部集成：待补充
+
+## 本地决策
+
+记录未来 AI 会话必须延续的项目级决策：
+
+-
+EOF
+}
+
+install_project_adapter() {
+  local dst="$PROJECT_ROOT/ai-harness/project-adapter.md"
+  local rel="${dst#$PROJECT_ROOT/}"
+
+  if [ -e "$dst" ] && [ "$FORCE" -eq 0 ]; then
+    plan "skip existing $rel"
+    return
+  fi
+
+  if [ -e "$dst" ]; then
+    plan "overwrite $rel with detected project profile and backup"
+  else
+    plan "create $rel with detected project profile"
+  fi
+
+  if [ "$DRY_RUN" -eq 0 ]; then
+    mkdir -p "$(dirname "$dst")"
+    if [ -e "$dst" ]; then
+      backup_file "$dst"
+    fi
+    generate_project_adapter_content > "$dst"
+  fi
+}
+
 write_lock() {
   local target="$PROJECT_ROOT/.tic-rules.lock"
   plan "write .tic-rules.lock"
@@ -197,7 +458,7 @@ EOF
 
 merge_agents
 install_template_file "$PACKAGE_ROOT/templates/docs/ai-rules-usage.md" "$PROJECT_ROOT/docs/ai-rules-usage.md"
-install_template_file "$PACKAGE_ROOT/templates/ai-harness/project-adapter.md" "$PROJECT_ROOT/ai-harness/project-adapter.md"
+install_project_adapter
 write_lock
 
 printf 'Team-Intelligence-Center bootstrap plan for %s:\n' "$PROJECT_ROOT"

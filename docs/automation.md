@@ -9,6 +9,7 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - 用 marker 边界合并 `AGENTS.md`。
 - `--dry-run` 安装预览。
 - 用轻量 lock 文件辅助诊断。
+- 自动生成项目适配说明，包含技术栈、依赖、Node 版本、包管理器、项目关系和常见命令线索。
 - 按风险分级处理任务。
 - standard / critical 任务默认执行 SDD + TDD。
 - OpenSpec 作为可选规格承载层，用于已启用 OpenSpec 或需要长期行为追踪的变更。
@@ -36,6 +37,16 @@ ai-harness/project-adapter.md
 ```
 
 `AGENTS.md` 会写入 marker 块中，方便项目已有规则和 TIC 轻量规则共存。
+
+`ai-harness/project-adapter.md` 不是空模板。bootstrap 会自动探测：
+
+- `package.json`、`pnpm-workspace.yaml`、`tsconfig.json`、`go.mod`、`pyproject.toml` 等技术栈文件。
+- `.nvmrc`、`.node-version`、`package.json engines.node` 中声明的 Node 版本。
+- `pnpm-lock.yaml`、`yarn.lock`、`package-lock.json`、`bun.lock*` 推断包管理器。
+- `package.json` 中的 scripts、dependencies、devDependencies、peerDependencies 和 workspaces。
+- `openspec/`、`apps/`、`packages/` 等项目关系线索。
+
+已有 `ai-harness/project-adapter.md` 默认不会覆盖；需要刷新画像时使用 `--force` / `-Force`。
 
 ## 推荐使用流程
 

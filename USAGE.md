@@ -176,6 +176,8 @@ ai-harness/project-adapter.md
 
 原则上，standard / critical 任务仍然执行 **SDD + TDD**：先明确行为规格和验收标准，再写或更新测试，最后实现和验证。项目已有 `openspec/` 时，SDD 应写入或关联 OpenSpec change；没有 OpenSpec 时，使用 `docs/sdd/` 或项目约定位置。
 
+其中 `ai-harness/project-adapter.md` 会自动生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、OpenSpec 和 monorepo 线索。已有文件默认不覆盖；需要刷新时使用 `--force` 或 PowerShell 的 `-Force`。
+
 ---
 
 ## 4. Global-Rules 使用说明
@@ -558,6 +560,7 @@ AI 工具中使用 `/opsx:*`：
 - `manifest.json` 记录版本、资产、模板和安装产物。
 - `bootstrap-project.sh` 支持 `--dry-run`、幂等写入和 marker-bounded `AGENTS.md` 合并。
 - `.tic-rules.lock` 记录规则版本、安装时间和规则源路径，便于诊断。
+- `ai-harness/project-adapter.md` 自动生成项目画像，减少研发手填项目介绍、依赖和 Node 版本。
 - 任务按 `consulting / micro / standard / critical` 分级，简单事保持简单，高风险才升级流程。
 - standard / critical 任务坚持 SDD + TDD；OpenSpec 是可选规格承载层，不是每次对话的强制流程。
 

@@ -9,6 +9,7 @@
     "tool_neutral": true,
     "principle": "SDD + TDD",
     "openspec_integration": "optional_spec_carrier_for_standard_and_critical_changes",
+    "auto_project_profile": true,
     "risk_routing": [
       "consulting",
       "micro",
@@ -57,6 +58,7 @@
     "marker bounded AGENTS merge",
     "dry-run first installation",
     "minimal lock file for diagnostics",
+    "auto-generated project adapter",
     "risk based task routing"
   ],
   "intentionally_excluded": [
