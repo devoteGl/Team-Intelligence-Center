@@ -15,6 +15,7 @@
 - 完成前必须验证。最终说明要写清楚跑了哪些命令、哪些通过、哪些未测、还有什么风险。
 - 不编造业务事实。反推到的行为要标注可信度，候选规则确认前不得写成正式需求。
 - 不覆盖人的工作。保留项目已有规则和用户未提交改动。
+- standard / critical 任务完成后，如涉及用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程变化，应自动生成 PRD 更新草稿和待确认项。
 
 ## 任务分级
 
@@ -43,17 +44,27 @@
 - micro 级纯文案或无行为样式微调，可只做最小截图、局部检查或说明级验证。
 - 无法运行或自动核对界面时，最终报告必须说明原因、替代验证内容和剩余 UI 风险。
 
+## 开发后 PRD 同步
+
+- 触发条件：开发完成、验收通过、发版前整理，或本次变更影响用户可见行为、UI、API、数据模型、状态流转、业务规则、运营流程。
+- 默认动作：执行 `Skills/post-dev-prd-sync.md`，基于 OpenSpec / SDD、git diff、测试、UI 验证、API 契约等证据生成 PRD 更新草稿。
+- 不触发场景：纯重构、格式化、注释、测试补充、内部实现优化且无行为变化。
+- 草稿不得自动转正。S2/S3 代码反推和推测内容必须进入候选规则或待确认项，人工确认后才能同步到正式 PRD / OpenSpec specs。
+
 ## 推荐使用的 TIC 资产
 
 - 全局行为规则：`Global-Rules/coding-rules.md`
 - 新需求生成：`Prompts/ai-prd-generator.rules.md`
 - 老项目补文档：`Prompts/ai-prd-editor.rules.md`
+- 开发后 PRD 同步：`Skills/post-dev-prd-sync.md`
 - OpenSpec / Superpowers 接合：`Design/development-paradigm-openspec-guide.md`
 - 代码调研：`Skills/code-investigator.md`
 - 任务拆解：`Skills/task-decomposer.md`
 - API 契约冻结：`Skills/api-contract-freezer.md`
 - 候选规则抽取：`Skills/candidate-rule-extractor.md`
 - 发版交接：`Skills/release-ops-handoff.md` 和 `Skills/release-train-handoff.md`
+
+默认从规则来源目录读取这些 Skills，不自动复制到项目本地 skills 或全局 skills。只有团队明确维护镜像时，才做显式同步。
 
 ## 完成报告
 

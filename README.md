@@ -21,7 +21,7 @@
 - **`ai-prd-editor.rules.md` (Production Version - 存量重构梳理)**：AI-PRD 深度重构编辑器规范。这套规则重点处理无文档的老项目问题，限制 AI 的自我发挥（强制将反推信息评定可信度 S1~S4级别），强约束跨模型间的结构一致性（强制双层 Changelog 以防结构漂移），让庞大甚至腐化的系统重新长出“记忆”。
 
 ### 3. ⚡ Skills (可复用执行能力模块)
-封装各角色在具体执行场景下的标准化操作方法论与输出模板，共 13 个 Skill：
+封装各角色在具体执行场景下的标准化操作方法论与输出模板，共 14 个 Skill：
 
 | Skill 文件 | 服务角色 | 核心能力 |
 |-----------|---------|--------|
@@ -38,6 +38,7 @@
 | `release-ops-handoff.md` | PM/Release Manager/DS | 单个功能或单个跨项目变更的运维发版、运营使用、QA 验收和反馈闭环交付卡 |
 | `git-flow-operator.md` | PM/Release Manager | Git Flow 分支创建、release/hotfix 合并、tag、push 与回灌门禁 |
 | `release-train-handoff.md` | PM/Release Manager/DS | 全量/多项目发版总控包、服务卡、数据库/脚本 manifest、冒烟、回滚与证据归档 |
+| `post-dev-prd-sync.md` | DS/PM | 开发完成后基于证据生成 PRD 更新草稿、候选规则和待确认项 |
 
 ### 4. 🧭 Design (落地范式与工具接入)
 提供公司级研发范式、OpenSpec、Superpowers、Figma MCP 等跨项目落地指南：
@@ -49,6 +50,7 @@
 - **`manifest.json` / `VERSION`**：声明规则包版本、资产清单、安装产物与刻意排除项。
 - **`templates/`**：项目侧最小入口模板，包括 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`。
 - **`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1`**：幂等接入业务项目，默认只合并最小规则入口、轻量 lock，并自动生成项目画像；不安装 Git hooks、不复制历史 PRD、不绑定 Codex-only。
+- **`tools/install.sh` / `tools/install.ps1`**：日常一条命令接入入口，默认安装到当前目录，底层复用 bootstrap。
 - **`tools/codegraph-helper.sh` / `tools/codegraph-helper.ps1`**：可选 CodeGraph 上下文增强入口，帮助老项目和跨模块任务分析影响面；不默认安装或初始化。
 - **`tools/git-advice.sh` / `tools/git-advice.ps1`**：只读 Git 副驾，输出分支和提交建议，不执行 Git 变更。
 - **`tools/validate-pack.sh`**：校验规则包文件、版本、Skill 结构和轻量化约束。
@@ -74,10 +76,10 @@
 > 📘 **完整使用指南请阅读 [USAGE.md](./USAGE.md)**，包含快速上手、各模块详细说明、工作流全景图、集成方式和 FAQ。
 
 建议作为知识基座在团队协同工程中进行应用：
-- **AI 提示词挂载**：直接将此仓库的规则复制到 AI 智能编辑器目录下的 `.rules` 或全局 System Prompt。由于其使用纯文本强制描述约束，所有 LLM 可直接无损耗接收并转入 Team Agent 模拟态投入全时工作。 
+- **AI 提示词挂载**：优先在项目级 `AGENTS.md` 或项目规则入口引用本仓库，不默认覆盖开发者全局 System Prompt 或全局 skills。由于其使用纯文本约束，所有 LLM 均可读取并转入 Team Agent 模拟态投入工作。
 - **Submodule 规范基石**：将其作为 `git submodule` 集成在大型复杂工程库的独立存放点作为约束性资产规范，配合代码审批流长期守护项目全生命周期的产品需求与技术一致边界。
-- **轻量自动化接入**：执行 `bash tools/bootstrap-project.sh --dry-run /path/to/project` 预览，再执行 `bash tools/bootstrap-project.sh --yes /path/to/project` 写入最小入口。
-- **Windows 原生接入**：PowerShell 环境执行 `powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -Yes -ProjectRoot C:\path\to\project`。
+- **轻量自动化接入**：执行 `bash /path/to/Team-Intelligence-Center/tools/install.sh`，默认把最小入口写入当前业务项目。
+- **Windows 原生接入**：PowerShell 环境执行 `powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1`。
 - **OpenSpec 规格层**：参考 [公司研发范式 + OpenSpec / Superpowers 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路。
 - **Superpowers 执行方法层**：在已启用 Superpowers 的 AI 工具中，用 brainstorming、planning、TDD、debugging、code review、subagent-driven development 等能力承接 OpenSpec tasks；OpenSpec 仍是规格事实源。
 - **项目一键接入**：业务项目引入本仓库后，让 AI 执行 [project-governance-bootstrap](./Skills/project-governance-bootstrap.md)，自动补齐 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/` 与 `openspec/` 基础入口，并自动检测/尽力安装 Superpowers；无法静默安装的工具会写入人工待办。

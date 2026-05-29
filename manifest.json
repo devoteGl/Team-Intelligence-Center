@@ -11,6 +11,8 @@
     "openspec_integration": "optional_spec_carrier_for_standard_and_critical_changes",
     "auto_project_profile": true,
     "codegraph_optional": true,
+    "post_dev_prd_sync": "generate_evidence_based_prd_update_draft_after_standard_or_critical_delivery_when_product_behavior_changes",
+    "skills_reference_only_by_default": true,
     "ui_visual_verification": "use_playwright_browser_screenshots_computer_use_or_chrome_when_ui_risk_requires_real_interface_checks",
     "risk_routing": [
       "consulting",
@@ -48,6 +50,8 @@
     "tools/codegraph-helper.sh",
     "tools/git-advice.ps1",
     "tools/git-advice.sh",
+    "tools/install.ps1",
+    "tools/install.sh",
     "tools/validate-pack.sh"
   ],
   "generated_project_files": [
@@ -65,6 +69,8 @@
     "auto-generated project adapter",
     "optional CodeGraph helper for context and impact analysis",
     "UI visual verification rule for real interface checks",
+    "evidence-based post-development PRD sync draft",
+    "one-command install wrapper",
     "risk based task routing"
   ],
   "intentionally_excluded": [
@@ -75,6 +81,7 @@
     "automatic Git branch/commit/push/merge/tag execution",
     "mandatory CodeGraph installation or initialization",
     "mandatory full end-to-end browser flow for every UI micro task",
+    "automatic copy of Skills into project-local or global skill directories",
     "RTK requirement",
     "project PRD history packaging",
     "forced SDD/Plan/Approval for readonly and micro tasks",

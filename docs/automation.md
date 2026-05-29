@@ -14,6 +14,8 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - standard / critical 任务默认执行 SDD + TDD。
 - OpenSpec 作为可选规格承载层，用于已启用 OpenSpec 或需要长期行为追踪的变更。
 - UI 相关变更优先核对真实界面，可使用 Playwright、浏览器截图、Computer Use 或 Chrome。
+- standard / critical 交付后，如产品行为发生变化，生成基于证据的 PRD 更新草稿。
+- 简化入口：提供一条命令安装包装器，底层仍复用幂等 bootstrap。
 
 ## 明确排除的部分
 
@@ -27,6 +29,7 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - 不要求咨询、只读、micro 任务走完整 SDD/Plan/Approval。
 - 不要求所有 UI micro 任务跑完整端到端流程。
 - 不接管分支生命周期，也不默认执行 Git 变更。
+- 不自动把 `Skills/` 差量复制到业务项目本地 skills 或开发者全局 skills。
 
 ## 安装产物
 
@@ -56,19 +59,23 @@ ai-harness/project-adapter.md
 macOS / Linux / WSL：
 
 ```bash
-bash tools/validate-pack.sh
-bash tools/bootstrap-project.sh --dry-run /path/to/project
-bash tools/bootstrap-project.sh --yes /path/to/project
+cd /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/install.sh
+bash /path/to/Team-Intelligence-Center/tools/install.sh --preview
+bash /path/to/Team-Intelligence-Center/tools/install.sh --refresh
 ```
 
 Windows PowerShell：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -DryRun -ProjectRoot C:\path\to\project
-powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -Yes -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -Preview -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -Refresh -ProjectRoot C:\path\to\project
 ```
 
 默认安装保持轻量。任务确实需要更多结构时，再手动使用更深入的 TIC 技能。
+
+底层高级入口仍保留：`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1` 支持 `--force` / `-Force`、`--rules-dir` / `-RulesDir` 等参数。日常研发优先使用 `install.*`。
 
 ## SDD + TDD 与 OpenSpec
 
@@ -81,6 +88,15 @@ powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -Yes -Proje
 - 测试或明确验证项应从 SDD 的验收标准推导出来，再进入实现。
 
 因此，OpenSpec 是规格承载层，不是每个任务都必须启动的重流程。
+
+## 开发后 PRD 同步
+
+开发完成后的 PRD 自动化应生成“基于证据的更新草稿”，而不是直接把代码推断写成正式 PRD。
+
+- standard / critical 任务完成后，若影响用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程，应执行 `Skills/post-dev-prd-sync.md`。
+- 证据来源包括 OpenSpec / SDD、git diff、commit、测试结果、UI 验证、API 契约和用户确认。
+- 输出为 PRD 更新草稿、证据清单、候选规则和待确认项。
+- S2/S3 代码反推内容不得自动转正；人工确认后再同步到正式 PRD、OpenSpec specs 或项目约定位置。
 
 ## UI 变更验证
 
@@ -142,6 +158,15 @@ powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command imp
 ```
 
 `status` 是只读检查；只有显式执行 `init` 才可能在业务项目生成 `.codegraph/`。原始 `.codegraph/` 是否提交由业务项目决定，不确定时只保留人工整理后的摘要。
+
+## Skills 分发策略
+
+默认策略是“引用规则库，不复制 Skills”。
+
+- bootstrap / install 只在业务项目写入 `AGENTS.md`、`.tic-rules.lock`、`docs/ai-rules-usage.md` 和 `ai-harness/project-adapter.md`。
+- 业务项目通过 `.tic-rules.lock` 和 `AGENTS.md` 中的规则来源路径读取 `Skills/*.md`。
+- 不自动差量复制到项目本地 skills，也不写入 `~/.codex/skills` 等全局目录，避免覆盖研发个人配置或产生版本漂移。
+- 团队确实需要本地镜像时，应作为单独的显式同步任务执行，并记录来源版本、覆盖范围和回滚方式。
 
 ## 研发如何拉取规则
 

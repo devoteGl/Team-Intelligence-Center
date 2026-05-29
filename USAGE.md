@@ -64,7 +64,8 @@ Team-Intelligence-Center/
 │   ├── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
 │   ├── release-ops-handoff.md          #    [PM/Release/DS] 单变更发版交接
 │   ├── git-flow-operator.md            #    [PM/Release] Git Flow 分支、合并、tag、回灌
-│   └── release-train-handoff.md        #    [PM/Release/DS] 全量多项目发版总控
+│   ├── release-train-handoff.md        #    [PM/Release/DS] 全量多项目发版总控
+│   └── post-dev-prd-sync.md            #    [DS/PM] 开发后 PRD 同步
 │
 ├── templates/                          # 🧩 业务项目最小接入模板
 │   ├── AGENTS.md
@@ -78,6 +79,8 @@ Team-Intelligence-Center/
 │   ├── codegraph-helper.ps1
 │   ├── git-advice.sh
 │   ├── git-advice.ps1
+│   ├── install.sh
+│   ├── install.ps1
 │   └── validate-pack.sh
 │
 └── docs/
@@ -107,10 +110,11 @@ Team-Intelligence-Center/
 
 **适用场景**：个人项目或小团队，使用支持自定义 System Prompt 的 AI 编辑器。
 
-1. **复制 `Global-Rules/coding-rules.md` 的内容**到你的 AI 编辑器的全局规则配置中
+1. **优先把 `Global-Rules/coding-rules.md` 接入项目级规则配置**
    - Cursor：放入项目根目录的 `.cursorrules` 文件
    - Windsurf：放入 `.windsurfrules` 文件
-   - Claude Code / Gemini Code Assist：放入 `.rules` 目录或全局 System Prompt
+   - Claude Code / Gemini Code Assist：优先放入项目 `.rules` 目录
+   - 不建议默认覆盖开发者全局 System Prompt，除非个人明确选择全局生效
 
 2. **根据场景选择 Prompt**：
    - 新项目/新需求 → 使用 `ai-prd-generator.rules.md`
@@ -140,29 +144,30 @@ git clone https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Center.git
 
 **适用场景**：希望把 TIC 接入业务项目，但不想复制重流程包、vendor、Git hooks 或历史 PRD。
 
-先在本仓库自检：
+最简单用法：在业务项目目录执行规则库的安装入口。
 
 ```bash
-bash tools/validate-pack.sh
+bash /path/to/Team-Intelligence-Center/tools/install.sh
 ```
 
-再预览要写入业务项目的文件：
+需要指定项目路径时：
 
 ```bash
-bash tools/bootstrap-project.sh --dry-run /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/install.sh /path/to/project
 ```
 
-确认后写入：
+预览不写入：
 
 ```bash
-bash tools/bootstrap-project.sh --yes /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/install.sh --preview /path/to/project
 ```
 
 Windows 原生 PowerShell：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -DryRun -ProjectRoot C:\path\to\project
-powershell -ExecutionPolicy Bypass -File tools\bootstrap-project.ps1 -Yes -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1
+powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -Preview -ProjectRoot C:\path\to\project
 ```
 
 默认只生成或合并：
@@ -175,6 +180,8 @@ ai-harness/project-adapter.md
 ```
 
 它不会默认安装 Git hooks、不会复制 `tools/` 到业务项目、不会绑定 Codex-only，也不会要求咨询和 micro 任务走完整 PRD/SDD 流程。
+
+它也不会自动把 `Skills/` 差量复制到项目本地 skills 或开发者全局 skills。业务项目默认通过规则源路径读取 Skills，避免覆盖个人配置和产生版本漂移。
 
 原则上，standard / critical 任务仍然执行 **SDD + TDD**：先明确行为规格和验收标准，再写或更新测试，最后实现和验证。项目已有 `openspec/` 时，SDD 应写入或关联 OpenSpec change；没有 OpenSpec 时，使用 `docs/sdd/` 或项目约定位置。
 
@@ -276,6 +283,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 | `release-ops-handoff` | PM/Release/DS | 单个功能或单个跨项目变更发版交接 | P0 |
 | `git-flow-operator` | PM/Release | 新需求开分支、release/hotfix 合并、tag、回灌 | P0 |
 | `release-train-handoff` | PM/Release/DS | 全量发版、多项目联动、SQL/脚本发版交付包 | P0 |
+| `post-dev-prd-sync` | DS/PM | 开发完成后基于证据同步 PRD 更新草稿 | P0 |
 
 ### 6.2 如何在对话中引用 Skill
 
@@ -316,6 +324,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
   └─ Skill: prd-review-checklist
        │
 [DS] 文档归档
+  ├─ Skill: post-dev-prd-sync
   └─ Skill: changelog-writer
        │
 [PM] 会话结束
@@ -368,6 +377,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
     │
     ▼
 ⚙️ [DS] 文档归档
+    │  ├─ 基于证据生成 PRD 更新草稿（post-dev-prd-sync）
     │  ├─ 编写双层 Changelog（changelog-writer）
     │  └─ 同步规则到 main-prd.md
     │
@@ -389,12 +399,12 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 
 ## 8. 集成方式
 
-### 8.1 方式一：全局 System Prompt
+### 8.1 方式一：项目级规则入口（推荐）
 
-将 `coding-rules.md` 的完整内容作为 AI 编辑器的全局 System Prompt 加载。
+通过 `tools/install.sh` / `tools/install.ps1` 在业务项目生成 `AGENTS.md`，让 AI 从项目级入口读取公司规则。
 
-**优点**：所有对话自动生效，无需重复配置
-**适用**：个人使用、单项目场景
+**优点**：项目内生效，不冲掉开发者全局配置
+**适用**：团队协作、多人共享规则
 
 ### 8.2 方式二：Git Submodule
 
@@ -419,23 +429,20 @@ echo ".ai-rules" >> .gitignore
 按该技能初始化本项目的 AGENTS、ai-rules-usage、ai-harness 和 openspec。
 ```
 
-### 8.3 方式三：按需复制
+### 8.3 方式三：按需引用 / 显式镜像
 
-将需要的文件手动复制到项目中：
+默认只引用规则库路径，不复制 Skills。确实需要本地镜像时，应显式执行并记录来源版本：
 
 ```bash
-# 只需要 Global-Rules
-cp Global-Rules/coding-rules.md your-project/.cursorrules
+# 只读引用：让 AI 读取规则库内的技能
+ai-rules/Team-Intelligence-Center/Skills/code-investigator.md
 
-# 需要 PRD 生成能力
-cp Prompts/ai-prd-generator.rules.md your-project/PRD/
-
-# 需要特定 Skill
-cp Skills/code-investigator.md your-project/.ai-rules/
+# 显式镜像时，必须记录来源 commit，并由团队维护
+cp -R ai-rules/Team-Intelligence-Center/Skills your-project/.ai-rules/Skills
 ```
 
 **优点**：灵活，可按需裁剪
-**适用**：只需要部分功能的场景
+**适用**：离线环境、工具不支持跨目录读取、团队明确维护本地镜像的场景
 
 ---
 
@@ -577,7 +584,17 @@ AI 工具中使用 `/opsx:*`：
 
 ### 10.4 脚本说明
 
-`tools/bootstrap-project.sh` 常用参数：
+日常接入优先使用 `tools/install.sh`：
+
+| 参数 | 作用 |
+| --- | --- |
+| `--preview` | 只预览，不写文件 |
+| `--refresh` | 刷新生成文档，覆盖前备份 |
+| `--rules-dir PATH` | 指定业务项目中记录的 TIC 规则源路径 |
+
+Windows PowerShell 使用同义参数：`-Preview`、`-Refresh`、`-RulesDir`、`-ProjectRoot`。
+
+底层高级入口 `tools/bootstrap-project.sh` 仍可使用：
 
 | 参数 | 作用 |
 | --- | --- |
@@ -586,7 +603,7 @@ AI 工具中使用 `/opsx:*`：
 | `--force` | 覆盖已有 `docs/ai-rules-usage.md` 和 `ai-harness/project-adapter.md`，覆盖前备份 |
 | `--rules-dir PATH` | 指定业务项目中记录的 TIC 规则源路径 |
 
-Windows PowerShell 使用同名参数：`-DryRun`、`-Yes`、`-Force`、`-RulesDir`、`-ProjectRoot`。
+Windows PowerShell 高级入口使用同名参数：`-DryRun`、`-Yes`、`-Force`、`-RulesDir`、`-ProjectRoot`。
 
 可选 Git 建议脚本只读检查仓库状态并给出分支/提交建议，不执行任何 Git 变更：
 
@@ -632,10 +649,10 @@ powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command imp
 
 ### Q2：Skill 是自动触发还是需要手动调用？
 
-**A**：目前需要手动引用。你可以：
-- 在对话中直接提及 Skill 名称
-- 通过角色切换间接触发（如切换到 CI 角色，AI 应自动参考 code-investigator）
-- 将高频 Skill 的内容直接合并到 System Prompt 中
+**A**：分两层：
+- 高频、低争议场景由项目 `AGENTS.md` 自动触发，例如 UI 真实界面验证、standard / critical 交付后的 `post-dev-prd-sync` 判断。
+- 专项能力仍可手动触发，例如直接说“执行 code-investigator”或“补一下本次 PRD”。
+- Skills 默认从规则库路径读取，不自动复制到项目本地 skills 或全局 skills。团队要做本地镜像时，应单独显式同步并记录版本。
 
 ### Q3：可以只用 Skills 不用 Global-Rules 吗？
 

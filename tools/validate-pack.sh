@@ -51,6 +51,8 @@ require_file tools/codegraph-helper.ps1
 require_file tools/codegraph-helper.sh
 require_file tools/git-advice.ps1
 require_file tools/git-advice.sh
+require_file tools/install.ps1
+require_file tools/install.sh
 require_file tools/validate-pack.sh
 
 version_file="$(tr -d '[:space:]' < VERSION 2>/dev/null || true)"
@@ -63,10 +65,10 @@ else
 fi
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
-if [ "$skill_count" -ge 13 ]; then
-  pass "skill count >= 13 ($skill_count)"
+if [ "$skill_count" -ge 14 ]; then
+  pass "skill count >= 14 ($skill_count)"
 else
-  fail "expected at least 13 skill files, found $skill_count"
+  fail "expected at least 14 skill files, found $skill_count"
 fi
 
 while IFS= read -r skill_file; do
@@ -77,7 +79,7 @@ while IFS= read -r skill_file; do
   fi
 done < <(find Skills -maxdepth 1 -type f -name '*.md' | sort)
 
-for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/validate-pack.sh; do
+for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/install.sh tools/validate-pack.sh; do
   if [ -x "$script" ]; then
     pass "script executable: $script"
   else
@@ -103,10 +105,22 @@ else
   fail "missing SDD + TDD principle or OpenSpec integration declaration"
 fi
 
+if grep -q 'post_dev_prd_sync' manifest.json && grep -q '开发后 PRD 同步' Skills/post-dev-prd-sync.md && grep -q '交付同步模式' Prompts/ai-prd-editor.rules.md && grep -q 'post-dev-prd-sync.md' templates/AGENTS.md; then
+  pass "post-development PRD sync is declared"
+else
+  fail "missing post-development PRD sync policy"
+fi
+
 if grep -q 'auto_project_profile' manifest.json && grep -q 'package.json' tools/bootstrap-project.sh && grep -q 'package.json' tools/bootstrap-project.ps1 && grep -q '项目画像' tools/bootstrap-project.sh && grep -q '项目画像' tools/bootstrap-project.ps1; then
   pass "bootstrap generates project adapter profile"
 else
   fail "bootstrap must generate project adapter profile"
+fi
+
+if grep -q 'skills_reference_only_by_default' manifest.json && grep -q 'Skills 默认从上述源路径读取' templates/docs/ai-rules-usage.md && grep -q '不自动差量复制到项目本地 skills 或开发者全局 skills' templates/docs/ai-rules-usage.md; then
+  pass "skills distribution is reference-only by default"
+else
+  fail "skills distribution policy must avoid automatic local/global copying"
 fi
 
 if grep -q 'codegraph_optional' manifest.json && grep -q 'does not install CodeGraph' tools/codegraph-helper.sh && grep -q '不替代 SDD + TDD' tools/codegraph-helper.sh && grep -q '不替代 SDD + TDD' tools/codegraph-helper.ps1; then
