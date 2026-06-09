@@ -44,6 +44,7 @@ require_dir Design
 require_file templates/AGENTS.md
 require_file templates/docs/ai-rules-usage.md
 require_file templates/ai-harness/project-adapter.md
+require_file templates/codex-global/AGENTS.md
 require_file docs/automation.md
 require_file tools/bootstrap-project.ps1
 require_file tools/bootstrap-project.sh
@@ -51,6 +52,8 @@ require_file tools/codegraph-helper.ps1
 require_file tools/codegraph-helper.sh
 require_file tools/git-advice.ps1
 require_file tools/git-advice.sh
+require_file tools/install-codex-global.ps1
+require_file tools/install-codex-global.sh
 require_file tools/install.ps1
 require_file tools/install.sh
 require_file tools/validate-pack.sh
@@ -65,10 +68,10 @@ else
 fi
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
-if [ "$skill_count" -ge 14 ]; then
-  pass "skill count >= 14 ($skill_count)"
+if [ "$skill_count" -ge 15 ]; then
+  pass "skill count >= 15 ($skill_count)"
 else
-  fail "expected at least 14 skill files, found $skill_count"
+  fail "expected at least 15 skill files, found $skill_count"
 fi
 
 while IFS= read -r skill_file; do
@@ -79,7 +82,7 @@ while IFS= read -r skill_file; do
   fi
 done < <(find Skills -maxdepth 1 -type f -name '*.md' | sort)
 
-for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/install.sh tools/validate-pack.sh; do
+for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/install-codex-global.sh tools/install.sh tools/validate-pack.sh; do
   if [ -x "$script" ]; then
     pass "script executable: $script"
   else
@@ -111,6 +114,12 @@ else
   fail "missing post-development PRD sync policy"
 fi
 
+if grep -q 'delivery_walkthrough' manifest.json && grep -q '交付走查' Skills/delivery-walkthrough.md && grep -q 'delivery-walkthrough.md' templates/AGENTS.md && grep -q 'delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md; then
+  pass "delivery walkthrough is declared"
+else
+  fail "missing delivery walkthrough policy"
+fi
+
 if grep -q 'auto_project_profile' manifest.json && grep -q 'package.json' tools/bootstrap-project.sh && grep -q 'package.json' tools/bootstrap-project.ps1 && grep -q '项目画像' tools/bootstrap-project.sh && grep -q '项目画像' tools/bootstrap-project.ps1; then
   pass "bootstrap generates project adapter profile"
 else
@@ -121,6 +130,13 @@ if grep -q 'skills_reference_only_by_default' manifest.json && grep -q 'Skills �
   pass "skills distribution is reference-only by default"
 else
   fail "skills distribution policy must avoid automatic local/global copying"
+fi
+
+codex_wrapper_count="$(find templates/codex-global/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"
+if [ "$codex_wrapper_count" -ge 7 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
+  pass "Codex global loader is wrapper-only and project-first"
+else
+  fail "Codex global loader must stay wrapper-only and project-first"
 fi
 
 if grep -q 'codegraph_optional' manifest.json && grep -q 'does not install CodeGraph' tools/codegraph-helper.sh && grep -q '不替代 SDD + TDD' tools/codegraph-helper.sh && grep -q '不替代 SDD + TDD' tools/codegraph-helper.ps1; then

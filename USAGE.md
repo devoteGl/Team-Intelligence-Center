@@ -62,6 +62,7 @@ Team-Intelligence-Center/
 │   ├── conflict-arbiter.md             #    [PM] 共享文件仲裁
 │   ├── fe-be-handoff.md                #    [FE/BE] 前后端交接
 │   ├── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
+│   ├── delivery-walkthrough.md         #    [PM/Tech Lead/QA/DS] 交付走查
 │   ├── release-ops-handoff.md          #    [PM/Release/DS] 单变更发版交接
 │   ├── git-flow-operator.md            #    [PM/Release] Git Flow 分支、合并、tag、回灌
 │   ├── release-train-handoff.md        #    [PM/Release/DS] 全量多项目发版总控
@@ -79,6 +80,8 @@ Team-Intelligence-Center/
 │   ├── codegraph-helper.ps1
 │   ├── git-advice.sh
 │   ├── git-advice.ps1
+│   ├── install-codex-global.sh
+│   ├── install-codex-global.ps1
 │   ├── install.sh
 │   ├── install.ps1
 │   └── validate-pack.sh
@@ -187,6 +190,33 @@ ai-harness/project-adapter.md
 
 其中 `ai-harness/project-adapter.md` 会自动生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、OpenSpec 和 monorepo 线索。已有文件默认不覆盖；需要刷新时使用 `--force` 或 PowerShell 的 `-Force`。
 
+### 3.4 Codex 全局 Loader（可选）
+
+**适用场景**：希望 Codex 全局知道如何发现 TIC，但不想让全局规则压过项目规则。
+
+预览：
+
+```bash
+bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh --dry-run
+```
+
+确认写入：
+
+```bash
+bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh --yes
+```
+
+写入内容只有：
+
+```text
+~/.codex/AGENTS.md
+~/.codex/skills/tic-*/SKILL.md
+```
+
+全局 `AGENTS.md` 使用 marker 块合并，不替换整份文件。`tic-*` skills 只是包装器：它们先找项目 `.tic-rules.lock` 和项目 `AGENTS.md`，再读取 `<rules_dir>/Skills/*.md`。
+
+不建议把 `templates/AGENTS.md`、`Prompts/*.md` 或完整 `Skills/*.md` 直接复制到 Codex 全局。
+
 ---
 
 ## 4. Global-Rules 使用说明
@@ -280,6 +310,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 | `conflict-arbiter` | PM | FE/BE 需修改共享文件时 | P2 |
 | `fe-be-handoff` | FE/BE | 契约冻结后开始实现前 | P2 |
 | `project-governance-bootstrap` | PM/DS | 项目首次接入公司范式 | P0 |
+| `delivery-walkthrough` | PM/Tech Lead/QA/DS | 实现完成后生成交付走查、Review 指引和验证证据 | P0 |
 | `release-ops-handoff` | PM/Release/DS | 单个功能或单个跨项目变更发版交接 | P0 |
 | `git-flow-operator` | PM/Release | 新需求开分支、release/hotfix 合并、tag、回灌 | P0 |
 | `release-train-handoff` | PM/Release/DS | 全量发版、多项目联动、SQL/脚本发版交付包 | P0 |
@@ -322,6 +353,9 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
        │
 [QA] 测试验收
   └─ Skill: prd-review-checklist
+       │
+[PM/Tech Lead] 交付走查
+  └─ Skill: delivery-walkthrough
        │
 [DS] 文档归档
   ├─ Skill: post-dev-prd-sync
@@ -374,6 +408,12 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
     │  ├─ 功能验收测试
     │  ├─ 通过 → 流转到 DS
     │  └─ 不通过 → 打回 FE/BE（CP-5 确认回退范围）
+    │
+    ▼
+⚙️ [PM/Tech Lead] 交付走查
+    │  ├─ 基于 diff、测试、截图/录屏和人工验收生成 Walkthrough（delivery-walkthrough）
+    │  ├─ 给出 Review 指引、未测项和剩余风险
+    │  └─ 需要上线时流转到发版交接
     │
     ▼
 ⚙️ [DS] 文档归档
@@ -605,6 +645,18 @@ Windows PowerShell 使用同义参数：`-Preview`、`-Refresh`、`-RulesDir`、
 
 Windows PowerShell 高级入口使用同名参数：`-DryRun`、`-Yes`、`-Force`、`-RulesDir`、`-ProjectRoot`。
 
+Codex 全局 Loader 入口：
+
+| 参数 | 作用 |
+| --- | --- |
+| `--dry-run` / `--preview` | 只预览，不写文件 |
+| `--yes` / `-y` | 跳过交互确认 |
+| `--force` | 覆盖已有非 TIC `tic-*` wrapper，覆盖前备份 |
+| `--codex-home PATH` | 指定 Codex home，用于测试或非默认安装 |
+| `--rules-dir PATH` | 指定全局 Loader 的默认 TIC 规则源 |
+
+Windows PowerShell 使用同义参数：`-DryRun`、`-Preview`、`-Yes`、`-Force`、`-CodexHome`、`-RulesDir`。
+
 可选 Git 建议脚本只读检查仓库状态并给出分支/提交建议，不执行任何 Git 变更：
 
 ```bash
@@ -635,6 +687,7 @@ powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command imp
 - 核心规则、Prompts、Skills、Design、templates 和 tools 存在。
 - Skill 文件保留标准标题和 `## 技能用途` 结构。
 - 自动化策略仍声明“不默认 Git hooks”和“不强制 micro/consulting 全流程”。
+- Codex 全局 Loader 仍保持“项目优先、包装器优先”，不复制完整 Skills。
 
 ---
 
@@ -651,8 +704,9 @@ powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command imp
 
 **A**：分两层：
 - 高频、低争议场景由项目 `AGENTS.md` 自动触发，例如 UI 真实界面验证、standard / critical 交付后的 `post-dev-prd-sync` 判断。
-- 专项能力仍可手动触发，例如直接说“执行 code-investigator”或“补一下本次 PRD”。
+- 专项能力仍可手动触发，例如直接说“执行 code-investigator”“生成本次 walkthrough”或“补一下本次 PRD”。
 - Skills 默认从规则库路径读取，不自动复制到项目本地 skills 或全局 skills。团队要做本地镜像时，应单独显式同步并记录版本。
+- Codex 全局的 `tic-*` skills 只是包装器，不是 TIC Skill 正文本体。
 
 ### Q3：可以只用 Skills 不用 Global-Rules 吗？
 

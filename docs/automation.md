@@ -14,8 +14,10 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - standard / critical 任务默认执行 SDD + TDD。
 - OpenSpec 作为可选规格承载层，用于已启用 OpenSpec 或需要长期行为追踪的变更。
 - UI 相关变更优先核对真实界面，可使用 Playwright、浏览器截图、Computer Use 或 Chrome。
+- standard / critical 实现完成后，生成面向异步 review 和验收的交付 Walkthrough artifact。
 - standard / critical 交付后，如产品行为发生变化，生成基于证据的 PRD 更新草稿。
 - 简化入口：提供一条命令安装包装器，底层仍复用幂等 bootstrap。
+- Codex 全局只安装轻量 Loader 和 `tic-*` skill 包装器，不承载项目规则本体。
 
 ## 明确排除的部分
 
@@ -30,6 +32,7 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - 不要求所有 UI micro 任务跑完整端到端流程。
 - 不接管分支生命周期，也不默认执行 Git 变更。
 - 不自动把 `Skills/` 差量复制到业务项目本地 skills 或开发者全局 skills。
+- 不把完整项目规则写入 Codex 全局 `AGENTS.md`。
 
 ## 安装产物
 
@@ -97,6 +100,15 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 - 证据来源包括 OpenSpec / SDD、git diff、commit、测试结果、UI 验证、API 契约和用户确认。
 - 输出为 PRD 更新草稿、证据清单、候选规则和待确认项。
 - S2/S3 代码反推内容不得自动转正；人工确认后再同步到正式 PRD、OpenSpec specs 或项目约定位置。
+
+## 交付 Walkthrough
+
+Walkthrough 是完成态交付 artifact，用来让 PM、Reviewer、QA、运维或运营在没有全程跟随 Agent 执行的情况下快速恢复上下文。
+
+- standard / critical 实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明，或用户要求 walkthrough，应执行 `Skills/delivery-walkthrough.md`。
+- 证据来源包括需求来源、OpenSpec / SDD、git diff、改动文件、测试/构建、接口契约、截图、录屏、日志和人工确认。
+- 输出重点是交付摘要、用户可见变化、技术走查、变更文件与影响面、验证证据、Review 指引、未测项、风险和后续动作。
+- Walkthrough 不替代发版 runbook。需要部署、运营使用、回滚和上线观察时，继续执行 `Skills/release-ops-handoff.md` 或 `Skills/release-train-handoff.md`。
 
 ## UI 变更验证
 
@@ -167,6 +179,45 @@ powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command imp
 - 业务项目通过 `.tic-rules.lock` 和 `AGENTS.md` 中的规则来源路径读取 `Skills/*.md`。
 - 不自动差量复制到项目本地 skills，也不写入 `~/.codex/skills` 等全局目录，避免覆盖研发个人配置或产生版本漂移。
 - 团队确实需要本地镜像时，应作为单独的显式同步任务执行，并记录来源版本、覆盖范围和回滚方式。
+
+## Codex 全局 Loader
+
+Codex 全局只适合安装发现入口，不适合承载整套项目规则。
+
+安装内容：
+
+```text
+~/.codex/AGENTS.md                    # marker-bounded TIC Loader
+~/.codex/skills/tic-*/SKILL.md        # Codex 原生 skill 包装器
+```
+
+这些包装器只负责定位项目 `.tic-rules.lock` 或项目 `AGENTS.md` 中的规则源，再读取 `<rules_dir>/Skills/*.md`。它们不是 TIC Skill 正文本体。
+
+macOS / Linux / WSL：
+
+```bash
+bash tools/install-codex-global.sh --dry-run
+bash tools/install-codex-global.sh --yes
+```
+
+测试或指定目录：
+
+```bash
+bash tools/install-codex-global.sh --yes --codex-home /tmp/codex-home
+```
+
+Windows PowerShell：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File tools\install-codex-global.ps1 -DryRun
+powershell -ExecutionPolicy Bypass -File tools\install-codex-global.ps1 -Yes
+```
+
+全局 Loader 的优先级原则：
+
+- 项目 `AGENTS.md` 和 `.tic-rules.lock` 优先。
+- 没有项目 TIC 接入时，不强制项目走 SDD / PRD / OpenSpec。
+- 用户显式调用 `tic-*` skill 时，才用默认规则源作为兜底。
 
 ## 研发如何拉取规则
 

@@ -11,8 +11,10 @@
     "openspec_integration": "optional_spec_carrier_for_standard_and_critical_changes",
     "auto_project_profile": true,
     "codegraph_optional": true,
+    "delivery_walkthrough": "generate_evidence_based_walkthrough_artifact_after_standard_or_critical_implementation_when_review_qa_ui_or_usage_handoff_is_needed",
     "post_dev_prd_sync": "generate_evidence_based_prd_update_draft_after_standard_or_critical_delivery_when_product_behavior_changes",
     "skills_reference_only_by_default": true,
+    "codex_global_loader": "optional_global_loader_and_tic_skill_wrappers_only",
     "ui_visual_verification": "use_playwright_browser_screenshots_computer_use_or_chrome_when_ui_risk_requires_real_interface_checks",
     "risk_routing": [
       "consulting",
@@ -41,7 +43,8 @@
   "templates": [
     "templates/AGENTS.md",
     "templates/docs/ai-rules-usage.md",
-    "templates/ai-harness/project-adapter.md"
+    "templates/ai-harness/project-adapter.md",
+    "templates/codex-global/AGENTS.md"
   ],
   "tools": [
     "tools/bootstrap-project.ps1",
@@ -52,6 +55,8 @@
     "tools/git-advice.sh",
     "tools/install.ps1",
     "tools/install.sh",
+    "tools/install-codex-global.ps1",
+    "tools/install-codex-global.sh",
     "tools/validate-pack.sh"
   ],
   "generated_project_files": [
@@ -69,8 +74,10 @@
     "auto-generated project adapter",
     "optional CodeGraph helper for context and impact analysis",
     "UI visual verification rule for real interface checks",
+    "artifact-style delivery walkthrough with summary, evidence, review guidance, media references, risks, and follow-up actions",
     "evidence-based post-development PRD sync draft",
     "one-command install wrapper",
+    "optional Codex global loader and tic-* skill wrappers",
     "risk based task routing"
   ],
   "intentionally_excluded": [
@@ -82,6 +89,7 @@
     "mandatory CodeGraph installation or initialization",
     "mandatory full end-to-end browser flow for every UI micro task",
     "automatic copy of Skills into project-local or global skill directories",
+    "full project rules in Codex global AGENTS",
     "RTK requirement",
     "project PRD history packaging",
     "forced SDD/Plan/Approval for readonly and micro tasks",

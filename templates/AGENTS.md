@@ -15,6 +15,7 @@
 - 完成前必须验证。最终说明要写清楚跑了哪些命令、哪些通过、哪些未测、还有什么风险。
 - 不编造业务事实。反推到的行为要标注可信度，候选规则确认前不得写成正式需求。
 - 不覆盖人的工作。保留项目已有规则和用户未提交改动。
+- standard / critical 任务实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明或用户要求 walkthrough，应生成交付 Walkthrough。
 - standard / critical 任务完成后，如涉及用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程变化，应自动生成 PRD 更新草稿和待确认项。
 
 ## 任务分级
@@ -51,12 +52,20 @@
 - 不触发场景：纯重构、格式化、注释、测试补充、内部实现优化且无行为变化。
 - 草稿不得自动转正。S2/S3 代码反推和推测内容必须进入候选规则或待确认项，人工确认后才能同步到正式 PRD / OpenSpec specs。
 
+## 交付 Walkthrough
+
+- 触发条件：实现完成、准备异步 review、QA/PM 需要快速理解交付内容、UI/浏览器任务有截图或录屏证据、脚本/工具需要使用说明，或用户明确要求“walkthrough / 交付走查 / 交付说明”。
+- 默认动作：执行 `Skills/delivery-walkthrough.md`，基于需求来源、git diff、改动文件、测试/构建、UI 截图/录屏、接口契约和人工确认生成可审阅交付 artifact。
+- 输出重点：交付摘要、用户可见变化、技术走查、变更文件与影响面、验证证据、Review 指引、未测项、剩余风险和后续动作。
+- 边界：Walkthrough 不替代开工前计划、正式 PRD、Changelog 或发版 runbook；需要上线交接时继续执行发版交接技能。
+
 ## 推荐使用的 TIC 资产
 
 - 全局行为规则：`Global-Rules/coding-rules.md`
 - 新需求生成：`Prompts/ai-prd-generator.rules.md`
 - 老项目补文档：`Prompts/ai-prd-editor.rules.md`
 - 开发后 PRD 同步：`Skills/post-dev-prd-sync.md`
+- 交付走查：`Skills/delivery-walkthrough.md`
 - OpenSpec / Superpowers 接合：`Design/development-paradigm-openspec-guide.md`
 - 代码调研：`Skills/code-investigator.md`
 - 任务拆解：`Skills/task-decomposer.md`
