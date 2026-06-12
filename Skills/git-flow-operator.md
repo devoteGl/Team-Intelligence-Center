@@ -116,7 +116,7 @@ release 分支不得继续塞新需求。
 用户明确确认后，按顺序执行：
 
 1. 合并 `release/<release-id>` 到 `master`。
-2. 创建 tag，推荐 `v<version>` 或团队约定格式。
+2. 在 `master` 的 release 合并提交上创建 tag，推荐 `v<version>` 或团队约定格式。
 3. 合并 `release/<release-id>` 回 `develop`。
 4. 更新父工作区子模块指针与发版证据。
 5. 按需 push 分支和 tag。
@@ -135,10 +135,16 @@ release 分支不得继续塞新需求。
 用户明确确认后，按顺序执行：
 
 1. 合并 `hotfix/<issue-id>` 到 `master`。
-2. 创建 hotfix tag。
+2. 在 `master` 的 hotfix 合并提交上创建 hotfix tag。不得直接在 `hotfix/*` 分支提交上创建发布 tag。
 3. 合并或 cherry-pick 回 `develop`。
 4. 回灌所有活跃且受影响的 `release/*`。
 5. 更新事故记录和发版记录。
+
+创建 tag 前必须核对：
+
+- `git rev-parse <tag>^{commit}` 目标必须等于 `master` 当前发布提交。
+- 若多仓同版本发布，每个仓库都必须分别确认 `master` 发布提交、tag 名、tag 落点和远端是否已有同名 tag。
+- 发现 tag 名正确但落点不在 `master`，或落点正确但 tag 名错误时，先暂停说明；删除、重建或推送远端 tag 必须等待用户明确确认。
 
 ---
 
