@@ -2,8 +2,18 @@
 
 本项目使用 Team-Intelligence-Center 作为轻量 AI 协作规则层。
 
-规则来源：`{{TIC_RULES_DIR}}`
+规则来源：见下方“规则源解析”。本文件不得记录个人本机绝对路径。
 规则版本：`{{TIC_VERSION}}`
+
+## 规则源解析
+
+AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源：
+
+1. 若 `.tic-rules.lock` 中存在 `rules_path=`，按项目相对路径读取该目录。
+2. 否则读取 `.tic-rules.local` 中的 `rules_dir=`；该文件只保存个人本机绝对路径，必须保持 gitignored。
+3. 若仍未找到，使用开发者已安装的 Codex 全局 Loader 或人工指定的规则库路径作为兜底。
+
+提交到仓库的 `AGENTS.md` 和 `.tic-rules.lock` 不应包含 `/Users/...`、`/home/...`、`C:\...` 等个人路径。
 
 ## 工作原则
 

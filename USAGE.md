@@ -182,9 +182,16 @@ docs/ai-rules-usage.md
 ai-harness/project-adapter.md
 ```
 
+同时会生成本机配置：
+
+```text
+.tic-rules.local    # 记录当前开发者机器上的规则库绝对路径，自动加入 .gitignore
+.gitignore          # 补充 .tic-rules.local 和 .tic-backups/
+```
+
 它不会默认安装 Git hooks、不会复制 `tools/` 到业务项目、不会绑定 Codex-only，也不会要求咨询和 micro 任务走完整 PRD/SDD 流程。
 
-它也不会自动把 `Skills/` 差量复制到项目本地 skills 或开发者全局 skills。业务项目默认通过规则源路径读取 Skills，避免覆盖个人配置和产生版本漂移。
+它也不会自动把 `Skills/` 差量复制到项目本地 skills 或开发者全局 skills。业务项目默认通过 `.tic-rules.lock` 的项目相对路径或 `.tic-rules.local` 的本机路径读取 Skills，避免覆盖个人配置和产生版本漂移。
 
 原则上，standard / critical 任务仍然执行 **SDD + TDD**：先明确行为规格和验收标准，再写或更新测试，最后实现和验证。项目已有 `openspec/` 时，SDD 应写入或关联 OpenSpec change；没有 OpenSpec 时，使用 `docs/sdd/` 或项目约定位置。
 
@@ -608,7 +615,8 @@ AI 工具中使用 `/opsx:*`：
 
 - `manifest.json` 记录版本、资产、模板和安装产物。
 - `bootstrap-project.sh` 支持 `--dry-run`、幂等写入和 marker-bounded `AGENTS.md` 合并。
-- `.tic-rules.lock` 记录规则版本、安装时间和规则源路径，便于诊断。
+- `.tic-rules.lock` 只记录规则版本和项目相对规则源，不写个人本机绝对路径。
+- `.tic-rules.local` 记录当前开发者机器上的规则库绝对路径，并自动加入 `.gitignore`。
 - `ai-harness/project-adapter.md` 自动生成项目画像，减少研发手填项目介绍、依赖和 Node 版本。
 - 任务按 `consulting / micro / standard / critical` 分级，简单事保持简单，高风险才升级流程。
 - standard / critical 任务坚持 SDD + TDD；OpenSpec 是可选规格承载层，不是每次对话的强制流程。
@@ -630,7 +638,7 @@ AI 工具中使用 `/opsx:*`：
 | --- | --- |
 | `--preview` | 只预览，不写文件 |
 | `--refresh` | 刷新生成文档，覆盖前备份 |
-| `--rules-dir PATH` | 指定业务项目中记录的 TIC 规则源路径 |
+| `--rules-dir PATH` | 指定 TIC 规则库路径；项目内路径写入相对 `rules_path`，项目外路径只写入 `.tic-rules.local` |
 
 Windows PowerShell 使用同义参数：`-Preview`、`-Refresh`、`-RulesDir`、`-ProjectRoot`。
 
@@ -641,7 +649,7 @@ Windows PowerShell 使用同义参数：`-Preview`、`-Refresh`、`-RulesDir`、
 | `--dry-run` | 只预览，不写文件 |
 | `--yes` / `-y` | 跳过交互确认 |
 | `--force` | 覆盖已有 `docs/ai-rules-usage.md` 和 `ai-harness/project-adapter.md`，覆盖前备份 |
-| `--rules-dir PATH` | 指定业务项目中记录的 TIC 规则源路径 |
+| `--rules-dir PATH` | 指定 TIC 规则库路径；项目内路径写入相对 `rules_path`，项目外路径只写入 `.tic-rules.local` |
 
 Windows PowerShell 高级入口使用同名参数：`-DryRun`、`-Yes`、`-Force`、`-RulesDir`、`-ProjectRoot`。
 

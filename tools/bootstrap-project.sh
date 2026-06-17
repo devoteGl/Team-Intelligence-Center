@@ -19,7 +19,7 @@ Options:
   --dry-run        Show planned writes without changing files.
   --yes, -y        Skip interactive confirmation.
   --force          Overwrite existing docs/ai-rules-usage.md and ai-harness/project-adapter.md after backing them up.
-  --rules-dir PATH Path that the target project should use to find Team-Intelligence-Center.
+  --rules-dir PATH Path to Team-Intelligence-Center. Project-local paths are recorded as relative; external paths are written only to .tic-rules.local.
   --help, -h       Show this help.
 USAGE
 }
@@ -64,10 +64,25 @@ fi
 
 PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd)"
 RULES_DIR="${RULES_DIR:-$PACKAGE_ROOT}"
+RULES_DIR="$(cd "$RULES_DIR" && pwd)"
 VERSION="$(tr -d '[:space:]' < "$PACKAGE_ROOT/VERSION" 2>/dev/null || echo unknown)"
 PACKAGE_ID="Team_Intelligence_Center_${VERSION}"
 BEGIN_MARKER="<!-- TIC_LIGHT_AUTOMATION_BEGIN -->"
 END_MARKER="<!-- TIC_LIGHT_AUTOMATION_END -->"
+
+RULES_SOURCE_MODE="local_config"
+RULES_PROJECT_PATH=""
+if [ "$RULES_DIR" = "$PROJECT_ROOT" ]; then
+  RULES_SOURCE_MODE="project_relative"
+  RULES_PROJECT_PATH="."
+else
+  case "$RULES_DIR/" in
+    "$PROJECT_ROOT/"*)
+      RULES_SOURCE_MODE="project_relative"
+      RULES_PROJECT_PATH="${RULES_DIR#$PROJECT_ROOT/}"
+      ;;
+  esac
+fi
 
 if [ "$DRY_RUN" -eq 0 ] && [ "$YES" -eq 0 ] && [ -t 0 ]; then
   printf 'Install Team-Intelligence-Center lightweight rules into %s? [y/N] ' "$PROJECT_ROOT"
@@ -446,13 +461,75 @@ write_lock() {
   if [ "$DRY_RUN" -eq 0 ]; then
     cat > "$target" <<EOF
 managed_by=team-intelligence-center
-version=1
+version=2
 rules_version=$VERSION
 package_id=$PACKAGE_ID
 install_mode=minimal
-rules_dir=$RULES_DIR
-installed_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+rules_source=$RULES_SOURCE_MODE
+rules_path=$RULES_PROJECT_PATH
+local_config=.tic-rules.local
 EOF
+  fi
+}
+
+write_local_config() {
+  local target="$PROJECT_ROOT/.tic-rules.local"
+  plan "write .tic-rules.local"
+  if [ "$DRY_RUN" -eq 0 ]; then
+    cat > "$target" <<EOF
+# Local Team-Intelligence-Center resolver.
+# This file is machine-specific and must not be committed.
+rules_dir=$RULES_DIR
+rules_source=$RULES_SOURCE_MODE
+rules_path=$RULES_PROJECT_PATH
+updated_at=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+EOF
+  fi
+}
+
+ensure_gitignore_local_config() {
+  local target="$PROJECT_ROOT/.gitignore"
+  local needs_local=1
+  local needs_backups=1
+
+  if [ -f "$target" ]; then
+    if grep -Fxq ".tic-rules.local" "$target"; then
+      needs_local=0
+    fi
+    if grep -Fxq ".tic-backups/" "$target"; then
+      needs_backups=0
+    fi
+  fi
+
+  if [ "$needs_local" -eq 0 ] && [ "$needs_backups" -eq 0 ]; then
+    plan "skip .gitignore TIC local entries"
+    return
+  fi
+
+  if [ -f "$target" ]; then
+    plan "append TIC local entries to .gitignore"
+  else
+    plan "create .gitignore with TIC local entries"
+  fi
+
+  if [ "$DRY_RUN" -eq 0 ]; then
+    if [ -f "$target" ]; then
+      backup_file "$target"
+    fi
+    {
+      if [ -f "$target" ]; then
+        cat "$target"
+        printf '\n'
+      fi
+      printf '# Team-Intelligence-Center local files\n'
+      if [ "$needs_local" -eq 1 ]; then
+        printf '.tic-rules.local\n'
+      fi
+      if [ "$needs_backups" -eq 1 ]; then
+        printf '.tic-backups/\n'
+      fi
+    } > "$target.tmp"
+    mv "$target.tmp" "$target"
   fi
 }
 
@@ -460,6 +537,8 @@ merge_agents
 install_template_file "$PACKAGE_ROOT/templates/docs/ai-rules-usage.md" "$PROJECT_ROOT/docs/ai-rules-usage.md"
 install_project_adapter
 write_lock
+write_local_config
+ensure_gitignore_local_config
 
 printf 'Team-Intelligence-Center bootstrap plan for %s:\n' "$PROJECT_ROOT"
 for item in "${planned[@]}"; do

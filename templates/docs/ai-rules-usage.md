@@ -26,12 +26,10 @@ standard / critical 任务完成后，如影响用户可见行为、UI、API、�
 
 ## 规则来源
 
-Team-Intelligence-Center 源路径：
+本项目不在可提交文件中记录个人本机绝对路径。AI 读取 TIC 正文规则或 Skills 时，应优先使用 `.tic-rules.lock` 中的项目相对 `rules_path`；若项目未内置规则库，则读取 `.tic-rules.local` 中的个人本机 `rules_dir`。
 
-```text
-{{TIC_RULES_DIR}}
-```
+`.tic-rules.local` 由安装脚本生成，只用于当前开发者机器，必须保持 gitignored。
 
 请把源规则库作为稳定知识基座。除非团队明确决定，不要把大型流程包、vendor 资产或历史 PRD 档案复制进业务项目。
 
-Skills 默认从上述源路径读取，不自动差量复制到项目本地 skills 或开发者全局 skills，避免版本漂移和覆盖个人配置。
+Skills 默认从解析出的规则源读取，不自动差量复制到项目本地 skills 或开发者全局 skills，避免版本漂移和覆盖个人配置。

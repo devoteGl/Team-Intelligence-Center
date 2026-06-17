@@ -45,7 +45,16 @@ docs/ai-rules-usage.md
 ai-harness/project-adapter.md
 ```
 
+同时写入本机配置：
+
+```text
+.tic-rules.local    # 个人本机规则库绝对路径，自动 gitignored
+.gitignore          # 补充 .tic-rules.local 和 .tic-backups/
+```
+
 `AGENTS.md` 会写入 marker 块中，方便项目已有规则和 TIC 轻量规则共存。
+
+`.tic-rules.lock` 是可提交的稳定元信息，只保存规则版本、接入模式和项目相对 `rules_path`。当规则库不在业务项目目录内时，`rules_path` 为空，个人绝对路径只写入 `.tic-rules.local`。
 
 `ai-harness/project-adapter.md` 不是空模板。bootstrap 会自动探测：
 
@@ -175,8 +184,8 @@ powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command imp
 
 默认策略是“引用规则库，不复制 Skills”。
 
-- bootstrap / install 只在业务项目写入 `AGENTS.md`、`.tic-rules.lock`、`docs/ai-rules-usage.md` 和 `ai-harness/project-adapter.md`。
-- 业务项目通过 `.tic-rules.lock` 和 `AGENTS.md` 中的规则来源路径读取 `Skills/*.md`。
+- bootstrap / install 在业务项目写入 `AGENTS.md`、`.tic-rules.lock`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`，并生成本机 `.tic-rules.local`。
+- 业务项目优先通过 `.tic-rules.lock` 中的项目相对 `rules_path` 读取 `Skills/*.md`；没有项目内规则库时，再通过 gitignored 的 `.tic-rules.local` 读取个人本机规则源。
 - 不自动差量复制到项目本地 skills，也不写入 `~/.codex/skills` 等全局目录，避免覆盖研发个人配置或产生版本漂移。
 - 团队确实需要本地镜像时，应作为单独的显式同步任务执行，并记录来源版本、覆盖范围和回滚方式。
 
@@ -191,7 +200,7 @@ Codex 全局只适合安装发现入口，不适合承载整套项目规则。
 ~/.codex/skills/tic-*/SKILL.md        # Codex 原生 skill 包装器
 ```
 
-这些包装器只负责定位项目 `.tic-rules.lock` 或项目 `AGENTS.md` 中的规则源，再读取 `<rules_dir>/Skills/*.md`。它们不是 TIC Skill 正文本体。
+这些包装器只负责定位项目 `.tic-rules.lock` 的项目相对 `rules_path` 或 `.tic-rules.local` 的本机 `rules_dir`，再读取 `<rules_dir>/Skills/*.md`。它们不是 TIC Skill 正文本体。
 
 macOS / Linux / WSL：
 

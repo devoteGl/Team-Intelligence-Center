@@ -21,7 +21,7 @@ Options:
   --preview       Show planned writes without changing files.
   --refresh       Refresh generated docs after backing up existing files.
   --rules-dir PATH
-                  Path that the target project should record as the rules source.
+                  Path to Team-Intelligence-Center. Project-local paths are committed as relative; external paths stay local.
   --help, -h      Show this help.
 USAGE
 }

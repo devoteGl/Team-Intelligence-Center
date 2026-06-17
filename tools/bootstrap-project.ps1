@@ -18,7 +18,7 @@ Options:
   -DryRun        Show planned writes without changing files.
   -Yes          Skip interactive confirmation.
   -Force        Overwrite existing docs/ai-rules-usage.md and ai-harness/project-adapter.md after backing them up.
-  -RulesDir     Path that the target project should use to find Team-Intelligence-Center.
+  -RulesDir     Path to Team-Intelligence-Center. Project-local paths are recorded as relative; external paths are written only to .tic-rules.local.
   -ProjectRoot  Target project root. Defaults to the current directory.
 "@
 }
@@ -39,6 +39,7 @@ $ProjectRoot = (Resolve-Path -LiteralPath $ProjectRoot).Path
 if ([string]::IsNullOrWhiteSpace($RulesDir)) {
     $RulesDir = $PackageRoot
 }
+$RulesDir = (Resolve-Path -LiteralPath $RulesDir).Path
 
 $VersionPath = Join-Path $PackageRoot "VERSION"
 if (Test-Path -LiteralPath $VersionPath) {
@@ -52,6 +53,25 @@ $BeginMarker = "<!-- TIC_LIGHT_AUTOMATION_BEGIN -->"
 $EndMarker = "<!-- TIC_LIGHT_AUTOMATION_END -->"
 $Stamp = Get-Date -Format "yyyyMMddHHmmss"
 $Planned = New-Object System.Collections.Generic.List[string]
+
+function Get-ProjectRelativeRulesPath {
+    $root = [System.IO.Path]::GetFullPath($ProjectRoot).TrimEnd([char[]]@('\', '/'))
+    $path = [System.IO.Path]::GetFullPath($RulesDir).TrimEnd([char[]]@('\', '/'))
+    if ($path -eq $root) {
+        return "."
+    }
+
+    $rootWithSeparator = $root + [System.IO.Path]::DirectorySeparatorChar
+    if ($path.StartsWith($rootWithSeparator, [System.StringComparison]::OrdinalIgnoreCase)) {
+        $relative = $path.Substring($rootWithSeparator.Length)
+        return $relative.Replace("\", "/")
+    }
+
+    return ""
+}
+
+$RulesProjectPath = Get-ProjectRelativeRulesPath
+$RulesSourceMode = if ([string]::IsNullOrWhiteSpace($RulesProjectPath)) { "local_config" } else { "project_relative" }
 
 if (-not $DryRun -and -not $Yes) {
     $answer = Read-Host "Install Team-Intelligence-Center lightweight rules into $ProjectRoot? [y/N]"
@@ -408,16 +428,76 @@ function Write-LockFile {
     $target = Join-Path $ProjectRoot ".tic-rules.lock"
     Add-Plan "write .tic-rules.lock"
     if (-not $DryRun) {
-        $installedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
         $content = @"
 managed_by=team-intelligence-center
-version=1
+version=2
 rules_version=$Version
 package_id=$PackageId
 install_mode=minimal
-rules_dir=$RulesDir
-installed_at=$installedAt
+rules_source=$RulesSourceMode
+rules_path=$RulesProjectPath
+local_config=.tic-rules.local
 "@
+        Set-Content -LiteralPath $target -Value $content -Encoding UTF8
+    }
+}
+
+function Write-LocalConfig {
+    $target = Join-Path $ProjectRoot ".tic-rules.local"
+    Add-Plan "write .tic-rules.local"
+    if (-not $DryRun) {
+        $updatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+        $content = @"
+# Local Team-Intelligence-Center resolver.
+# This file is machine-specific and must not be committed.
+rules_dir=$RulesDir
+rules_source=$RulesSourceMode
+rules_path=$RulesProjectPath
+updated_at=$updatedAt
+"@
+        Set-Content -LiteralPath $target -Value $content -Encoding UTF8
+    }
+}
+
+function Ensure-GitignoreLocalConfig {
+    $target = Join-Path $ProjectRoot ".gitignore"
+    $needsLocal = $true
+    $needsBackups = $true
+
+    if (Test-Path -LiteralPath $target) {
+        $lines = @(Get-Content -LiteralPath $target -Encoding UTF8)
+        $needsLocal = -not ($lines -contains ".tic-rules.local")
+        $needsBackups = -not ($lines -contains ".tic-backups/")
+    }
+
+    if (-not $needsLocal -and -not $needsBackups) {
+        Add-Plan "skip .gitignore TIC local entries"
+        return
+    }
+
+    if (Test-Path -LiteralPath $target) {
+        Add-Plan "append TIC local entries to .gitignore"
+    } else {
+        Add-Plan "create .gitignore with TIC local entries"
+    }
+
+    if (-not $DryRun) {
+        $existing = ""
+        if (Test-Path -LiteralPath $target) {
+            Backup-File $target
+            $existing = (Get-Content -LiteralPath $target -Raw -Encoding UTF8).TrimEnd()
+        }
+
+        $additions = New-Object System.Collections.Generic.List[string]
+        [void]$additions.Add("# Team-Intelligence-Center local files")
+        if ($needsLocal) { [void]$additions.Add(".tic-rules.local") }
+        if ($needsBackups) { [void]$additions.Add(".tic-backups/") }
+
+        $content = if ([string]::IsNullOrWhiteSpace($existing)) {
+            ($additions -join "`r`n") + "`r`n"
+        } else {
+            $existing + "`r`n`r`n" + ($additions -join "`r`n") + "`r`n"
+        }
         Set-Content -LiteralPath $target -Value $content -Encoding UTF8
     }
 }
@@ -426,6 +506,8 @@ Merge-Agents
 Install-TemplateFile (Join-Path $PackageRoot "templates/docs/ai-rules-usage.md") (Join-Path $ProjectRoot "docs/ai-rules-usage.md")
 Install-ProjectAdapter
 Write-LockFile
+Write-LocalConfig
+Ensure-GitignoreLocalConfig
 
 Write-Host "Team-Intelligence-Center bootstrap plan for ${ProjectRoot}:"
 foreach ($item in $Planned) {

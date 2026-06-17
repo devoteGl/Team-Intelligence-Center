@@ -19,7 +19,7 @@ Defaults:
 Options:
   -Preview      Show planned writes without changing files.
   -Refresh      Refresh generated docs after backing up existing files.
-  -RulesDir     Path that the target project should record as the rules source.
+  -RulesDir     Path to Team-Intelligence-Center. Project-local paths are committed as relative; external paths stay local.
   -ProjectRoot  Target project root. Defaults to the current directory.
 "@
 }

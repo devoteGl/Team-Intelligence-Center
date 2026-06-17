@@ -96,6 +96,12 @@ else
   fail "PowerShell bootstrap missing TIC markers or lock writer"
 fi
 
+if grep -q 'rules_path=' tools/bootstrap-project.sh && grep -q 'local_config=.tic-rules.local' tools/bootstrap-project.sh && grep -q '.tic-rules.local' tools/bootstrap-project.sh && grep -q '.tic-rules.local' tools/bootstrap-project.ps1 && ! grep -q '{{TIC_RULES_DIR}}' templates/AGENTS.md && ! grep -q '{{TIC_RULES_DIR}}' templates/docs/ai-rules-usage.md; then
+  pass "project install avoids committed absolute rules paths"
+else
+  fail "project install must keep absolute rules paths out of committed templates"
+fi
+
 if grep -q 'git_workflow_advice_only' manifest.json && grep -q 'git switch, add, commit, push, merge, tag' tools/git-advice.ps1 && grep -q 'git switch, add, commit, push, merge, tag' tools/git-advice.sh; then
   pass "Git advice scripts are read-only by policy"
 else
@@ -126,14 +132,14 @@ else
   fail "bootstrap must generate project adapter profile"
 fi
 
-if grep -q 'skills_reference_only_by_default' manifest.json && grep -q 'Skills 默认从上述源路径读取' templates/docs/ai-rules-usage.md && grep -q '不自动差量复制到项目本地 skills 或开发者全局 skills' templates/docs/ai-rules-usage.md; then
+if grep -q 'skills_reference_only_by_default' manifest.json && grep -q 'Skills 默认从解析出的规则源读取' templates/docs/ai-rules-usage.md && grep -q '不自动差量复制到项目本地 skills 或开发者全局 skills' templates/docs/ai-rules-usage.md; then
   pass "skills distribution is reference-only by default"
 else
   fail "skills distribution policy must avoid automatic local/global copying"
 fi
 
 codex_wrapper_count="$(find templates/codex-global/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"
-if [ "$codex_wrapper_count" -ge 7 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
+if [ "$codex_wrapper_count" -ge 7 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
   pass "Codex global loader is wrapper-only and project-first"
 else
   fail "Codex global loader must stay wrapper-only and project-first"

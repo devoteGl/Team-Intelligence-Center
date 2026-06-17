@@ -65,12 +65,17 @@
     "docs/ai-rules-usage.md",
     "ai-harness/project-adapter.md"
   ],
+  "generated_local_files": [
+    ".tic-rules.local",
+    ".tic-backups/"
+  ],
   "borrowed_from_codex_project": [
     "manifest based versioning",
     "idempotent project bootstrap",
     "marker bounded AGENTS merge",
     "dry-run first installation",
     "minimal lock file for diagnostics",
+    "local-only rules source resolver to avoid committed machine paths",
     "auto-generated project adapter",
     "optional CodeGraph helper for context and impact analysis",
     "UI visual verification rule for real interface checks",
