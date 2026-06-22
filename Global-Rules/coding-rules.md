@@ -243,16 +243,19 @@ FE/BE 并行开始前，PM 必须先冻结 `types/` 接口契约，双方基于�
 |------|------|------|------|
 | `master` | 生产可发布或已发布代码 | `release/*` / `hotfix/*` 合入 | tag、生产发布 |
 | `develop` | 日常集成主线 | `feature/*`、`release/*`、`hotfix/*` 回灌 | `release/*` |
-| `feature/<change-id>` | 新需求或常规修复 | `develop` | `develop` |
-| `release/<release-id>` | 发版冻结、预发/生产准备 | `develop` | `master` + 回灌 `develop` |
-| `hotfix/<issue-id>` | 线上紧急修复 | `master` | `master` + `develop` + 活跃 `release/*` |
+| `feature/<business-slug>` | 新需求或常规修复 | `develop` | `develop` |
+| `release/<version>` | 发版冻结、预发/生产准备 | `develop` | `master` + 回灌 `develop` |
+| `hotfix/<version>` | 线上紧急修复 | `master` | `master` + `develop` + 活跃 `release/*` |
 
 ### 8.2 AI 自动化边界
 
-- AI 可以在新需求开始时自动创建 `feature/*` 分支。
-- 多项目联动时，AI 应在父工作区和涉及子项目创建同名 `feature/*`，并记录分支映射。
-- AI 可以在用户明确要求发版时创建 `release/*`，但必须同步生成或更新发版总控文档。
-- AI 可以在用户明确要求线上紧急修复时从 `master` 创建 `hotfix/*`。
+- `feature/*` 分支后缀使用业务名或 issue + 业务名，如 `feature/offline-refund`、`feature/1234-offline-refund`。
+- `release/*`、`hotfix/*` 分支后缀必须是版本号式数字编号，格式为 `数字.数字.三位数字`，如 `release/1.0.004`、`hotfix/1.0.005`。
+- 发布 tag 使用纯版本号，如 `1.0.004`，不得加 `v` 前缀，不得在同一项目混用 `v1.0.004` 和 `1.0.004`。
+- 若历史 tag 全部为 `v` 前缀，不得自动新增无 `v` tag；必须先让用户确认迁移或延续策略。
+- 创建 release/hotfix 前必须扫描本地/远端分支、tag、发版记录和项目文档中的可见版本号，取历史最大版本并默认递增第三段。
+- AI 不得静默创建分支；必须先输出候选分支、版本证据、起点 commit 和待执行命令，等待用户确认无误后再执行。
+- 多项目联动时，AI 应在父工作区和涉及子项目使用同名分支，并记录分支映射。
 - AI 不得静默合并到 `master`，不得静默打 tag，不得静默 push 生产相关分支。
 - `release/*` 合并到 `master`、tag、回灌 `develop`、`hotfix/*` 回灌必须由用户显式调用或明确确认。
 

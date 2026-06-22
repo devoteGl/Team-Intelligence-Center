@@ -108,6 +108,12 @@ else
   fail "Git advice scripts or manifest do not record read-only policy"
 fi
 
+if grep -q 'feature/<business-slug>' Skills/git-flow-operator.md && grep -q '1.0.004' Skills/git-flow-operator.md && grep -q '不得添加 `v` 前缀' Skills/git-flow-operator.md && grep -q '等待用户确认' Skills/git-flow-operator.md && grep -q 'feature/<business-slug>' Global-Rules/coding-rules.md && grep -q 'feature_branch_policy' tools/git-advice.sh && grep -q 'release_hotfix_version_policy' tools/git-advice.ps1 && grep -q 'suggested_tag' tools/git-advice.sh && grep -q 'business-slug-required' tools/git-advice.ps1; then
+  pass "Git Flow branch naming uses business feature branches and versioned release/hotfix tags"
+else
+  fail "Git Flow branch naming must use business feature branches, versioned release/hotfix, no-v tags, and confirmation gates"
+fi
+
 if grep -q 'SDD + TDD' templates/AGENTS.md && grep -q 'openspec_integration' manifest.json && grep -q 'sdd_tdd_required_for_standard_and_critical' manifest.json; then
   pass "SDD + TDD principle and OpenSpec integration are declared"
 else
@@ -139,7 +145,7 @@ else
 fi
 
 codex_wrapper_count="$(find templates/codex-global/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"
-if [ "$codex_wrapper_count" -ge 7 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
+if [ "$codex_wrapper_count" -ge 8 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
   pass "Codex global loader is wrapper-only and project-first"
 else
   fail "Codex global loader must stay wrapper-only and project-first"

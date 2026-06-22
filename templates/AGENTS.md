@@ -25,6 +25,7 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - 完成前必须验证。最终说明要写清楚跑了哪些命令、哪些通过、哪些未测、还有什么风险。
 - 不编造业务事实。反推到的行为要标注可信度，候选规则确认前不得写成正式需求。
 - 不覆盖人的工作。保留项目已有规则和用户未提交改动。
+- 涉及创建分支、release/hotfix、merge、tag、push 或回灌时，必须执行 `Skills/git-flow-operator.md`。`feature/*` 使用业务名或 issue + 业务名；`release/*`、`hotfix/*` 和 tag 使用 `数字.数字.三位数字`，tag 不加 `v` 前缀。创建前必须输出候选分支和待执行命令，等待用户确认。
 - standard / critical 任务实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明或用户要求 walkthrough，应生成交付 Walkthrough。
 - standard / critical 任务完成后，如涉及用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程变化，应自动生成 PRD 更新草稿和待确认项。
 
@@ -79,6 +80,7 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - OpenSpec / Superpowers 接合：`Design/development-paradigm-openspec-guide.md`
 - 代码调研：`Skills/code-investigator.md`
 - 任务拆解：`Skills/task-decomposer.md`
+- Git Flow 分支操作：`Skills/git-flow-operator.md`
 - API 契约冻结：`Skills/api-contract-freezer.md`
 - 候选规则抽取：`Skills/candidate-rule-extractor.md`
 - 发版交接：`Skills/release-ops-handoff.md` 和 `Skills/release-train-handoff.md`

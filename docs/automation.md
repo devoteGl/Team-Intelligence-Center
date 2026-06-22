@@ -149,10 +149,12 @@ powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lig
 
 - 当前仓库根目录、分支、上游和变更文件数量。
 - 当前分支是否像长期分支。
-- 建议的短分支名和提交标题。
+- 本地 / 远端 `release/<version>`、`hotfix/<version>`、tag 和 `docs/releases/` 中的可见最大版本号。
+- 建议的业务名 feature 分支、版本号式 release/hotfix 分支、无 `v` 前缀 tag 和提交标题。
 - 本地运行态文件、密钥和本地配置风险。
 
 脚本不会执行 `git switch`、`git add`、`git commit`、`git push`、`git merge`、`git tag` 或删除分支。
+分支创建仍需由 `git-flow-operator` 输出确认卡，用户确认后才执行。
 
 ## 可选 CodeGraph 上下文增强
 

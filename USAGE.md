@@ -675,6 +675,8 @@ bash tools/git-advice.sh --type feature "lightweight automation"
 powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lightweight automation"
 ```
 
+Git Flow 分支命名采用混合规则：`feature/*` 使用业务名或 issue + 业务名，例如 `feature/offline-refund`、`feature/1234-offline-refund`；`release/*`、`hotfix/*` 和发布 tag 使用版本号式编号，格式为 `数字.数字.三位数字`，例如 `release/1.0.004`、`hotfix/1.0.005`、`1.0.005`。发布 tag 不加 `v` 前缀。AI 创建分支前必须给出候选分支、命名依据、起点 commit 和待执行命令，等待用户确认后才执行；创建 release/hotfix 前还必须扫描本地/远端分支、tag 和发版记录中的可见最大版本。
+
 可选 CodeGraph helper 用于老项目、monorepo、跨模块改动或重构前的上下文和影响面分析。它不默认安装 CodeGraph，也不默认初始化 `.codegraph/`：
 
 ```bash
