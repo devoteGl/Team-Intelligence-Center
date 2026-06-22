@@ -56,6 +56,8 @@ require_file tools/install-codex-global.ps1
 require_file tools/install-codex-global.sh
 require_file tools/install.ps1
 require_file tools/install.sh
+require_file tools/update.ps1
+require_file tools/update.sh
 require_file tools/validate-pack.sh
 
 version_file="$(tr -d '[:space:]' < VERSION 2>/dev/null || true)"
@@ -82,7 +84,7 @@ while IFS= read -r skill_file; do
   fi
 done < <(find Skills -maxdepth 1 -type f -name '*.md' | sort)
 
-for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/install-codex-global.sh tools/install.sh tools/validate-pack.sh; do
+for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/install-codex-global.sh tools/install.sh tools/update.sh tools/validate-pack.sh; do
   if [ -x "$script" ]; then
     pass "script executable: $script"
   else
@@ -142,6 +144,12 @@ if grep -q 'skills_reference_only_by_default' manifest.json && grep -q 'Skills �
   pass "skills distribution is reference-only by default"
 else
   fail "skills distribution policy must avoid automatic local/global copying"
+fi
+
+if grep -q 'one_command_user_update' manifest.json && grep -q 'pull --ff-only' tools/update.sh && grep -q 'install-codex-global.sh' tools/update.sh && grep -q 'install.sh' tools/update.sh && grep -q 'tools/update.sh' USAGE.md && grep -q '一条命令' docs/automation.md; then
+  pass "one-command user update path is declared"
+else
+  fail "one-command user update path must update rules source, global wrappers, and project entrypoints"
 fi
 
 codex_wrapper_count="$(find templates/codex-global/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"

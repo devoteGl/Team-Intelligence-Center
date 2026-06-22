@@ -75,6 +75,8 @@ cd /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/install.sh
 bash /path/to/Team-Intelligence-Center/tools/install.sh --preview
 bash /path/to/Team-Intelligence-Center/tools/install.sh --refresh
+bash /path/to/Team-Intelligence-Center/tools/update.sh
+bash /path/to/Team-Intelligence-Center/tools/update.sh --preview
 ```
 
 Windows PowerShell：
@@ -83,11 +85,14 @@ Windows PowerShell：
 powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -ProjectRoot C:\path\to\project
 powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -Preview -ProjectRoot C:\path\to\project
 powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -Refresh -ProjectRoot C:\path\to\project
+powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\update.ps1 -ProjectRoot C:\path\to\project
 ```
 
 默认安装保持轻量。任务确实需要更多结构时，再手动使用更深入的 TIC 技能。
 
 底层高级入口仍保留：`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1` 支持 `--force` / `-Force`、`--rules-dir` / `-RulesDir` 等参数。日常研发优先使用 `install.*`。
+
+规则升级入口是 `tools/update.sh` / `tools/update.ps1`。它把用户操作压缩为一条命令：更新规则源、刷新 Codex 全局 Loader 和 `tic-*` wrapper、刷新当前业务项目 `AGENTS.md` / `.tic-rules.lock` / 使用说明 / 项目画像。需要谨慎检查时先加 `--preview` / `-Preview`。
 
 ## SDD + TDD 与 OpenSpec
 
@@ -238,7 +243,7 @@ powershell -ExecutionPolicy Bypass -File tools\install-codex-global.ps1 -Yes
 
 ```bash
 git clone https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Center.git
-git pull --ff-only
+bash Team-Intelligence-Center/tools/update.sh --project /path/to/business-project
 ```
 
 业务项目需要锁定规则版本时，推荐使用 submodule：
@@ -248,4 +253,4 @@ git submodule add https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Cen
 git submodule update --init --recursive
 ```
 
-然后在已拉取的规则目录中执行 bootstrap，并传入业务项目路径。
+然后在已拉取的规则目录中执行 bootstrap，并传入业务项目路径。后续升级时，研发在业务项目中执行规则库的 `tools/update.sh` 即可。

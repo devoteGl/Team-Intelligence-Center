@@ -52,6 +52,7 @@
 - **`templates/`**：项目侧最小入口模板，包括 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`。
 - **`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1`**：幂等接入业务项目，默认只合并最小规则入口、轻量 lock，并自动生成项目画像；不安装 Git hooks、不复制历史 PRD、不绑定 Codex-only。
 - **`tools/install.sh` / `tools/install.ps1`**：日常一条命令接入入口，默认安装到当前目录，底层复用 bootstrap。
+- **`tools/update.sh` / `tools/update.ps1`**：日常一条命令升级入口，拉取规则源并刷新 Codex 全局包装器和项目入口。
 - **`tools/install-codex-global.sh` / `tools/install-codex-global.ps1`**：可选安装 Codex 全局 Loader 和 `tic-*` skill 包装器；只负责发现项目 TIC，不复制完整 Skills。
 - **`tools/codegraph-helper.sh` / `tools/codegraph-helper.ps1`**：可选 CodeGraph 上下文增强入口，帮助老项目和跨模块任务分析影响面；不默认安装或初始化。
 - **`tools/git-advice.sh` / `tools/git-advice.ps1`**：只读 Git 副驾，输出分支和提交建议，不执行 Git 变更。
@@ -81,6 +82,7 @@
 - **AI 提示词挂载**：优先在项目级 `AGENTS.md` 或项目规则入口引用本仓库，不默认覆盖开发者全局 System Prompt 或全局 skills。由于其使用纯文本约束，所有 LLM 均可读取并转入 Team Agent 模拟态投入工作。
 - **Submodule 规范基石**：将其作为 `git submodule` 集成在大型复杂工程库的独立存放点作为约束性资产规范，配合代码审批流长期守护项目全生命周期的产品需求与技术一致边界。
 - **轻量自动化接入**：执行 `bash /path/to/Team-Intelligence-Center/tools/install.sh`，默认把最小入口写入当前业务项目。
+- **日常规则升级**：在业务项目中执行 `bash /path/to/Team-Intelligence-Center/tools/update.sh`，一条命令拉取规则并刷新入口。
 - **Windows 原生接入**：PowerShell 环境执行 `powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1`。
 - **Codex 全局 Loader**：可选执行 `bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh --dry-run` 预览，只安装全局发现入口和 `tic-*` 包装器。
 - **OpenSpec 规格层**：参考 [公司研发范式 + OpenSpec / Superpowers 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路。

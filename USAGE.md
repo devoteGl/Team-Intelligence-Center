@@ -84,6 +84,8 @@ Team-Intelligence-Center/
 │   ├── install-codex-global.ps1
 │   ├── install.sh
 │   ├── install.ps1
+│   ├── update.sh
+│   ├── update.ps1
 │   └── validate-pack.sh
 │
 └── docs/
@@ -171,6 +173,24 @@ Windows 原生 PowerShell：
 powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1
 powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -ProjectRoot C:\path\to\project
 powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -Preview -ProjectRoot C:\path\to\project
+```
+
+日常升级时，研发只需要一条命令。脚本会拉取规则库、刷新 Codex 全局 `tic-*` wrapper，并刷新当前业务项目入口：
+
+```bash
+bash /path/to/Team-Intelligence-Center/tools/update.sh
+```
+
+Windows PowerShell：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\update.ps1
+```
+
+预览不写入：
+
+```bash
+bash /path/to/Team-Intelligence-Center/tools/update.sh --preview
 ```
 
 默认只生成或合并：
@@ -641,6 +661,19 @@ AI 工具中使用 `/opsx:*`：
 | `--rules-dir PATH` | 指定 TIC 规则库路径；项目内路径写入相对 `rules_path`，项目外路径只写入 `.tic-rules.local` |
 
 Windows PowerShell 使用同义参数：`-Preview`、`-Refresh`、`-RulesDir`、`-ProjectRoot`。
+
+日常升级优先使用 `tools/update.sh`，让用户只执行一条命令：
+
+| 参数 | 作用 |
+| --- | --- |
+| `--preview` | 只预览，不写文件、不拉取 |
+| `--project PATH` | 指定业务项目路径；默认当前目录 |
+| `--codex-home PATH` | 指定 Codex home |
+| `--no-pull` | 不拉取规则源 |
+| `--no-global` | 不刷新 Codex 全局 Loader 和 wrapper |
+| `--no-project` | 不刷新业务项目入口 |
+
+Windows PowerShell 使用同义参数：`-Preview`、`-ProjectRoot`、`-CodexHome`、`-NoPull`、`-NoGlobal`、`-NoProject`。
 
 底层高级入口 `tools/bootstrap-project.sh` 仍可使用：
 
