@@ -63,7 +63,15 @@ BREAKING CHANGE: <描述不兼容变更内容>（如适用）
 
 ---
 
-## 2. 任务复杂度评估模型
+## 2. Adaptive Workflow 任务分级模型
+
+TIC 只维护一套 adaptive workflow。强管控不是第二套 strict 流程，而是通过 `risk_floor` 把任务最低档位锁到 `standard` 或 `critical`。
+
+```text
+classified_tier = consulting | micro | standard | critical
+risk_floor = none | standard | critical
+effective_tier = max(classified_tier, risk_floor)
+```
 
 ### 2.1 评估维度
 
@@ -100,54 +108,64 @@ BREAKING CHANGE: <描述不兼容变更内容>（如适用）
 复杂度分 = 影响范围分 × 变更深度分 × 关键路径权重
 
 分级标准：
-  1-3分:  简单任务  → 快速通道（可跳过部分检查点）
-  4-9分:  中等任务  → 标准流程（所有检查点）
-  10+分:  复杂任务  → 严格流程（检查点 + 多角色并行 + 强制 QA）
+  咨询/只读: consulting → 直接回答或轻量调查
+  1-3分:  micro       → 快速通道（最小实现 + 最小验证）
+  4-9分:  standard    → 标准流程（SDD/TDD + 必要检查点）
+  10+分:  critical    → 强证据链（完整门禁 + 回滚/发版/归档）
 ```
 
 ### 2.3 例外条款
 
-- 任何**支付/登录/权限**相关变更，最低按"中等"处理（≥4分）
+- 任何**支付/登录/权限**相关变更，最低按 `standard` 处理
 - 任何**删除现有功能**必须人工确认（无论分数）
-- 数据库 Migration / 环境配置变更 必须严格流程
+- 数据库 Migration / 环境配置变更最低按 `critical` 处理
+- 项目 `.tic-rules.lock`、`ai-harness/project-adapter.md` 或人工要求声明 `risk_floor` 时，不得自行降级到该 floor 以下
 
 ### 2.4 实战示例
 
 | 场景 | 范围 | 深度 | 路径 | 总分 | 分级 |
 |------|------|------|------|------|------|
-| 改按钮颜色 | 2 | 1 | ×1 | 2 | 🟢 简单 |
-| 新增独立页面 | 2 | 2 | ×1 | 4 | 🟡 中等 |
-| 修改 API 返回字段 | 4 | 5 | ×1 | 20 | 🔴 复杂 |
-| 登录页文案调整 | 2 | 1 | ×2 | 4 | 🟡 中等 |
-| 重构 Store 逻辑 | 4 | 5 | ×2 | 40 | 🔴 极复杂 |
-| 全局主题色替换（15处） | 5 | 1 | ×1 | 5 | 🟡 中等 |
+| 改按钮颜色 | 2 | 1 | ×1 | 2 | micro |
+| 新增独立页面 | 2 | 2 | ×1 | 4 | standard |
+| 修改 API 返回字段 | 4 | 5 | ×1 | 20 | critical |
+| 登录页文案调整 | 2 | 1 | ×2 | 4 | standard |
+| 重构 Store 逻辑 | 4 | 5 | ×2 | 40 | critical |
+| 全局主题色替换（15处） | 5 | 1 | ×1 | 5 | standard |
 
 ---
 
 ## 3. 任务流转协议
 
-### 3.1 标准流程
+### 3.1 总控路由
 
 ```
-[PM] 任务拆解 + 复杂度评估 → [CI] 现状调研 → [PM] 方案制定
-     → [FE/BE] 并行实现（基于冻结契约）
-     → [QA] 测试验收 → [DS] 文档
+用户任务 → tic-workflow-orchestrator → 风险分级 → 套用 risk_floor
+       → 选择 phase / Skill DAG → 验证 → Closeout / Release
 ```
 
-### 3.2 快速通道（1-3分任务）
+`tic-workflow-orchestrator` 只做路由，不复制子 Skill 正文。具体执行仍由 `task-decomposer`、`code-investigator`、`contract-handoff`、`delivery-walkthrough` 等技能承担。
+
+### 3.2 标准流程
 
 ```
-[PM] 任务拆解 + 复杂度评估 → [PM] 快速执行 → [PM] 自检 + 交付
+Intake → Discovery → Planning → Execution → Verification → Closeout → Release(按需)
 ```
-- 跳过 CI 独立调研阶段
-- QA 合并为"自检清单"由执行角色完成
-- 仅需 CP-1（确认任务）和 CP-5（验收）
 
-### 3.3 并行阶段前置条件
+### 3.3 快速通道（micro）
 
-FE/BE 并行开始前，PM 必须先冻结 `types/` 接口契约，双方基于已冻结契约各自实现，不得在并行期间修改共享类型定义。
+```
+Intake → Execution → Verification → Short Closeout
+```
+- 不强制 CI 独立调研
+- 不强制 OpenSpec / PRD / Walkthrough
+- 必须执行最小有意义验证
+- 只保留必要人工确认点
 
-### 3.4 失败回退协议
+### 3.4 并行阶段前置条件
+
+FE/BE 并行开始前，PM 必须执行 `contract-handoff`，冻结 API、共享类型、字段、枚举、错误码、权限点和 Mock/fixture 约定。双方基于已冻结契约各自实现，不得在并行期间私自修改共享定义。
+
+### 3.5 失败回退协议
 
 - **QA 不通过** → 打回对应 FE/BE 修复 → 修复完成后重新提交 QA，不跳过 QA 阶段
 - **CI 调研发现范围超出预期** → 交回 PM 重新拆解任务，不自行缩减范围
@@ -173,7 +191,7 @@ FE/BE 并行开始前，PM 必须先冻结 `types/` 接口契约，双方基于�
 ### 4.2 共享文件仲裁流程
 
 1. 需要修改方向 PM 提出申请，说明修改原因和影响范围
-2. PM 评估后在当前响应中给出仲裁结论
+2. PM 使用 `shared-domain-arbiter` 评估后给出仲裁结论
 3. 仲裁结论必须记录在当次会话状态快照中
 
 ### 4.3 删除/重构前置要求
@@ -231,6 +249,12 @@ FE/BE 并行开始前，PM 必须先冻结 `types/` 接口契约，双方基于�
 - [ ] 存在对共享文件的未仲裁修改
 - [ ] Git Commit Message 不符合规范
 
+### 7.1 UI 设计与验证技能路由
+
+- UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归相关改动，应使用 `design-taste-frontend` 与 `ui-ux-pro-max` 参与方案和实现判断。
+- 若 `design-taste-frontend` 明确判定场景不适用（如密集后台、数据表或多步骤产品 UI），仍需记录该判断，并按项目设计系统与 `ui-ux-pro-max` 执行。
+- 需要端到端验证功能、真实点击输入、登录、桌面 App、用户本机状态、真实浏览器插件或账号态时，优先使用 `@电脑`（`plugin://computer-use@openai-bundled` / Computer Use）；不可用时说明原因，再用 Playwright、Browser 或 Chrome 替代。
+
 ---
 
 ## 8. Git Flow 与发版分支约束
@@ -268,13 +292,13 @@ FE/BE 并行开始前，PM 必须先冻结 `types/` 接口契约，双方基于�
 - 构建、测试、冒烟、人工验收和已知未测项。
 - 回滚方案、不可逆数据变更和前向修复策略。
 
-全量发版、多项目联动发版、SQL/脚本发版应使用 `release-train-handoff` 技能；分支创建、合并、tag、push 和回灌应使用 `git-flow-operator` 技能。
+发版、运维、运营、QA、回滚或上线观察交接应使用 `release-handoff` 技能；单变更使用 `mode=single`，多项目、多服务、SQL/脚本或全量发版使用 `mode=train`。分支创建、合并、tag、push 和回灌应使用 `git-flow-operator` 技能。
 
 ---
 
 ## 9. 会话状态快照（跨对话恢复机制）
 
-**每次响应结束时**，AI 必须输出当前会话状态快照：
+standard / critical 任务、跨会话任务、存在冻结契约或待决策项时，AI 必须输出当前会话状态快照。consulting / micro 任务可保持轻量，除非用户要求接力或任务存在未完成状态：
 
 ```
 ---
@@ -313,7 +337,7 @@ FE/BE 并行开始前，PM 必须先冻结 `types/` 接口契约，双方基于�
 [🟢低] #4 编写测试         → 负责人: QA | 状态: 未开始 | 依赖: #2, #3
 
 复杂度评估: 范围4 × 深度3 × 路径2 = 24分 → 🔴 复杂任务
-建议流程: 严格流程（所有检查点 + 多角色并行）
+建议流程: critical（完整门禁 + 多角色并行 + 证据归档）
 等待: ✅ CP-1 用户确认任务清单
 ```
 
@@ -373,7 +397,7 @@ interface IAuthToken {
 |------------|------|------|------|------|
 | 改个颜色/文案 | 1-2 | 1 | ×1 | 🟢 快速通道 |
 | 新增独立页面/组件 | 2 | 2 | ×1 | 🟡 标准流程 |
-| 修改 API/Store 接口 | 4 | 5 | ×1 | 🔴 严格流程 |
+| 修改 API/Store 接口 | 4 | 5 | ×1 | 🔴 critical |
 | 支付/登录相关任何改动 | ≥2 | ≥1 | ×2 | 🟡 至少标准流程 |
 | 删除现有代码 | - | 5 | - | 🔴 必须 CP-4 确认 |
 

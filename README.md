@@ -21,25 +21,29 @@
 - **`ai-prd-editor.rules.md` (Production Version - 存量重构梳理)**：AI-PRD 深度重构编辑器规范。这套规则重点处理无文档的老项目问题，限制 AI 的自我发挥（强制将反推信息评定可信度 S1~S4级别），强约束跨模型间的结构一致性（强制双层 Changelog 以防结构漂移），让庞大甚至腐化的系统重新长出“记忆”。
 
 ### 3. ⚡ Skills (可复用执行能力模块)
-封装各角色在具体执行场景下的标准化操作方法论与输出模板，共 15 个 Skill：
+封装各角色在具体执行场景下的标准化操作方法论与输出模板。1.0.0 起采用 **single adaptive workflow + risk_floor**：`tic-workflow-orchestrator` 只做路由，具体执行由 canonical Skill 承担，旧入口通过 alias / subflow 保持兼容。
 
 | Skill 文件 | 服务角色 | 核心能力 |
 |-----------|---------|--------|
+| `tic-workflow-orchestrator.md` | PM/Tech Lead | adaptive 工作流总控（风险分级、risk_floor、Skill DAG、检查点、OpenSpec/Superpowers 接合） |
 | `code-investigator.md` | CI | 5 阶段代码调研方法论（目录扫描→技术栈→模块拆解→规则抽取→风险标记） |
-| `api-contract-freezer.md` | PM | 接口契约冻结流程（定义模板→冻结声明→变更管理→版本控制） |
+| `contract-handoff.md` | PM/FE/BE | 契约冻结 + 前后端交接（冻结声明、字段、错误码、Mock、自测、联调） |
 | `changelog-writer.md` | DS | 双层 Changelog 编写规范（全局总纲 + 版本详情，严格对齐 PRD Editor §11） |
-| `prd-review-checklist.md` | QA | PRD 四维质量审查（完整性→无歧义→边界→可执行性，含 30+ 检查项） |
-| `session-snapshot-manager.md` | PM | 会话快照生成与恢复标准化（6 强制字段 + 恢复检查清单 + 异常处理） |
-| `candidate-rule-extractor.md` | CI/BE | 候选业务规则抽取（前后端扫描矩阵 + YAML 输出格式 + 生命周期管理） |
 | `task-decomposer.md` | PM | 任务拆解方法论（三维拆解 + 依赖链标注 + 质量自检） |
-| `conflict-arbiter.md` | PM | 共享文件仲裁流程（申请→四维评估→结论→记录，含 Hotfix 处理） |
-| `fe-be-handoff.md` | FE/BE | 前后端交接标准化（FE/BE 交接清单模板 + Mock 方案 + 集成验证清单） |
+| `shared-domain-arbiter.md` | PM/Tech Lead | 共享文件域仲裁（router/types/constants/global config 等） |
 | `project-governance-bootstrap.md` | PM/DS | 项目首次接入公司范式时，生成 AGENTS、AI 规则说明、ai-harness、OpenSpec 基础治理文件，并声明 Superpowers 协作边界 |
 | `delivery-walkthrough.md` | PM/Tech Lead/QA/DS | 完成实现后的交付走查 artifact（变更摘要、证据、截图/录屏、Review 指引、风险和后续动作） |
-| `release-ops-handoff.md` | PM/Release Manager/DS | 单个功能或单个跨项目变更的运维发版、运营使用、QA 验收和反馈闭环交付卡 |
+| `release-handoff.md` | PM/Release Manager/DS | 发版交接统一入口，`mode=single` 单变更，`mode=train` 多项目/SQL/脚本发版总控 |
 | `git-flow-operator.md` | PM/Release Manager | Git Flow 分支创建、release/hotfix 合并、tag、push 与回灌门禁 |
-| `release-train-handoff.md` | PM/Release Manager/DS | 全量/多项目发版总控包、服务卡、数据库/脚本 manifest、冒烟、回滚与证据归档 |
 | `post-dev-prd-sync.md` | DS/PM | 开发完成后基于证据生成 PRD 更新草稿、候选规则和待确认项 |
+
+兼容入口：
+- `api-contract-freezer.md`、`fe-be-handoff.md` → `contract-handoff.md`
+- `conflict-arbiter.md` → `shared-domain-arbiter.md`
+- `release-ops-handoff.md`、`release-train-handoff.md` → `release-handoff.md`
+- `candidate-rule-extractor.md` 是 `code-investigator` 的规则抽取子流程
+- `prd-review-checklist.md` 是验收 checklist
+- `session-snapshot-manager.md` 是总控和全局规则使用的快照模板
 
 ### 4. 🧭 Design (落地范式与工具接入)
 提供公司级研发范式、OpenSpec、Superpowers、Figma MCP 等跨项目落地指南：
@@ -59,18 +63,19 @@
 - **`tools/validate-pack.sh`**：校验规则包文件、版本、Skill 结构和轻量化约束。
 - **`docs/automation.md`**：记录从 Codex_Project 吸收的有益机制，以及明确剔除的冗余部分。
 
-自动化默认原则是 **SDD + TDD**：standard / critical 任务先明确行为规格，再从验收标准推导测试或验证；OpenSpec 可作为规格承载层，但不强制咨询和 micro 任务进入重流程。
+自动化默认原则是 **adaptive workflow + SDD + TDD**：consulting / micro 保持轻量；standard / critical 任务先明确行为规格，再从验收标准推导测试或验证；OpenSpec 可作为规格承载层，但不强制咨询和 micro 任务进入重流程。强管控项目通过 `risk_floor=standard|critical` 锁定最低档位，不维护第二套 strict 流程。
 
 ## 🔄 核心工作流理念
 
 本中枢要求任意系统开发迭代不仅生成代码，更强制遵循工程纪律上的阶段卡点推进：
 
-1. **[PM] 任务拆解设计**：将自然语言提炼为任务清单清单及可被执行验证的验收标准 (Acceptance Criteria)。
-2. **[CI] 代码基现状调研**：不带任何主观推测地盘点老代码现状并生成现状交接报告。
-3. **[PM] API契约仲裁**：依据 CI 报告集中进行架构和契约决断。
-4. **[FE/BE] 并行执行隔离**：依照已冻结的实体契约工作，不可违规操作共享配置文件，修改皆需上游审批。
-5. **[QA] 测试准入验收**：核心流用例执行与边缘退回重测。
-6. **[DS] 开发纪要归档**：演进纪实向主文档和流水 CHANGELOG 输出沉淀。
+1. **[Orchestrator] 风险路由**：识别 consulting / micro / standard / critical，并应用 `risk_floor`。
+2. **[PM] 任务拆解设计**：将自然语言提炼为任务清单及可被执行验证的验收标准。
+3. **[CI] 代码基现状调研**：不带主观推测地盘点老代码现状并生成现状交接报告。
+4. **[PM/FE/BE] 契约与交接**：通过 `contract-handoff` 冻结契约和 FE/BE 交接清单。
+5. **[FE/BE] 并行执行隔离**：依照已冻结契约工作，修改共享域需 `shared-domain-arbiter`。
+6. **[QA] 测试准入验收**：核心流用例执行与边缘退回重测。
+7. **[DS/Release] 交付归档**：Walkthrough、PRD sync、Changelog、Release handoff 按风险和影响触发。
 
 **📍 用户挂载点控制（Human-in-the-loop）**：在这套设计中，人类用户作为唯一的 **Product Owner**。所有不可逆的高危操作（如：信息冲突仲裁、系统大篇幅逻辑覆写、旧业务删除）皆埋设被动拦截锁，强制配置检查点 (**CP-1~CP-5**) ，必须获取用户确认后 AI 才可向下一环流转。
 

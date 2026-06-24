@@ -1,3 +1,22 @@
+---
+schema: tic_skill.v1
+id: project-governance-bootstrap
+status: canonical
+phase: bootstrap
+role: PM / DS / Tech Lead
+risk_min: consulting
+inputs:
+  - project_root
+  - rules_source
+outputs:
+  - agents_entrypoint
+  - ai_rules_usage
+  - project_adapter
+  - openspec_workspace
+requires: []
+delegates_to: []
+---
+
 # Project Governance Bootstrap（项目治理接入技能）
 
 ## 技能用途
@@ -333,7 +352,7 @@ Gemini CLI：gemini extensions install https://github.com/obra/superpowers
 - 小修小改可以直接处理。
 - 新需求、中大型变更、跨端变更、接口变化必须先 `/opsx:propose`。
 - 有 OpenSpec change 时，Superpowers 执行计划和 review 需引用 change id。
-- 涉及前后端协作时，先按 `Skills/api-contract-freezer.md` 冻结契约。
+- 涉及前后端协作时，先按 `Skills/contract-handoff.md` 冻结契约并生成 FE/BE 交接清单。
 - 稳定事实写入 `openspec/specs/` 和 `ai-harness/memory/`。
 - 长期 PRD、API 契约、外部服务说明写入 `docs/`。
 

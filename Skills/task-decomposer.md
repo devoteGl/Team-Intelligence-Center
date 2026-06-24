@@ -1,3 +1,21 @@
+---
+schema: tic_skill.v1
+id: task-decomposer
+status: canonical
+phase: planning
+role: PM
+risk_min: standard
+inputs:
+  - user_task
+  - investigation_report
+outputs:
+  - task_list
+  - acceptance_criteria
+requires: []
+delegates_to:
+  - prd-review-checklist
+---
+
 # Task Decomposer（任务拆解技能）
 
 ## 技能用途

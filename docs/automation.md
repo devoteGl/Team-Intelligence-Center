@@ -10,7 +10,8 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - `--dry-run` 安装预览。
 - 用轻量 lock 文件辅助诊断。
 - 自动生成项目适配说明，包含技术栈、依赖、Node 版本、包管理器、项目关系和常见命令线索。
-- 按风险分级处理任务。
+- single adaptive workflow：按风险分级处理任务，并通过 `risk_floor` 锁定强管控项目的最低档位。
+- 机器可读 `tic_skill.v1` contract，用于校验 Skill phase、风险档、canonical / alias / subflow 生命周期。
 - standard / critical 任务默认执行 SDD + TDD。
 - OpenSpec 作为可选规格承载层，用于已启用 OpenSpec 或需要长期行为追踪的变更。
 - UI 相关变更优先核对真实界面，可使用 Playwright、浏览器截图、Computer Use 或 Chrome。
@@ -33,6 +34,7 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - 不接管分支生命周期，也不默认执行 Git 变更。
 - 不自动把 `Skills/` 差量复制到业务项目本地 skills 或开发者全局 skills。
 - 不把完整项目规则写入 Codex 全局 `AGENTS.md`。
+- 不提交 `.omx/`、`.superpowers/` 等本地运行态目录作为长期规格事实源。
 
 ## 安装产物
 
@@ -100,11 +102,57 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 
 - consulting 和 micro 任务保持直接。
 - standard 和 critical 任务必须执行 SDD + TDD。
+- 项目可通过 `risk_floor=standard|critical` 禁止任务降级到过轻流程。
 - 业务项目已有 `openspec/` 时，把 SDD 写入或关联 OpenSpec change。
 - 没有 OpenSpec 时，使用 `docs/sdd/` 或项目认可的规格位置。
 - 测试或明确验证项应从 SDD 的验收标准推导出来，再进入实现。
 
 因此，OpenSpec 是规格承载层，不是每个任务都必须启动的重流程。
+
+## Adaptive Workflow Orchestrator
+
+1.0.0 起推荐以 `Skills/tic-workflow-orchestrator.md` 作为 TIC 工作流入口。
+
+它只负责：
+
+- 识别 consulting / micro / standard / critical。
+- 套用项目 `risk_floor`。
+- 输出 phase、Skill DAG、检查点、产物和跳过项说明。
+- 指明 OpenSpec / Superpowers 接合点。
+
+它不负责：
+
+- 复制子 Skill 模板正文。
+- 替代 Superpowers planning / TDD / debugging / review。
+- 替代 OpenSpec 成为规格事实源。
+- 接管 Git branch、tag、push、merge。
+
+推荐 canonical 技能：
+
+```text
+tic-workflow-orchestrator
+task-decomposer
+code-investigator
+contract-handoff
+shared-domain-arbiter
+delivery-walkthrough
+release-handoff
+post-dev-prd-sync
+changelog-writer
+git-flow-operator
+project-governance-bootstrap
+```
+
+旧入口保留兼容：
+
+```text
+api-contract-freezer + fe-be-handoff -> contract-handoff
+conflict-arbiter -> shared-domain-arbiter
+release-ops-handoff + release-train-handoff -> release-handoff
+candidate-rule-extractor -> code-investigator 子流程
+prd-review-checklist -> 验收 checklist
+session-snapshot-manager -> 总控/全局规则快照模板
+```
 
 ## 开发后 PRD 同步
 
@@ -122,14 +170,15 @@ Walkthrough 是完成态交付 artifact，用来让 PM、Reviewer、QA、运维�
 - standard / critical 实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明，或用户要求 walkthrough，应执行 `Skills/delivery-walkthrough.md`。
 - 证据来源包括需求来源、OpenSpec / SDD、git diff、改动文件、测试/构建、接口契约、截图、录屏、日志和人工确认。
 - 输出重点是交付摘要、用户可见变化、技术走查、变更文件与影响面、验证证据、Review 指引、未测项、风险和后续动作。
-- Walkthrough 不替代发版 runbook。需要部署、运营使用、回滚和上线观察时，继续执行 `Skills/release-ops-handoff.md` 或 `Skills/release-train-handoff.md`。
+- Walkthrough 不替代发版 runbook。需要部署、运营使用、回滚和上线观察时，继续执行 `Skills/release-handoff.md`；单变更使用 `mode=single`，多项目、多服务、SQL/脚本使用 `mode=train`。
 
 ## UI 变更验证
 
 UI 相关任务的验证重点是真实界面，而不是只看代码。
 
+- UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归相关改动，应使用 `design-taste-frontend` 与 `ui-ux-pro-max` 参与方案和实现判断；若 `design-taste-frontend` 明确判定场景不适用，应记录原因并按项目设计系统继续。
 - 本地应用可运行时，优先使用 Playwright、浏览器截图、Computer Use 或 Chrome 打开页面并核对。
-- 涉及登录、桌面 App、用户本机状态、浏览器插件或真实账号态时，可以使用 Computer Use / Chrome。
+- 涉及端到端验证功能、真实点击输入、登录、桌面 App、用户本机状态、浏览器插件或真实账号态时，优先使用 `@电脑`（`plugin://computer-use@openai-bundled` / Computer Use）；不可用时说明原因，再用 Playwright、Browser 或 Chrome 替代。
 - 默认核对页面是否可打开、核心流程是否可操作、样式是否错位、桌面/移动端是否异常、控制台是否有关键错误。
 - micro 级纯文案或无行为样式微调，可做最小截图、局部检查或说明级验证。
 - 无法运行或自动核对界面时，最终报告必须说明原因、替代验证和剩余 UI 风险。
@@ -234,6 +283,7 @@ powershell -ExecutionPolicy Bypass -File tools\install-codex-global.ps1 -Yes
 - 项目 `AGENTS.md` 和 `.tic-rules.lock` 优先。
 - 没有项目 TIC 接入时，不强制项目走 SDD / PRD / OpenSpec。
 - 用户显式调用 `tic-*` skill 时，才用默认规则源作为兜底。
+- 新 wrapper 优先提供 `tic-workflow-orchestrator`、`tic-contract-handoff`、`tic-shared-domain-arbiter`、`tic-release-handoff`；旧 wrapper 保留兼容并可回退到旧 Skill 文件。
 
 ## 研发如何拉取规则
 

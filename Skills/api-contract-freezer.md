@@ -1,3 +1,22 @@
+---
+schema: tic_skill.v1
+id: api-contract-freezer
+status: alias
+canonical: contract-handoff
+phase: planning
+role: PM
+risk_min: standard
+inputs:
+  - ci_report
+  - task_list
+outputs:
+  - frozen_contract
+requires:
+  - task-decomposer
+delegates_to:
+  - contract-handoff
+---
+
 # API Contract Freezer（接口契约冻结技能）
 
 ## 技能用途

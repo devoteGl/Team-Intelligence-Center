@@ -1,3 +1,21 @@
+---
+schema: tic_skill.v1
+id: prd-review-checklist
+status: checklist
+canonical: task-decomposer
+phase: verification
+role: QA
+risk_min: standard
+inputs:
+  - prd_or_spec
+  - acceptance_criteria
+outputs:
+  - prd_review_findings
+requires:
+  - task-decomposer
+delegates_to: []
+---
+
 # PRD Review Checklist（PRD 质量审查技能）
 
 ## 技能用途

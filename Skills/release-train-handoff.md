@@ -1,3 +1,22 @@
+---
+schema: tic_skill.v1
+id: release-train-handoff
+status: alias
+canonical: release-handoff
+phase: release
+role: PM / Tech Lead / Release Manager / DS
+risk_min: critical
+inputs:
+  - delivery_evidence
+  - release_train_scope
+outputs:
+  - release_train_handoff
+requires:
+  - delivery-walkthrough
+delegates_to:
+  - release-handoff
+---
+
 # Release Train Handoff（发版批次交付包技能）
 
 ## 技能用途
@@ -30,7 +49,7 @@
 
 不要用本技能替代：
 
-- 单个业务功能的运营交付卡：使用 `release-ops-handoff` 或等价项目技能生成 `changes/*.md`。
+- 单个业务功能的运营交付卡：使用 `release-handoff(mode=single)` 或等价项目技能生成 `changes/*.md`。
 - 分支创建、merge、tag、push、回灌：使用 `git-flow-operator`。
 - OpenSpec 需求提案和实现任务：使用 OpenSpec 流程。
 

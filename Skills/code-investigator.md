@@ -1,3 +1,22 @@
+---
+schema: tic_skill.v1
+id: code-investigator
+status: canonical
+phase: discovery
+role: CI
+risk_min: standard
+inputs:
+  - task_scope
+  - project_context
+outputs:
+  - investigation_report
+  - candidate_rules
+  - risk_signals
+requires: []
+delegates_to:
+  - candidate-rule-extractor
+---
+
 # Code Investigator（代码调研技能）
 
 ## 技能用途

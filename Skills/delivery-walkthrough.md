@@ -1,3 +1,20 @@
+---
+schema: tic_skill.v1
+id: delivery-walkthrough
+status: canonical
+phase: closeout
+role: PM / Tech Lead / QA / DS
+risk_min: standard
+inputs:
+  - implementation_diff
+  - verification_evidence
+  - user_scope
+outputs:
+  - delivery_walkthrough
+requires: []
+delegates_to: []
+---
+
 # Delivery Walkthrough（交付走查技能）
 
 ## 技能用途
@@ -37,8 +54,8 @@ Walkthrough 是“完成态交付走查”，不是开工前计划，也不是�
 | 开工前拆任务、排依赖 | `task-decomposer` |
 | 实现前形成详细技术执行计划 | OpenSpec tasks / Superpowers planning / 项目计划机制 |
 | 完成后让人快速理解和验收本次交付 | `delivery-walkthrough` |
-| 发版、部署、运营使用、回滚和上线观察 | `release-ops-handoff` |
-| 多服务、多项目、SQL/脚本总控发版 | `release-train-handoff` |
+| 发版、部署、运营使用、回滚和上线观察 | `release-handoff(mode=single)` |
+| 多服务、多项目、SQL/脚本总控发版 | `release-handoff(mode=train)` |
 | 开发后同步 PRD、候选规则和待确认项 | `post-dev-prd-sync` |
 | 版本历史归档 | `changelog-writer` |
 
@@ -48,7 +65,7 @@ Walkthrough 是“完成态交付走查”，不是开工前计划，也不是�
 任务 / OpenSpec / SDD
   -> 实现与验证
   -> delivery-walkthrough
-  -> release-ops-handoff（需要上线交接时）
+  -> release-handoff（需要上线交接时）
   -> post-dev-prd-sync / changelog-writer（需要文档沉淀时）
 ```
 
@@ -93,7 +110,7 @@ Walkthrough 是“完成态交付走查”，不是开工前计划，也不是�
 6. 整理验证证据：自动化、手动、UI/浏览器、未执行验证分别列清。
 7. 给出 review 指引：建议从哪些文件、路径、接口、状态流转或风险点开始看。
 8. 标注剩余风险和待确认项：区分阻塞、重要、可后续。
-9. 如需上线交接，明确指向 `release-ops-handoff` 或补充发版入口。
+9. 如需上线交接，明确指向 `release-handoff(mode=single|train)` 或补充发版入口。
 
 ---
 
@@ -200,4 +217,4 @@ Walkthrough 是“完成态交付走查”，不是开工前计划，也不是�
 - Walkthrough 是否已生成文件，以及文件路径。
 - 使用了哪些证据来源。
 - 哪些验证已经完成，哪些仍未覆盖。
-- 后续是否还需要 `release-ops-handoff`、`post-dev-prd-sync` 或 `changelog-writer`。
+- 后续是否还需要 `release-handoff`、`post-dev-prd-sync` 或 `changelog-writer`。

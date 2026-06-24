@@ -1,3 +1,19 @@
+---
+schema: tic_skill.v1
+id: changelog-writer
+status: canonical
+phase: closeout
+role: DS
+risk_min: standard
+inputs:
+  - delivery_evidence
+  - version_scope
+outputs:
+  - changelog
+requires: []
+delegates_to: []
+---
+
 # Changelog Writer（双层变更日志编写技能）
 
 ## 技能用途

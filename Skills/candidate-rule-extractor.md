@@ -1,3 +1,21 @@
+---
+schema: tic_skill.v1
+id: candidate-rule-extractor
+status: subflow
+canonical: code-investigator
+phase: discovery
+role: CI / BE
+risk_min: standard
+inputs:
+  - source_files
+  - module_scope
+outputs:
+  - candidate_rules
+requires:
+  - code-investigator
+delegates_to: []
+---
+
 # Candidate Rule Extractor（候选业务规则抽取技能）
 
 ## 技能用途

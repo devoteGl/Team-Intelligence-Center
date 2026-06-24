@@ -1,13 +1,18 @@
 {
   "package": "Team_Intelligence_Center",
-  "version": "0.1.0",
-  "package_id": "Team_Intelligence_Center_0.1.0",
+  "version": "1.0.0",
+  "package_id": "Team_Intelligence_Center_1.0.0",
   "type": "lightweight_rules_automation",
   "purpose": "Install a small, tool-neutral AI collaboration rules entrypoint into business projects.",
   "automation_policy": {
     "default_install_mode": "minimal",
     "tool_neutral": true,
-    "principle": "SDD + TDD",
+    "principle": "adaptive workflow + SDD + TDD",
+    "workflow_orchestrator": "Skills/tic-workflow-orchestrator.md",
+    "workflow_model": "single_adaptive_with_risk_floor",
+    "risk_floor": "none",
+    "strict_mode_alias": "risk_floor=critical",
+    "skill_contract_schema": "tic_skill.v1",
     "openspec_integration": "optional_spec_carrier_for_standard_and_critical_changes",
     "auto_project_profile": true,
     "codegraph_optional": true,
@@ -17,18 +22,48 @@
     "skills_reference_only_by_default": true,
     "codex_global_loader": "optional_global_loader_and_tic_skill_wrappers_only",
     "ui_visual_verification": "use_playwright_browser_screenshots_computer_use_or_chrome_when_ui_risk_requires_real_interface_checks",
+    "ui_design_skill_routing": "use_design_taste_frontend_and_ui_ux_pro_max_for_ui_changes_and_computer_use_for_end_to_end_real_interface_validation",
     "risk_routing": [
       "consulting",
       "micro",
       "standard",
       "critical"
     ],
+    "closeout_phase": "route delivery walkthrough, PRD sync, changelog, and release handoff by risk and user-visible impact",
     "no_vendor_assets": true,
     "no_git_hooks_by_default": true,
     "git_workflow_advice_only": true,
     "no_forced_full_flow_for_readonly_or_micro_tasks": true,
     "sdd_tdd_required_for_standard_and_critical": true,
     "no_codex_only_constraint": true
+  },
+  "skill_lifecycle": {
+    "canonical": [
+      "tic-workflow-orchestrator",
+      "task-decomposer",
+      "code-investigator",
+      "contract-handoff",
+      "shared-domain-arbiter",
+      "delivery-walkthrough",
+      "release-handoff",
+      "post-dev-prd-sync",
+      "changelog-writer",
+      "git-flow-operator",
+      "project-governance-bootstrap"
+    ],
+    "aliases": {
+      "api-contract-freezer": "contract-handoff",
+      "fe-be-handoff": "contract-handoff",
+      "conflict-arbiter": "shared-domain-arbiter",
+      "release-ops-handoff": "release-handoff",
+      "release-train-handoff": "release-handoff"
+    },
+    "subflows": {
+      "candidate-rule-extractor": "code-investigator",
+      "prd-review-checklist": "task-decomposer",
+      "session-snapshot-manager": "tic-workflow-orchestrator"
+    },
+    "compatibility_policy": "aliases and subflows remain available for at least one major adoption cycle before physical removal"
   },
   "source_assets": {
     "global_rules": [
@@ -86,7 +121,9 @@
     "evidence-based post-development PRD sync draft",
     "one-command install wrapper",
     "optional Codex global loader and tic-* skill wrappers",
-    "risk based task routing"
+    "risk based task routing",
+    "single adaptive workflow with risk_floor",
+    "machine-readable TIC skill contracts"
   ],
   "intentionally_excluded": [
     "Codex-only workflow binding",

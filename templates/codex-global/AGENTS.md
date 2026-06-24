@@ -26,9 +26,11 @@
 - 不自动复制 TIC `Skills/` 到项目本地 skills 或全局 skills。
 - 不覆盖研发个人全局规则；本 Loader 只提供发现项目 TIC 的方法。
 - 不默认执行 Git 分支、提交、推送、合并或 tag。涉及 Git Flow 操作时，应读取项目 TIC 的 `Skills/git-flow-operator.md`，先给出候选分支、版本/tag 证据和待执行命令，等待用户确认。
+- 默认使用 single adaptive workflow：`tic-workflow-orchestrator` 判断 consulting / micro / standard / critical，并应用项目 `risk_floor`。`strict` 仅作为 `risk_floor=critical` 的兼容说法。
 - consulting / micro 任务保持轻量，不强制 PRD / SDD / OpenSpec。
 - standard / critical 任务在项目已接入 TIC 时执行 SDD + TDD。
-- UI 相关变更应优先用 Playwright、浏览器截图、Computer Use 或 Chrome 核对真实界面。
+- API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前优先读取 `Skills/contract-handoff.md`；共享文件域修改优先读取 `Skills/shared-domain-arbiter.md`。
+- UI 相关变更应使用 `design-taste-frontend` 与 `ui-ux-pro-max`；需要端到端真实操作验证时，优先使用 `@电脑`（`plugin://computer-use@openai-bundled` / Computer Use），并可结合 Playwright、浏览器截图或 Chrome 核对真实界面。
 - standard / critical 任务实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明或用户要求 walkthrough，应生成交付 Walkthrough。
 - standard / critical 任务完成后，如影响用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程，应生成 PRD 更新草稿和待确认项。
 
@@ -39,6 +41,7 @@
 ```text
 <rules_dir>/Skills/post-dev-prd-sync.md
 <rules_dir>/Skills/code-investigator.md
+<rules_dir>/Skills/tic-workflow-orchestrator.md
 ```
 
 如果规则源或目标 Skill 不存在，应说明缺失原因，并继续采用最接近的轻量处理方式。

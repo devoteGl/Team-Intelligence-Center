@@ -18,6 +18,7 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 ## 工作原则
 
 - 简单任务保持简单。咨询、只读查询、代码解释、微小非行为改动，不走完整 PRD/SDD/Plan 流程。
+- 默认使用 single adaptive workflow：先由 `tic-workflow-orchestrator` 判断 consulting / micro / standard / critical，再套用项目 `risk_floor`。强管控项目使用 `risk_floor=standard|critical`，不维护第二套 strict 流程。
 - standard / critical 任务执行 SDD + TDD。先明确行为规格，再基于验收标准编写或更新测试，最后实现。
 - 项目已有 `openspec/`，或任务涉及跨模块、API、数据模型、长期产品行为时，优先用 OpenSpec 承载规格；没有 OpenSpec 时，把 SDD 放到 `docs/sdd/` 或项目约定位置。
 - 按风险升级，而不是按关键词升级。支付、认证、数据迁移、生产配置、安全、删除、跨模块契约需要更严格处理。
@@ -26,7 +27,10 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - 不编造业务事实。反推到的行为要标注可信度，候选规则确认前不得写成正式需求。
 - 不覆盖人的工作。保留项目已有规则和用户未提交改动。
 - 涉及创建分支、release/hotfix、merge、tag、push 或回灌时，必须执行 `Skills/git-flow-operator.md`。`feature/*` 使用业务名或 issue + 业务名；`release/*`、`hotfix/*` 和 tag 使用 `数字.数字.三位数字`，tag 不加 `v` 前缀。创建前必须输出候选分支和待执行命令，等待用户确认。
+- 涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `Skills/contract-handoff.md`；旧 `api-contract-freezer.md` 与 `fe-be-handoff.md` 仅作为兼容入口。
+- 涉及共享文件域修改时，优先使用 `Skills/shared-domain-arbiter.md`；旧 `conflict-arbiter.md` 仅作为兼容入口。
 - standard / critical 任务实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明或用户要求 walkthrough，应生成交付 Walkthrough。
+- 需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `Skills/release-handoff.md`；单变更使用 `mode=single`，多项目、多服务、SQL/脚本使用 `mode=train`。
 - standard / critical 任务完成后，如涉及用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程变化，应自动生成 PRD 更新草稿和待确认项。
 
 ## 任务分级
@@ -37,6 +41,8 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 | micro | 文案、注释、文档、微小非行为改动 | 做窄改动，跑最小有意义验证。 |
 | standard | 新功能、行为变化、API/UI 契约、跨模块改动 | 写或更新 SDD，从验收标准推导 TDD 测试，实现后验证。 |
 | critical | 支付、认证、安全、生产配置、破坏性迁移、数据丢失风险 | 需要明确人工确认、SDD + TDD 证据、回滚思路、更强验证和清晰发版说明。 |
+
+`risk_floor` 可由 `.tic-rules.lock`、`ai-harness/project-adapter.md` 或用户明确要求提供。AI 不得把任务降级到 floor 以下。
 
 ## SDD + TDD 原则
 
@@ -50,8 +56,9 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 
 涉及 UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归的变更时，AI 应优先核对真实界面。
 
+- UI 相关改动必须使用 `design-taste-frontend` 与 `ui-ux-pro-max`。若 `design-taste-frontend` 明确判定场景不适用（如密集后台、数据表或多步骤产品 UI），仍需记录该判断，并按项目设计系统与 `ui-ux-pro-max` 执行。
 - 本地应用可运行时，优先使用 Playwright、浏览器截图、Computer Use 或 Chrome 打开页面并核对。
-- 需要登录、桌面 App、用户本机状态、真实浏览器插件或账号态时，可以使用 Computer Use / Chrome 辅助验证。
+- 需要端到端验证功能、真实点击输入、登录、桌面 App、用户本机状态、真实浏览器插件或账号态时，优先使用 `@电脑`（`plugin://computer-use@openai-bundled` / Computer Use）辅助验证；不可用时说明原因，再用 Playwright、Browser 或 Chrome 替代。
 - 核对重点：页面是否可打开、核心流程是否可操作、样式是否错位、桌面/移动端是否异常、控制台是否有关键错误。
 - micro 级纯文案或无行为样式微调，可只做最小截图、局部检查或说明级验证。
 - 无法运行或自动核对界面时，最终报告必须说明原因、替代验证内容和剩余 UI 风险。
@@ -77,13 +84,14 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - 老项目补文档：`Prompts/ai-prd-editor.rules.md`
 - 开发后 PRD 同步：`Skills/post-dev-prd-sync.md`
 - 交付走查：`Skills/delivery-walkthrough.md`
+- 工作流总控：`Skills/tic-workflow-orchestrator.md`
 - OpenSpec / Superpowers 接合：`Design/development-paradigm-openspec-guide.md`
 - 代码调研：`Skills/code-investigator.md`
 - 任务拆解：`Skills/task-decomposer.md`
 - Git Flow 分支操作：`Skills/git-flow-operator.md`
-- API 契约冻结：`Skills/api-contract-freezer.md`
-- 候选规则抽取：`Skills/candidate-rule-extractor.md`
-- 发版交接：`Skills/release-ops-handoff.md` 和 `Skills/release-train-handoff.md`
+- 契约冻结与交接：`Skills/contract-handoff.md`
+- 共享域仲裁：`Skills/shared-domain-arbiter.md`
+- 发版交接：`Skills/release-handoff.md`
 
 默认从规则来源目录读取这些 Skills，不自动复制到项目本地 skills 或全局 skills。只有团队明确维护镜像时，才做显式同步。
 

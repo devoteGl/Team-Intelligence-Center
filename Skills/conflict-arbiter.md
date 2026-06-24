@@ -1,3 +1,21 @@
+---
+schema: tic_skill.v1
+id: conflict-arbiter
+status: alias
+canonical: shared-domain-arbiter
+phase: execution
+role: PM
+risk_min: standard
+inputs:
+  - shared_file_change_request
+outputs:
+  - arbitration_decision
+requires:
+  - task-decomposer
+delegates_to:
+  - shared-domain-arbiter
+---
+
 # Conflict Arbiter（共享文件冲突仲裁技能）
 
 ## 技能用途

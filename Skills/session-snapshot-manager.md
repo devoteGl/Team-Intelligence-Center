@@ -1,3 +1,20 @@
+---
+schema: tic_skill.v1
+id: session-snapshot-manager
+status: rule-template
+canonical: tic-workflow-orchestrator
+phase: closeout
+role: PM
+risk_min: standard
+inputs:
+  - workflow_state
+outputs:
+  - session_snapshot
+requires: []
+delegates_to:
+  - tic-workflow-orchestrator
+---
+
 # Session Snapshot Manager（会话状态快照管理技能）
 
 ## 技能用途

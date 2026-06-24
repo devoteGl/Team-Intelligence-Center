@@ -52,21 +52,18 @@ Team-Intelligence-Center/
 │   └── ai-prd-editor.rules.md          #    存量项目 PRD 编辑器
 │
 ├── Skills/                             # ⚡ 能力层（可复用执行模块）
+│   ├── tic-workflow-orchestrator.md    #    [PM/Tech Lead] adaptive 工作流总控
 │   ├── code-investigator.md            #    [CI] 代码调研方法论
-│   ├── api-contract-freezer.md         #    [PM] 接口契约冻结流程
+│   ├── contract-handoff.md             #    [PM/FE/BE] 契约冻结与前后端交接
 │   ├── changelog-writer.md             #    [DS] 双层 Changelog 编写
-│   ├── prd-review-checklist.md         #    [QA] PRD 质量审查框架
-│   ├── session-snapshot-manager.md      #    [PM] 会话快照管理
-│   ├── candidate-rule-extractor.md     #    [CI/BE] 候选规则抽取
 │   ├── task-decomposer.md              #    [PM] 任务拆解方法
-│   ├── conflict-arbiter.md             #    [PM] 共享文件仲裁
-│   ├── fe-be-handoff.md                #    [FE/BE] 前后端交接
+│   ├── shared-domain-arbiter.md        #    [PM/Tech Lead] 共享文件域仲裁
 │   ├── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
 │   ├── delivery-walkthrough.md         #    [PM/Tech Lead/QA/DS] 交付走查
-│   ├── release-ops-handoff.md          #    [PM/Release/DS] 单变更发版交接
+│   ├── release-handoff.md              #    [PM/Release/DS] 单变更/发版批次交接
 │   ├── git-flow-operator.md            #    [PM/Release] Git Flow 分支、合并、tag、回灌
-│   ├── release-train-handoff.md        #    [PM/Release/DS] 全量多项目发版总控
-│   └── post-dev-prd-sync.md            #    [DS/PM] 开发后 PRD 同步
+│   ├── post-dev-prd-sync.md            #    [DS/PM] 开发后 PRD 同步
+│   └── legacy aliases / subflows        #    api-contract-freezer、fe-be-handoff 等兼容入口
 │
 ├── templates/                          # 🧩 业务项目最小接入模板
 │   ├── AGENTS.md
@@ -327,21 +324,25 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 
 | Skill | 服务角色 | 触发场景 | 优先级 |
 |-------|---------|---------|--------|
+| `tic-workflow-orchestrator` | PM/Tech Lead | 需要按 TIC 研发范式路由任务、判断风险、选择 phase 和 Skill | P0 |
 | `code-investigator` | CI | PM 分配调研任务后 | P0 |
-| `api-contract-freezer` | PM | FE/BE 并行前需冻结契约 | P0 |
+| `contract-handoff` | PM/FE/BE | API、共享类型、字段、错误码、权限点、FE/BE 并行前 | P0 |
 | `changelog-writer` | DS | QA 验收通过后归档 | P0 |
-| `prd-review-checklist` | QA | PRD 产出后审查 | P1 |
-| `session-snapshot-manager` | PM | 每次响应结束/新对话恢复 | P1 |
-| `candidate-rule-extractor` | CI/BE | 调研阶段抽取业务规则 | P1 |
 | `task-decomposer` | PM | 新任务开始时拆解 | P2 |
-| `conflict-arbiter` | PM | FE/BE 需修改共享文件时 | P2 |
-| `fe-be-handoff` | FE/BE | 契约冻结后开始实现前 | P2 |
+| `shared-domain-arbiter` | PM/Tech Lead | 需要修改 router/types/constants/全局配置等共享域 | P2 |
 | `project-governance-bootstrap` | PM/DS | 项目首次接入公司范式 | P0 |
 | `delivery-walkthrough` | PM/Tech Lead/QA/DS | 实现完成后生成交付走查、Review 指引和验证证据 | P0 |
-| `release-ops-handoff` | PM/Release/DS | 单个功能或单个跨项目变更发版交接 | P0 |
+| `release-handoff` | PM/Release/DS | 单变更或发版批次的运维、运营、QA、回滚、上线观察交接 | P0 |
 | `git-flow-operator` | PM/Release | 新需求开分支、release/hotfix 合并、tag、回灌 | P0 |
-| `release-train-handoff` | PM/Release/DS | 全量发版、多项目联动、SQL/脚本发版交付包 | P0 |
 | `post-dev-prd-sync` | DS/PM | 开发完成后基于证据同步 PRD 更新草稿 | P0 |
+
+兼容入口：
+- `api-contract-freezer`、`fe-be-handoff` 仍保留，但新任务优先使用 `contract-handoff`。
+- `conflict-arbiter` 仍保留，但新任务优先使用 `shared-domain-arbiter`。
+- `release-ops-handoff`、`release-train-handoff` 仍保留，但新任务优先使用 `release-handoff(mode=single|train)`。
+- `candidate-rule-extractor` 是 `code-investigator` 的 Phase 4 子流程。
+- `prd-review-checklist` 是验收 checklist。
+- `session-snapshot-manager` 是总控和全局规则使用的快照模板。
 
 ### 6.2 如何在对话中引用 Skill
 
@@ -352,7 +353,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 "请按照 code-investigator 技能，对 src/order/ 模块执行标准调研"
 
 # 方式二：场景触发
-"我需要冻结接口契约"  → AI 自动匹配 api-contract-freezer
+"我需要冻结接口契约并交接前后端"  → AI 自动匹配 contract-handoff
 
 # 方式三：角色触发
 "切换到 CI 角色开始调研" → AI 自动匹配 code-investigator
@@ -364,95 +365,102 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 ### 6.3 Skill 在工作流中的位置
 
 ```text
+[Orchestrator] 风险分级 + 路由
+  └─ Skill: tic-workflow-orchestrator
+       │
 [PM] 任务拆解
   └─ Skill: task-decomposer
        │
 [CI] 现状调研
   ├─ Skill: code-investigator
-  └─ Skill: candidate-rule-extractor
+  └─ Subflow: candidate-rule-extractor
        │
-[PM] 方案制定 + 契约冻结
-  ├─ Skill: api-contract-freezer
-  └─ Skill: conflict-arbiter（并行期间按需触发）
+[PM/FE/BE] 方案制定 + 契约冻结 + 交接
+  └─ Skill: contract-handoff
        │
 [FE/BE] 并行实现
-  └─ Skill: fe-be-handoff
+  └─ Skill: shared-domain-arbiter（共享域修改时）
        │
 [QA] 测试验收
-  └─ Skill: prd-review-checklist
+  └─ Checklist: prd-review-checklist
        │
 [PM/Tech Lead] 交付走查
   └─ Skill: delivery-walkthrough
+       │
+[Release] 发版交接（按需）
+  └─ Skill: release-handoff(mode=single|train)
        │
 [DS] 文档归档
   ├─ Skill: post-dev-prd-sync
   └─ Skill: changelog-writer
        │
-[PM] 会话结束
-  └─ Skill: session-snapshot-manager
+[PM] 会话接力（按需）
+  └─ Template: session-snapshot-manager
 ```
 
 ---
 
 ## 7. 工作流全景图
 
-### 7.1 标准需求开发流程
+### 7.1 Adaptive Workflow 全景图
 
 ```text
 用户提出需求
     │
     ▼
-⚙️ [PM] 任务拆解
-    │  ├─ 输出任务清单（task-decomposer）
-    │  └─ 等待 CP-1：用户审批任务清单 ←── 🛑 必须等待
+⚙️ [Orchestrator] 风险分级与路由
+    │  ├─ classified_tier: consulting / micro / standard / critical
+    │  ├─ 应用 risk_floor: none / standard / critical
+    │  ├─ 输出 TIC Workflow Plan
+    │  └─ 选择 phase / Skill DAG
     │
-    ▼
-⚙️ [CI] 现状调研
-    │  ├─ 执行标准调研（code-investigator）
-    │  ├─ 抽取候选规则（candidate-rule-extractor）
-    │  └─ 输出调研报告
+    ├─ consulting / micro
+    │    └─ 轻流程：直接回答或窄改动 + 最小验证
     │
-    ▼
-🔄 [CI → PM] 交接
-    │
-    ▼
-⚙️ [PM] 方案制定
-    │  ├─ 基于调研报告制定方案
-    │  ├─ 等待 CP-2：用户确认方向 ←── 🛑 必须等待
-    │  ├─ 冻结接口契约（api-contract-freezer）
-    │  └─ 等待 CP-3：用户确认契约冻结 ←── 🛑 必须等待
-    │
-    ▼
-⚙️ [FE] + ⚙️ [BE] 并行实现
-    │  ├─ 各自产出交接清单（fe-be-handoff）
-    │  ├─ 基于契约独立开发
-    │  ├─ 需修改共享文件时 → 仲裁（conflict-arbiter）
-    │  └─ 各自完成自测
-    │
-    ▼
-⚙️ [QA] 测试验收
-    │  ├─ PRD 质量审查（prd-review-checklist）
-    │  ├─ 功能验收测试
-    │  ├─ 通过 → 流转到 DS
-    │  └─ 不通过 → 打回 FE/BE（CP-5 确认回退范围）
-    │
-    ▼
-⚙️ [PM/Tech Lead] 交付走查
-    │  ├─ 基于 diff、测试、截图/录屏和人工验收生成 Walkthrough（delivery-walkthrough）
-    │  ├─ 给出 Review 指引、未测项和剩余风险
-    │  └─ 需要上线时流转到发版交接
-    │
-    ▼
-⚙️ [DS] 文档归档
-    │  ├─ 基于证据生成 PRD 更新草稿（post-dev-prd-sync）
-    │  ├─ 编写双层 Changelog（changelog-writer）
-    │  └─ 同步规则到 main-prd.md
-    │
-    ▼
-📌 输出 SESSION SNAPSHOT（session-snapshot-manager）
+    └─ standard / critical
+         ├─ Planning：任务拆解、验收标准、SDD / OpenSpec（task-decomposer）
+         ├─ Discovery：现状调研、候选规则、风险（code-investigator）
+         ├─ Contract：契约冻结 + FE/BE 交接（contract-handoff，按需）
+         ├─ Execution：实现；共享域修改走 shared-domain-arbiter
+         ├─ Verification：测试、构建、lint、联调、UI/接口证据
+         ├─ Closeout：delivery-walkthrough / post-dev-prd-sync / changelog
+         └─ Release：release-handoff(mode=single|train，按需)
 ```
 
-### 7.2 检查点速查表
+### 7.2 关键节点说明
+
+```text
+micro:
+  Intake -> Execution -> Verification -> Short Closeout
+
+standard:
+  Intake -> Planning -> Discovery(按需) -> Contract(按需)
+  -> Execution -> Verification -> Closeout(按需)
+
+critical:
+  Intake -> Discovery -> OpenSpec/SDD -> Contract-Handoff
+  -> Execution with TDD -> Verification with evidence
+  -> Delivery Walkthrough -> Release Handoff(按需)
+  -> PRD Sync -> Changelog
+```
+
+### 7.3 旧线性流程映射
+
+```text
+旧: api-contract-freezer + fe-be-handoff
+新: contract-handoff
+
+旧: conflict-arbiter
+新: shared-domain-arbiter
+
+旧: release-ops-handoff / release-train-handoff
+新: release-handoff(mode=single|train)
+
+旧: session-snapshot-manager 每次响应强制
+新: standard/critical、跨会话、存在冻结契约或待决策项时输出
+```
+
+### 7.4 检查点速查表
 
 | 检查点 | 触发时机 | 不暂停的后果 |
 |--------|---------|------------|
@@ -616,7 +624,7 @@ AI 工具中使用 `/opsx:*`：
 3. 执行 `openspec init --tools codex,cursor,qoder,opencode --force`。
 4. 如团队已启用 Superpowers，让 `project-governance-bootstrap` 自动检测并尽力安装；不能自动安装的工具按报告人工处理，并把 `.superpowers/` 加入 `.gitignore`。
 5. 新建 `ai-harness/`，记录真实项目现状、决策和 runbook。
-6. 用 `ai-prd-editor`、`code-investigator`、`candidate-rule-extractor` 反向梳理存量业务。
+6. 用 `ai-prd-editor` 和 `code-investigator`（含 candidate rules 子流程）反向梳理存量业务。
 7. 从新需求开始走 `/opsx:propose -> Superpowers 执行 -> /opsx:archive`。
 
 也可以直接让 AI 执行 `project-governance-bootstrap`，自动生成上述基础入口，再由人补齐 TODO。

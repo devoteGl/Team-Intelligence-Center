@@ -1,3 +1,21 @@
+---
+schema: tic_skill.v1
+id: post-dev-prd-sync
+status: canonical
+phase: closeout
+role: DS / PM
+risk_min: standard
+inputs:
+  - delivery_evidence
+  - behavior_changes
+  - candidate_rules
+outputs:
+  - prd_update_draft
+  - pending_confirmations
+requires: []
+delegates_to: []
+---
+
 # Post Dev PRD Sync（开发后 PRD 同步技能）
 
 ## 技能用途

@@ -1,3 +1,20 @@
+---
+schema: tic_skill.v1
+id: git-flow-operator
+status: canonical
+phase: execution
+role: PM / Tech Lead / Release Manager
+risk_min: standard
+inputs:
+  - git_operation_request
+  - branch_context
+outputs:
+  - git_flow_confirmation_card
+  - git_operation_evidence
+requires: []
+delegates_to: []
+---
+
 # Git Flow Operator（分支与发版合并操作技能）
 
 ## 技能用途

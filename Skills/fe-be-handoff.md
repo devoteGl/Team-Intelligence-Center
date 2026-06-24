@@ -1,3 +1,23 @@
+---
+schema: tic_skill.v1
+id: fe-be-handoff
+status: alias
+canonical: contract-handoff
+phase: planning
+role: FE / BE
+risk_min: standard
+inputs:
+  - frozen_contract
+  - prd_or_openspec_change
+outputs:
+  - fe_handoff
+  - be_handoff
+requires:
+  - contract-handoff
+delegates_to:
+  - contract-handoff
+---
+
 # FE-BE Handoff（前后端交接技能）
 
 ## 技能用途

@@ -2,7 +2,7 @@
 
 本文面向公司内所有业务项目，说明如何把 `Team-Intelligence-Center`、OpenSpec、Superpowers、项目模板和不同 AI 编码工具组合成统一研发范式。
 
-结论先行：这套组合可以作为公司的统一开发范式。关键不是绑定某一个 AI 工具，而是让所有工具共同遵守同一套规则、规格、契约、验证和归档链路。OpenSpec 是规格事实源，Superpowers 是可选但推荐的 Agent 执行方法层。
+结论先行：这套组合可以作为公司的统一开发范式。关键不是绑定某一个 AI 工具，而是让所有工具共同遵守同一套规则、规格、契约、验证和归档链路。OpenSpec 是规格事实源，Superpowers 是可选但推荐的 Agent 执行方法层，TIC Workflow Orchestrator 是风险路由和治理入口。
 
 ## 1. 范式分层
 
@@ -13,6 +13,7 @@
 | 公司规则层 | `ai-rules/Team-Intelligence-Center/` | 通用角色、流程、Prompts、Skills、提交纪律 |
 | OpenSpec 规格层 | `openspec/` | 活跃变更、稳定规格、设计说明、任务清单、归档 |
 | Superpowers 执行层 | AI 工具插件 / `.superpowers/` | 头脑风暴、计划、TDD、调试、代码审查、子代理执行 |
+| TIC 工作流路由层 | `Skills/tic-workflow-orchestrator.md` | 风险分级、risk_floor、Skill DAG、检查点、证据和归档触发 |
 | 项目适配层 | `ai-harness/` | 当前项目的角色映射、记忆、决策、runbook |
 | 长期文档层 | `docs/` | PRD、API 契约、外部服务、设计资料、验收记录 |
 
@@ -48,6 +49,7 @@ your-project/
 
 ```text
 需求 / 问题
+  -> TIC orchestrator   # 风险分级、risk_floor、phase/Skill DAG
   -> /opsx:explore       # 可选：先探索和澄清
   -> /opsx:propose       # 生成 OpenSpec 变更工件
   -> docs/PRD            # 必要时沉淀 PRD
@@ -66,7 +68,7 @@ your-project/
 | --- | --- | --- |
 | 需求拆解 | PM / Tech Lead | proposal、PRD、验收标准 |
 | 现状调研 | CI | 影响范围、候选规则、风险清单 |
-| 契约冻结 | PM + FE + BE | API 契约、字段、错误码、Mock fixture |
+| 契约冻结 | PM + FE + BE | `contract-handoff`、API 契约、字段、错误码、Mock fixture |
 | 并行实现 | FE / BE + Superpowers | 各端代码、交接清单、自测记录、TDD / review 证据 |
 | 验收 | QA | 测试结果、回归风险、缺陷记录 |
 | 归档 | DS | specs、Changelog、memory、archive |
@@ -227,12 +229,12 @@ OpenSpec 负责“规格和变更工件”，`Team-Intelligence-Center` 负责�
 | OpenSpec 工件 | 应接合的公司规则 |
 | --- | --- |
 | `proposal.md` | `Prompts/ai-prd-generator.rules.md`、`Skills/task-decomposer.md` |
-| `specs/` | `Prompts/ai-prd-editor.rules.md`、`Skills/candidate-rule-extractor.md` |
-| `design.md` | `Skills/code-investigator.md`、`Skills/conflict-arbiter.md` |
-| `tasks.md` | `Skills/task-decomposer.md`、`Skills/fe-be-handoff.md` |
-| API 契约 | `Skills/api-contract-freezer.md` |
+| `specs/` | `Prompts/ai-prd-editor.rules.md`、`Skills/code-investigator.md` 的 candidate rules 子流程 |
+| `design.md` | `Skills/code-investigator.md`、`Skills/shared-domain-arbiter.md` |
+| `tasks.md` | `Skills/task-decomposer.md`、`Skills/contract-handoff.md` |
+| API 契约 | `Skills/contract-handoff.md` |
 | 验收 | `Skills/prd-review-checklist.md` |
-| 归档 | `Skills/changelog-writer.md`、`Skills/session-snapshot-manager.md` |
+| 归档 | `Skills/changelog-writer.md`、`Skills/tic-workflow-orchestrator.md` 的 snapshot 输出规则 |
 | 项目接入 | `Skills/project-governance-bootstrap.md` |
 
 落地项目不应复制或改写公司规则原文。推荐作为 submodule 接入：
@@ -260,6 +262,7 @@ Superpowers 负责“Agent 如何把任务做扎实”，不负责替代 OpenSpe
 ### 9.1 协作原则
 
 - OpenSpec 是规格事实源；Superpowers 是执行方法层。
+- TIC Orchestrator 是路由层：它决定风险档、检查点和需要哪些产物，不替代 OpenSpec 或 Superpowers。
 - 有 OpenSpec change 时，Superpowers 的计划、调试、review 产物必须引用该 change id。
 - `docs/superpowers/specs/` 不能成为第二套主规格；稳定行为应同步回 `openspec/specs/`。
 - `.superpowers/` 默认视为本地运行态目录，除非团队明确要求，不提交。
@@ -283,6 +286,7 @@ Superpowers 负责“Agent 如何把任务做扎实”，不负责替代 OpenSpe
 - 把 Superpowers 的临时头脑风暴材料当成已确认需求。
 - 绕过 OpenSpec 直接修改跨端契约。
 - 把同一需求同时维护在 OpenSpec specs 和另一套 Superpowers spec 中。
+- 把 `tic-workflow-orchestrator` 写成复制所有子 Skill 模板的巨型 Skill。
 
 ## 10. 老项目接入模式
 
@@ -351,7 +355,7 @@ legacy-project/
 
    - 使用 `Prompts/ai-prd-editor.rules.md` 整理存量 PRD 和业务事实。
    - 使用 `Skills/code-investigator.md` 调研目录、技术栈、模块边界。
-   - 使用 `Skills/candidate-rule-extractor.md` 从代码中抽取候选业务规则。
+   - 使用 `Skills/code-investigator.md` 的 candidate rules 子流程从代码中抽取候选业务规则。
 
 7. 建立第一版主规格：
 

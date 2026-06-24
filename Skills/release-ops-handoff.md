@@ -1,3 +1,22 @@
+---
+schema: tic_skill.v1
+id: release-ops-handoff
+status: alias
+canonical: release-handoff
+phase: release
+role: PM / Tech Lead / Release Manager / DS
+risk_min: standard
+inputs:
+  - delivery_evidence
+  - single_change_scope
+outputs:
+  - single_release_handoff
+requires:
+  - delivery-walkthrough
+delegates_to:
+  - release-handoff
+---
+
 # Release Ops Handoff（单变更发版交接技能）
 
 ## 技能用途
@@ -13,7 +32,7 @@
 
 本技能用于把“研发完成”转化为“生产可发布、运营会使用、风险可监控、问题能闭环”。
 
-如果目标是全量发版、多项目/多服务发版、包含 SQL/脚本/数据库变更、需要统一 release 目录、服务卡、数据库 manifest、脚本 manifest、总冒烟、总回滚和证据归档，应优先使用 `release-train-handoff`。
+如果目标是全量发版、多项目/多服务发版、包含 SQL/脚本/数据库变更、需要统一 release 目录、服务卡、数据库 manifest、脚本 manifest、总冒烟、总回滚和证据归档，应优先使用 `release-handoff(mode=train)`。
 
 ---
 
@@ -78,6 +97,6 @@
 
 ## 5. 与其他技能关系
 
-- `release-train-handoff`：全量/多项目发版总控，本技能可为其中 `changes/*.md` 提供单变更交付卡。
+- `release-handoff(mode=train)`：全量/多项目发版总控，本技能可为其中 `changes/*.md` 提供单变更交付卡。
 - `git-flow-operator`：分支、merge、tag、push、回灌操作门禁。
 - `ops-deploy-strategy` 或项目等价技能：纯基础设施部署策略。

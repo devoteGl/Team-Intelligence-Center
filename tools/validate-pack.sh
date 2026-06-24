@@ -70,10 +70,10 @@ else
 fi
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
-if [ "$skill_count" -ge 15 ]; then
-  pass "skill count >= 15 ($skill_count)"
+if [ "$skill_count" -ge 19 ]; then
+  pass "skill count >= 19 ($skill_count)"
 else
-  fail "expected at least 15 skill files, found $skill_count"
+  fail "expected at least 19 skill files, found $skill_count"
 fi
 
 while IFS= read -r skill_file; do
@@ -82,7 +82,28 @@ while IFS= read -r skill_file; do
   else
     fail "skill missing title or 技能用途 section: $skill_file"
   fi
+
+  if sed -n '1,40p' "$skill_file" | grep -q '^schema: tic_skill.v1$' &&
+     sed -n '1,40p' "$skill_file" | grep -q '^id: ' &&
+     sed -n '1,40p' "$skill_file" | grep -q '^status: ' &&
+     sed -n '1,40p' "$skill_file" | grep -q '^phase: ' &&
+     sed -n '1,40p' "$skill_file" | grep -q '^risk_min: '; then
+    pass "skill contract: $skill_file"
+  else
+    fail "skill missing tic_skill.v1 contract fields: $skill_file"
+  fi
 done < <(find Skills -maxdepth 1 -type f -name '*.md' | sort)
+
+orchestrator_lines="$(wc -l < Skills/tic-workflow-orchestrator.md | tr -d '[:space:]')"
+if [ "$orchestrator_lines" -le 220 ] &&
+   grep -q '只做路由' Skills/tic-workflow-orchestrator.md &&
+   grep -q 'risk_floor' Skills/tic-workflow-orchestrator.md &&
+   grep -q 'Capability First, Governance on Risk' Skills/tic-workflow-orchestrator.md &&
+   ! grep -q '任务拆解自检清单' Skills/tic-workflow-orchestrator.md; then
+  pass "workflow orchestrator is lightweight router ($orchestrator_lines lines)"
+else
+  fail "workflow orchestrator must stay lightweight, route-only, and risk_floor aware"
+fi
 
 for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/install-codex-global.sh tools/install.sh tools/update.sh tools/validate-pack.sh; do
   if [ -x "$script" ]; then
@@ -116,6 +137,12 @@ else
   fail "Git Flow branch naming must use business feature branches, versioned release/hotfix, no-v tags, and confirmation gates"
 fi
 
+if grep -q 'adaptive workflow' templates/AGENTS.md && grep -q 'workflow_orchestrator' manifest.json && grep -q 'single_adaptive_with_risk_floor' manifest.json && grep -q 'risk_floor' manifest.json && grep -q 'tic-workflow-orchestrator.md' README.md && grep -q 'tic-workflow-orchestrator.md' USAGE.md; then
+  pass "adaptive workflow orchestrator and risk_floor are declared"
+else
+  fail "missing adaptive workflow orchestrator or risk_floor declaration"
+fi
+
 if grep -q 'SDD + TDD' templates/AGENTS.md && grep -q 'openspec_integration' manifest.json && grep -q 'sdd_tdd_required_for_standard_and_critical' manifest.json; then
   pass "SDD + TDD principle and OpenSpec integration are declared"
 else
@@ -140,10 +167,22 @@ else
   fail "bootstrap must generate project adapter profile"
 fi
 
-if grep -q 'skills_reference_only_by_default' manifest.json && grep -q 'Skills 默认从解析出的规则源读取' templates/docs/ai-rules-usage.md && grep -q '不自动差量复制到项目本地 skills 或开发者全局 skills' templates/docs/ai-rules-usage.md; then
+if grep -q 'skills_reference_only_by_default' manifest.json && grep -q 'skill_contract_schema' manifest.json && grep -q 'skill_lifecycle' manifest.json && grep -q 'Skills 默认从解析出的规则源读取' templates/docs/ai-rules-usage.md && grep -q '不自动差量复制到项目本地 skills 或开发者全局 skills' templates/docs/ai-rules-usage.md; then
   pass "skills distribution is reference-only by default"
 else
-  fail "skills distribution policy must avoid automatic local/global copying"
+  fail "skills distribution policy must avoid automatic local/global copying and declare lifecycle contracts"
+fi
+
+if grep -q '"api-contract-freezer"[[:space:]]*:[[:space:]]*"contract-handoff"' manifest.json &&
+   grep -q '"fe-be-handoff"[[:space:]]*:[[:space:]]*"contract-handoff"' manifest.json &&
+   grep -q '"conflict-arbiter"[[:space:]]*:[[:space:]]*"shared-domain-arbiter"' manifest.json &&
+   grep -q '"release-ops-handoff"[[:space:]]*:[[:space:]]*"release-handoff"' manifest.json &&
+   grep -q '"release-train-handoff"[[:space:]]*:[[:space:]]*"release-handoff"' manifest.json &&
+   grep -q 'candidate-rule-extractor' manifest.json &&
+   grep -q 'session-snapshot-manager' manifest.json; then
+  pass "skill lifecycle aliases and subflows are declared"
+else
+  fail "missing skill lifecycle aliases or subflows"
 fi
 
 if grep -q 'one_command_user_update' manifest.json && grep -q 'pull --ff-only' tools/update.sh && grep -q 'install-codex-global.sh' tools/update.sh && grep -q 'install.sh' tools/update.sh && grep -q 'tools/update.sh' USAGE.md && grep -q '一条命令' docs/automation.md; then
@@ -153,7 +192,7 @@ else
 fi
 
 codex_wrapper_count="$(find templates/codex-global/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"
-if [ "$codex_wrapper_count" -ge 8 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
+if [ "$codex_wrapper_count" -ge 12 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'tic-workflow-orchestrator' templates/codex-global/skills/tic-workflow-orchestrator/SKILL.md && grep -q 'tic-contract-handoff' templates/codex-global/skills/tic-contract-handoff/SKILL.md && grep -q 'tic-release-handoff' templates/codex-global/skills/tic-release-handoff/SKILL.md && grep -q 'tic-shared-domain-arbiter' templates/codex-global/skills/tic-shared-domain-arbiter/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
   pass "Codex global loader is wrapper-only and project-first"
 else
   fail "Codex global loader must stay wrapper-only and project-first"
@@ -165,10 +204,10 @@ else
   fail "CodeGraph helper must remain optional and non-core"
 fi
 
-if grep -q 'ui_visual_verification' manifest.json && grep -q 'UI 验证规则' templates/AGENTS.md && grep -q 'Playwright' templates/AGENTS.md && grep -q 'Computer Use' templates/AGENTS.md && grep -q 'UI 变更验证' docs/automation.md; then
+if grep -q 'ui_visual_verification' manifest.json && grep -q 'ui_design_skill_routing' manifest.json && grep -q 'UI 验证规则' templates/AGENTS.md && grep -q 'design-taste-frontend' templates/AGENTS.md && grep -q 'ui-ux-pro-max' templates/AGENTS.md && grep -q '@电脑' templates/AGENTS.md && grep -q 'plugin://computer-use@openai-bundled' templates/AGENTS.md && grep -q 'design-taste-frontend' templates/codex-global/AGENTS.md && grep -q 'ui-ux-pro-max' templates/docs/ai-rules-usage.md && grep -q 'UI 变更验证' docs/automation.md && grep -q '@电脑' docs/automation.md; then
   pass "UI changes require real interface verification when risk warrants"
 else
-  fail "missing UI visual verification policy"
+  fail "missing UI design skill routing or real interface verification policy"
 fi
 
 if grep -q '轻量规则' templates/AGENTS.md && grep -q 'AI 规则使用说明' templates/docs/ai-rules-usage.md && grep -q '项目适配说明' templates/ai-harness/project-adapter.md && grep -q '轻量自动化设计' docs/automation.md; then
@@ -181,6 +220,12 @@ if grep -q 'no_git_hooks_by_default' manifest.json && grep -q 'no_forced_full_fl
   pass "manifest records lightweight exclusions"
 else
   fail "manifest does not record lightweight exclusions"
+fi
+
+if grep -q '^.omx/$' .gitignore && grep -q '^.superpowers/$' .gitignore; then
+  pass "agent runtime directories are gitignored"
+else
+  fail ".omx and .superpowers runtime directories must remain local-only"
 fi
 
 if [ "$failures" -eq 0 ]; then
