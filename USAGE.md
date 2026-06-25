@@ -133,11 +133,11 @@ Team-Intelligence-Center/
 ```bash
 # 方式一：作为 Git Submodule 引入
 cd your-project
-git submodule add https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
+git submodule add https://github.com/YOUR_ORG/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
 git submodule update --init --recursive
 
 # 方式二：开发者本机单独 clone
-git clone https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Center.git
+git clone https://github.com/YOUR_ORG/Team-Intelligence-Center.git
 ```
 
 长期业务项目推荐 submodule，因为可以锁定规则版本、随业务仓库 review 和升级；个人本地试用或维护规则库时直接 `git clone` 即可。然后在 AI 编辑器的配置中引用 `.ai-rules/Team-Intelligence-Center/` 或本机 clone 目录下的规则文件。
@@ -330,7 +330,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 | `changelog-writer` | DS | QA 验收通过后归档 | P0 |
 | `task-decomposer` | PM | 新任务开始时拆解 | P2 |
 | `shared-domain-arbiter` | PM/Tech Lead | 需要修改 router/types/constants/全局配置等共享域 | P2 |
-| `project-governance-bootstrap` | PM/DS | 项目首次接入公司范式 | P0 |
+| `project-governance-bootstrap` | PM/DS | 项目首次接入组织范式 | P0 |
 | `delivery-walkthrough` | PM/Tech Lead/QA/DS | 实现完成后生成交付走查、Review 指引和验证证据 | P0 |
 | `release-handoff` | PM/Release/DS | 单变更或发版批次的运维、运营、QA、回滚、上线观察交接 | P0 |
 | `git-flow-operator` | PM/Release | 新需求开分支、release/hotfix 合并、tag、回灌 | P0 |
@@ -476,7 +476,7 @@ critical:
 
 ### 8.1 方式一：项目级规则入口（推荐）
 
-通过 `tools/install.sh` / `tools/install.ps1` 在业务项目生成 `AGENTS.md`，让 AI 从项目级入口读取公司规则。
+通过 `tools/install.sh` / `tools/install.ps1` 在业务项目生成 `AGENTS.md`，让 AI 从项目级入口读取组织规则。
 
 **优点**：项目内生效，不冲掉开发者全局配置
 **适用**：团队协作、多人共享规则
@@ -485,7 +485,7 @@ critical:
 
 ```bash
 # 添加为子模块
-git submodule add https://your-repo/Team-Intelligence-Center.git .ai-rules
+git submodule add https://github.com/YOUR_ORG/Team-Intelligence-Center.git .ai-rules
 
 # 更新子模块（获取最新规则）
 git submodule update --remote
@@ -527,13 +527,13 @@ cp -R ai-rules/Team-Intelligence-Center/Skills your-project/.ai-rules/Skills
 
 推荐阅读：
 
-- [Design/development-paradigm-openspec-guide.md](./Design/development-paradigm-openspec-guide.md)：公司研发范式 + OpenSpec / Superpowers 落地指南。
+- [Design/development-paradigm-openspec-guide.md](./Design/development-paradigm-openspec-guide.md)：组织研发范式 + OpenSpec / Superpowers 落地指南。
 
 ### 9.1 推荐项目分层
 
 ```text
 your-project/
-├── ai-rules/Team-Intelligence-Center/ # 公司规则层
+├── ai-rules/Team-Intelligence-Center/ # 组织规则层
 ├── openspec/                          # OpenSpec 规格层
 ├── .superpowers/                       # Superpowers 临时执行状态，可加入 .gitignore
 ├── ai-harness/                        # 项目适配与记忆
@@ -580,7 +580,7 @@ AI 工具中使用 `/opsx:*`：
 
 | 层级 | 工具 / 目录 | 职责 |
 | --- | --- | --- |
-| 公司规则层 | `Team-Intelligence-Center` | 角色、流程、Prompts、Skills、提交纪律 |
+| 组织规则层 | `Team-Intelligence-Center` | 角色、流程、Prompts、Skills、提交纪律 |
 | 规格事实源 | `openspec/` | proposal、specs、design、tasks、archive |
 | 执行方法层 | Superpowers | brainstorming、planning、TDD、debugging、code review、subagent-driven development |
 | 长期文档层 | `docs/` | PRD、API 契约、外部服务、设计资料 |
@@ -615,7 +615,7 @@ AI 工具中使用 `/opsx:*`：
 
 ### 9.6 老项目接入
 
-老项目不要求使用公司推荐的 go-zero、admin-template 或 Unibest 模板，也不要求先迁移技术栈。
+老项目不要求使用组织推荐的 go-zero、admin-template 或 Unibest 模板，也不要求先迁移技术栈。
 
 推荐方式：
 

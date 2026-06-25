@@ -1,8 +1,10 @@
 {
   "package": "Team_Intelligence_Center",
-  "version": "1.0.0",
-  "package_id": "Team_Intelligence_Center_1.0.0",
+  "version": "0.1.0",
+  "package_id": "Team_Intelligence_Center_0.1.0",
   "type": "lightweight_rules_automation",
+  "release_status": "public_preview",
+  "license": "Apache-2.0",
   "purpose": "Install a small, tool-neutral AI collaboration rules entrypoint into business projects.",
   "automation_policy": {
     "default_install_mode": "minimal",

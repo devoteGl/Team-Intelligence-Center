@@ -111,7 +111,7 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 
 ## Adaptive Workflow Orchestrator
 
-1.0.0 起推荐以 `Skills/tic-workflow-orchestrator.md` 作为 TIC 工作流入口。
+当前版本推荐以 `Skills/tic-workflow-orchestrator.md` 作为 TIC 工作流入口。
 
 它只负责：
 
@@ -292,14 +292,14 @@ powershell -ExecutionPolicy Bypass -File tools\install-codex-global.ps1 -Yes
 研发本机维护或试用规则库：
 
 ```bash
-git clone https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Center.git
+git clone https://github.com/YOUR_ORG/Team-Intelligence-Center.git
 bash Team-Intelligence-Center/tools/update.sh --project /path/to/business-project
 ```
 
 业务项目需要锁定规则版本时，推荐使用 submodule：
 
 ```bash
-git submodule add https://ycbl.xadazhihui.cn:18443/NexusAI/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
+git submodule add https://github.com/YOUR_ORG/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
 git submodule update --init --recursive
 ```
 

@@ -1,6 +1,6 @@
 # Figma MCP + Skills 通用使用说明
 
-本文面向公司内所有项目的产品、设计和研发协作者，说明如何使用 Figma MCP 与 Figma skills 完成设计读取、设计稿生成、设计转代码、设计系统规则沉淀、Code Connect 映射等工作。
+本文面向组织内所有项目的产品、设计和研发协作者，说明如何使用 Figma MCP 与 Figma skills 完成设计读取、设计稿生成、设计转代码、设计系统规则沉淀、Code Connect 映射等工作。
 
 本文不绑定某一个业务项目。文中的目录、端类型和组件路径均为通用示例；落到具体项目时，以该项目 README、目录结构和本地规则配置为准。
 
@@ -19,7 +19,7 @@ Figma MCP 负责让 AI 读取或写入 Figma 文件；Figma skills 负责规定 
 
 ## 2. 已安装 Skills
 
-公司 AI 协作环境建议安装以下 Figma skills：
+组织 AI 协作环境建议安装以下 Figma skills：
 
 | Skill                              | 适用场景                                   | 产品/设计怎么理解                  |
 | ---------------------------------- | ------------------------------------------ | ---------------------------------- |
@@ -34,7 +34,7 @@ Figma MCP 负责让 AI 读取或写入 Figma 文件；Figma skills 负责规定 
 
 ### 2.1 安装命令
 
-先安装 `find-skills`，再通过 `find-skills` 安装 Figma 官方 skills。公司内部如果还有补充 skills，也通过 `find-skills` 继续安装。
+先安装 `find-skills`，再通过 `find-skills` 安装 Figma 官方 skills。组织内部如果还有补充 skills，也通过 `find-skills` 继续安装。
 
 #### 2.1.1 配置 Figma MCP
 
@@ -78,12 +78,12 @@ https://github.com/figma/mcp-server-guide
 - figma-generate-library
 ```
 
-#### 2.1.4 使用 find-skills 安装公司内部补充 skills
+#### 2.1.4 使用 find-skills 安装组织内部补充 skills
 
-如果公司内部有项目专用、行业专用或流程补充 skills，在 Codex 对话中输入：
+如果组织内部有项目专用、行业专用或流程补充 skills，在 Codex 对话中输入：
 
 ```text
-请使用 find-skills 查找并安装公司内部的 <skill 名称或关键词> skills。
+请使用 find-skills 查找并安装组织内部的 <skill 名称或关键词> skills。
 ```
 
 #### 2.1.5 重启并验证
@@ -153,7 +153,7 @@ https://www.figma.com/design/<fileKey>/<fileName>?node-id=123-456
 - 技术栈、组件库、路由、状态管理和接口规范。
 - 目标端的启动、检查和构建命令。
 
-如果项目接入了公司规则仓库，应优先使用公司统一规则；如果项目存在本地补充规则，以项目更近层级的规则为准。
+如果项目接入了组织规则仓库，应优先使用组织统一规则；如果项目存在本地补充规则，以项目更近层级的规则为准。
 
 ### 4.4 提问必填信息
 
@@ -376,7 +376,7 @@ Figma：
 推荐提法：
 
 ```text
-请使用 figma-create-design-system-rules，从这个 Figma 设计系统文件生成适合公司项目复用的 AI 前端规则：
+请使用 figma-create-design-system-rules，从这个 Figma 设计系统文件生成适合组织项目复用的 AI 前端规则：
 <Figma 文件链接>
 
 输出请包含：
@@ -387,7 +387,7 @@ Figma：
 - 禁止事项
 ```
 
-如果规则属于公司通用设计系统，应回写到公司规则仓库；如果只适用于单个项目，应放在该项目的本地规则或设计文档目录。
+如果规则属于组织通用设计系统，应回写到组织规则仓库；如果只适用于单个项目，应放在该项目的本地规则或设计文档目录。
 
 ### 5.7 生成或更新 Figma 组件库
 
@@ -440,7 +440,7 @@ Figma：
 ### 6.2 让 AI 从设计生成 PRD
 
 ```text
-请结合公司 PRD Generator 规则，根据这个 Figma 页面生成 PRD 初稿：
+请结合组织 PRD Generator 规则，根据这个 Figma 页面生成 PRD 初稿：
 <Figma 链接>
 
 要求：
@@ -546,7 +546,7 @@ Figma：
 
 ```text
 产品需求想法
-  → AI 按公司 PRD Generator 规则追问
+  → AI 按组织 PRD Generator 规则追问
   → 产出 PRD
   → 设计在 Figma 出页面
   → AI 读取 Figma 补充 PRD/验收标准
@@ -591,7 +591,7 @@ Figma：
 - 修改设计系统变量或 token。
 - 删除、重命名大量节点。
 - 保存 Code Connect 映射。
-- 将设计系统规则回写到公司规则仓库。
+- 将设计系统规则回写到组织规则仓库。
 
 ### 8.3 不建议让 AI 私自决定的事项
 
@@ -657,14 +657,14 @@ Figma：
 
 ### PRD 规则在哪里？
 
-在公司规则仓库中，一般位于：
+在组织规则仓库中，一般位于：
 
 ```text
 Team-Intelligence-Center/Prompts/ai-prd-generator.rules.md
 Team-Intelligence-Center/Prompts/ai-prd-editor.rules.md
 ```
 
-如果具体项目通过 submodule、软链或编辑器规则引入公司规则，以项目 README 中的配置说明为准。
+如果具体项目通过 submodule、软链或编辑器规则引入组织规则，以项目 README 中的配置说明为准。
 
 ### Figma 相关通用规则在哪里？
 
@@ -674,15 +674,15 @@ Team-Intelligence-Center/Prompts/ai-prd-editor.rules.md
 ~/.codex/skills/figma*
 ```
 
-如果团队将 Figma 规则沉淀到公司规则仓库，应以公司规则仓库为长期维护源。
+如果团队将 Figma 规则沉淀到组织规则仓库，应以组织规则仓库为长期维护源。
 
 ## 11. 推荐落点
 
-| 内容         | 公司通用建议          | 项目落地说明                              |
+| 内容         | 组织通用建议          | 项目落地说明                              |
 | ------------ | --------------------- | ----------------------------------------- |
 | PRD 产物     | `docs/PRD/`           | 若项目已有 PRD 目录，以项目约定为准       |
 | 接口契约     | `docs/api-contracts/` | 建议按消费端、服务端、外部服务拆分        |
 | 外部服务文档 | `docs/vendors/`       | 放 SDK、回调、鉴权、额度、联调说明        |
 | 设计协作说明 | `docs/design/`        | 放 Figma 使用手册、设计验收规则、差异记录 |
 | 项目 AI 记忆 | 项目约定目录          | 放稳定事实、决策记录、踩坑记录和 runbook  |
-| 公司通用规则 | 公司规则仓库          | 不建议在每个项目重复复制                  |
+| 组织通用规则 | 组织规则仓库          | 不建议在每个项目重复复制                  |

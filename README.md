@@ -3,11 +3,20 @@
 
 > *消除「PM 觉得说清楚了，开发觉得没说清楚」的永恒矛盾，将散落在代码与人脑中的业务真正沉淀为系统资产。*
 
+> Public preview: 当前公开版以 `0.1.x` 作为预览版本线，优先收集真实团队接入反馈，再进入稳定 `1.0.0` 发布。
+
 ## 📖 项目简介
 
 **Team-Intelligence-Center** 并非一个传统的业务应用程序，而是面向 AI 编程编辑器协作架构（如多角色 AI Agent）和工程团队（PM、前端、后端、QA、文档等）的**核心智能中枢引擎规范库**。
 
 它提供了一整套标准化的协作角色边界、业务流转协议与结构化的 System Prompts。通过在工程项目中引入本项目定义的严格规则，可以有效约束 AI 行为，避免常见的大语言模型输出发散、代码偏好漂移以及跨角色信息失真，确保每一次需求交付与历史重构都严格遵守可追溯的工程底线。
+
+## 📦 开源状态
+
+- **License**：Apache-2.0，见 [LICENSE](./LICENSE)。
+- **定位**：Chinese-first、tool-neutral 的 AI 工程协作规则包。
+- **适用工具**：Codex、Cursor、Qoder、OpenCode、OpenSpec、Superpowers，以及其他能读取项目规则的 AI 编码工具。
+- **发布建议**：首次公开发布建议使用 `v0.1.0` / `public-preview` tag。
 
 ## 🏗️ 核心资产目录说明
 
@@ -21,7 +30,7 @@
 - **`ai-prd-editor.rules.md` (Production Version - 存量重构梳理)**：AI-PRD 深度重构编辑器规范。这套规则重点处理无文档的老项目问题，限制 AI 的自我发挥（强制将反推信息评定可信度 S1~S4级别），强约束跨模型间的结构一致性（强制双层 Changelog 以防结构漂移），让庞大甚至腐化的系统重新长出“记忆”。
 
 ### 3. ⚡ Skills (可复用执行能力模块)
-封装各角色在具体执行场景下的标准化操作方法论与输出模板。1.0.0 起采用 **single adaptive workflow + risk_floor**：`tic-workflow-orchestrator` 只做路由，具体执行由 canonical Skill 承担，旧入口通过 alias / subflow 保持兼容。
+封装各角色在具体执行场景下的标准化操作方法论与输出模板。当前公开预览版采用 **single adaptive workflow + risk_floor**：`tic-workflow-orchestrator` 只做路由，具体执行由 canonical Skill 承担，旧入口通过 alias / subflow 保持兼容。
 
 | Skill 文件 | 服务角色 | 核心能力 |
 |-----------|---------|--------|
@@ -31,7 +40,7 @@
 | `changelog-writer.md` | DS | 双层 Changelog 编写规范（全局总纲 + 版本详情，严格对齐 PRD Editor §11） |
 | `task-decomposer.md` | PM | 任务拆解方法论（三维拆解 + 依赖链标注 + 质量自检） |
 | `shared-domain-arbiter.md` | PM/Tech Lead | 共享文件域仲裁（router/types/constants/global config 等） |
-| `project-governance-bootstrap.md` | PM/DS | 项目首次接入公司范式时，生成 AGENTS、AI 规则说明、ai-harness、OpenSpec 基础治理文件，并声明 Superpowers 协作边界 |
+| `project-governance-bootstrap.md` | PM/DS | 项目首次接入组织范式时，生成 AGENTS、AI 规则说明、ai-harness、OpenSpec 基础治理文件，并声明 Superpowers 协作边界 |
 | `delivery-walkthrough.md` | PM/Tech Lead/QA/DS | 完成实现后的交付走查 artifact（变更摘要、证据、截图/录屏、Review 指引、风险和后续动作） |
 | `release-handoff.md` | PM/Release Manager/DS | 发版交接统一入口，`mode=single` 单变更，`mode=train` 多项目/SQL/脚本发版总控 |
 | `git-flow-operator.md` | PM/Release Manager | Git Flow 分支创建、release/hotfix 合并、tag、push 与回灌门禁 |
@@ -46,8 +55,8 @@
 - `session-snapshot-manager.md` 是总控和全局规则使用的快照模板
 
 ### 4. 🧭 Design (落地范式与工具接入)
-提供公司级研发范式、OpenSpec、Superpowers、Figma MCP 等跨项目落地指南：
-- **`development-paradigm-openspec-guide.md`**：公司研发范式 + OpenSpec / Superpowers 落地指南。说明如何把本规则库、OpenSpec、Superpowers、Codex/Cursor/Qoder/OpenCode 和项目模板组合成统一开发链路。
+提供组织级研发范式、OpenSpec、Superpowers、Figma MCP 等跨项目落地指南：
+- **`development-paradigm-openspec-guide.md`**：组织研发范式 + OpenSpec / Superpowers 落地指南。说明如何把本规则库、OpenSpec、Superpowers、Codex/Cursor/Qoder/OpenCode 和项目模板组合成统一开发链路。
 - **`figma-mcp-skills-guide.md`**：Figma MCP + Skills 通用使用说明。说明设计读取、设计转代码、设计系统规则沉淀和 Code Connect 映射流程。
 
 ### 5. 🛠️ Automation (轻量自动化层)
@@ -90,6 +99,6 @@
 - **日常规则升级**：在业务项目中执行 `bash /path/to/Team-Intelligence-Center/tools/update.sh`，一条命令拉取规则并刷新入口。
 - **Windows 原生接入**：PowerShell 环境执行 `powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1`。
 - **Codex 全局 Loader**：可选执行 `bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh --dry-run` 预览，只安装全局发现入口和 `tic-*` 包装器。
-- **OpenSpec 规格层**：参考 [公司研发范式 + OpenSpec / Superpowers 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路。
+- **OpenSpec 规格层**：参考 [组织研发范式 + OpenSpec / Superpowers 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路。
 - **Superpowers 执行方法层**：在已启用 Superpowers 的 AI 工具中，用 brainstorming、planning、TDD、debugging、code review、subagent-driven development 等能力承接 OpenSpec tasks；OpenSpec 仍是规格事实源。
 - **项目一键接入**：业务项目引入本仓库后，让 AI 执行 [project-governance-bootstrap](./Skills/project-governance-bootstrap.md)，自动补齐 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/` 与 `openspec/` 基础入口，并自动检测/尽力安装 Superpowers；无法静默安装的工具会写入人工待办。

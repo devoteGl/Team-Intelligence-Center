@@ -1,0 +1,43 @@
+name: Feature request
+description: Suggest a workflow, skill, prompt, template, or automation improvement.
+title: "feat: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What workflow pain or adoption gap should this solve?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposal
+      description: Describe the rule, skill, template, or automation change you want.
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Global rules
+        - Prompts
+        - Skills
+        - Templates
+        - Automation scripts
+        - Documentation
+        - Other
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives
+      description: Any lighter approach or existing workaround?
+  - type: checkboxes
+    id: safety
+    attributes:
+      label: Safety checks
+      options:
+        - label: This proposal avoids private URLs, secrets, personal paths, and organization-specific confidential details.
+        - label: This proposal keeps consulting and micro tasks lightweight.

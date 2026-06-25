@@ -36,6 +36,13 @@ require_file VERSION
 require_file manifest.json
 require_file README.md
 require_file USAGE.md
+require_file LICENSE
+require_file CONTRIBUTING.md
+require_file SECURITY.md
+require_file .github/PULL_REQUEST_TEMPLATE.md
+require_file .github/ISSUE_TEMPLATE/bug_report.yml
+require_file .github/ISSUE_TEMPLATE/feature_request.yml
+require_file .github/ISSUE_TEMPLATE/config.yml
 require_file Global-Rules/coding-rules.md
 require_file Prompts/ai-prd-generator.rules.md
 require_file Prompts/ai-prd-editor.rules.md
@@ -68,6 +75,25 @@ if [ -n "$version_file" ] && [ "$version_file" = "$version_manifest" ]; then
 else
   fail "VERSION ($version_file) does not match manifest.json ($version_manifest)"
 fi
+
+if grep -q 'Apache License' LICENSE &&
+   grep -q '"license"[[:space:]]*:[[:space:]]*"Apache-2.0"' manifest.json &&
+   grep -q '"release_status"[[:space:]]*:[[:space:]]*"public_preview"' manifest.json; then
+  pass "open source metadata is declared"
+else
+  fail "missing Apache-2.0 license or public preview metadata"
+fi
+
+private_scan="$(mktemp)"
+grep -R -nE '(ycbl|xadazhihui|NexusAI|https://github.com/<owner>|https://your-repo|/Users/ctrlc|Downloads/dczd)' \
+  README.md USAGE.md docs Design Skills templates Global-Rules Prompts tools manifest.json CONTRIBUTING.md SECURITY.md .github 2>/dev/null |
+  grep -v '^tools/validate-pack.sh:' > "$private_scan" || true
+if [ -s "$private_scan" ]; then
+  fail "private or placeholder source references remain: $(head -5 "$private_scan" | tr '\n' '; ')"
+else
+  pass "no private source references in distributable files"
+fi
+rm -f "$private_scan"
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
 if [ "$skill_count" -ge 19 ]; then

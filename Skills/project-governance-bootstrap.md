@@ -24,7 +24,7 @@ delegates_to: []
 - 服务角色：**PM / DS / Tech Lead**
 - 触发时机：业务项目首次以 submodule 引入 `Team-Intelligence-Center` 后
 - 输出物：项目根目录 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/`、`openspec/` 基础治理文件，以及 Superpowers 协作边界说明
-- 适用场景：新项目接入公司研发范式、老项目补齐 AI 规则入口、不同编辑器统一 OpenSpec / OPSX 使用方式、声明 Superpowers 与 OpenSpec 的协作边界
+- 适用场景：新项目接入组织研发范式、老项目补齐 AI 规则入口、不同编辑器统一 OpenSpec / OPSX 使用方式、声明 Superpowers 与 OpenSpec 的协作边界
 
 > 目标：让开发只关注业务需求和架构内实现，把规则入口、规格层、执行方法层、项目记忆层、文档层的初始化尽量自动化。
 
@@ -39,7 +39,7 @@ delegates_to: []
 **绝对禁止**：
 
 - 覆盖已有 `AGENTS.md`、`docs/`、`ai-harness/`、`openspec/` 中的人写内容。
-- 为了接入公司范式而重构业务代码。
+- 为了接入组织范式而重构业务代码。
 - 把 AI 推测写成稳定规格。
 - 未冻结契约就推动跨端接口实现。
 - 把 `opsx` 当成终端命令；终端入口是 `openspec`。
@@ -50,7 +50,7 @@ delegates_to: []
 
 ## 1. 使用方式
 
-在业务项目根目录中，先以 submodule 引入公司规则：
+在业务项目根目录中，先以 submodule 引入组织规则：
 
 ```bash
 git submodule add <Team-Intelligence-Center-repo-url> ai-rules/Team-Intelligence-Center
@@ -86,7 +86,7 @@ openspec init --tools codex,cursor,qoder,opencode --force
 
 如果当前目录明显不是项目根目录，先切换到正确根目录。
 
-### Step 2：确认公司规则路径
+### Step 2：确认组织规则路径
 
 优先识别以下路径：
 
@@ -146,7 +146,7 @@ docs/design/README.md
 
 - 文件不存在：创建完整文件。
 - 文件已存在：追加或更新 `<!-- TIC:PROJECT-GOVERNANCE:START -->` 到 `<!-- TIC:PROJECT-GOVERNANCE:END -->` 区块。
-- 如果已有同类人工内容但没有 marker：先保留原文，再新增“公司 AI 研发范式”章节。
+- 如果已有同类人工内容但没有 marker：先保留原文，再新增“组织 AI 研发范式”章节。
 - 所有 `TODO` 必须明确标出，不伪造事实。
 
 ### Step 5：初始化 OpenSpec 工具入口
@@ -228,10 +228,10 @@ test -d ".superpowers"
 ````markdown
 # AGENTS.md
 
-本项目使用公司统一 AI 研发范式。
+本项目使用组织统一 AI 研发范式。
 
 <!-- TIC:PROJECT-GOVERNANCE:START -->
-## 公司规则入口
+## 组织规则入口
 
 必须优先阅读：
 
@@ -282,7 +282,7 @@ test -d ".superpowers"
 ````markdown
 # AI Rules Usage
 
-本项目使用公司 `Team-Intelligence-Center` 作为统一 AI 研发范式来源。
+本项目使用组织 `Team-Intelligence-Center` 作为统一 AI 研发范式来源。
 
 <!-- TIC:PROJECT-GOVERNANCE:START -->
 ## 规则来源
@@ -296,7 +296,7 @@ ai-rules/Team-Intelligence-Center/
 核心文件：
 
 - `Global-Rules/coding-rules.md`：提交规范、角色、阶段、检查点、会话快照。
-- `Design/development-paradigm-openspec-guide.md`：公司研发范式 + OpenSpec / Superpowers 落地指南。
+- `Design/development-paradigm-openspec-guide.md`：组织研发范式 + OpenSpec / Superpowers 落地指南。
 - `Prompts/ai-prd-generator.rules.md`：新需求 PRD 生成。
 - `Prompts/ai-prd-editor.rules.md`：老项目 / 存量项目 PRD 梳理。
 - `Skills/`：调研、任务拆解、契约冻结、交接、验收、归档等能力。
@@ -358,9 +358,9 @@ Gemini CLI：gemini extensions install https://github.com/obra/superpowers
 
 ## 本项目不做什么
 
-- 不复制公司规则原文。
+- 不复制组织规则原文。
 - 不维护第二套 PRD 或提交规范。
-- 不因为接入公司范式而迁移技术栈。
+- 不因为接入组织范式而迁移技术栈。
 - 不把 OpenSpec 当普通文档目录乱放材料。
 - 不把 Superpowers 临时材料当成已确认需求或稳定规格。
 <!-- TIC:PROJECT-GOVERNANCE:END -->
@@ -373,7 +373,7 @@ Gemini CLI：gemini extensions install https://github.com/obra/superpowers
 ```markdown
 # Project Adapter
 
-本文档记录公司 `Team-Intelligence-Center` 在当前项目中的适配方式。
+本文档记录组织 `Team-Intelligence-Center` 在当前项目中的适配方式。
 
 ## 项目边界
 
@@ -386,13 +386,13 @@ Gemini CLI：gemini extensions install https://github.com/obra/superpowers
 | 文档 | `docs/` | PRD、API 契约、外部服务、设计资料 |
 | 规格 | `openspec/` | 活跃变更和稳定规格 |
 | 项目记忆 | `ai-harness/memory/` | 项目事实、决策、runbook |
-| 公司规则 | `ai-rules/Team-Intelligence-Center/` | 通用规则来源 |
+| 组织规则 | `ai-rules/Team-Intelligence-Center/` | 通用规则来源 |
 | Superpowers | `.superpowers/` | 可选，本地执行状态，默认不提交 |
 <!-- TIC:PROJECT-GOVERNANCE:END -->
 
 ## 老项目说明
 
-如果当前项目不是公司推荐模板，不需要迁移技术栈。先记录真实现状，再逐步把稳定行为写入 OpenSpec。
+如果当前项目不是组织推荐模板，不需要迁移技术栈。先记录真实现状，再逐步把稳定行为写入 OpenSpec。
 ```
 
 ---
@@ -485,7 +485,7 @@ The project SHALL distinguish stable facts from assumptions.
 
 执行完成后必须确认：
 
-- [ ] `AGENTS.md` 已存在并指向公司规则。
+- [ ] `AGENTS.md` 已存在并指向组织规则。
 - [ ] `docs/ai-rules-usage.md` 已说明终端用 `openspec`、AI 工具用 `/opsx:*`。
 - [ ] `docs/ai-rules-usage.md` 已说明 Superpowers 是执行方法层，不是规格事实源。
 - [ ] `ai-harness/project-adapter.md` 已记录项目边界。

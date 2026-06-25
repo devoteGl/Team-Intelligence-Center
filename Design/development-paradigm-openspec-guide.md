@@ -1,8 +1,8 @@
-# 公司研发范式 + OpenSpec / Superpowers 落地指南
+# 组织研发范式 + OpenSpec / Superpowers 落地指南
 
-本文面向公司内所有业务项目，说明如何把 `Team-Intelligence-Center`、OpenSpec、Superpowers、项目模板和不同 AI 编码工具组合成统一研发范式。
+本文面向组织内所有业务项目，说明如何把 `Team-Intelligence-Center`、OpenSpec、Superpowers、项目模板和不同 AI 编码工具组合成统一研发范式。
 
-结论先行：这套组合可以作为公司的统一开发范式。关键不是绑定某一个 AI 工具，而是让所有工具共同遵守同一套规则、规格、契约、验证和归档链路。OpenSpec 是规格事实源，Superpowers 是可选但推荐的 Agent 执行方法层，TIC Workflow Orchestrator 是风险路由和治理入口。
+结论先行：这套组合可以作为组织的统一开发范式。关键不是绑定某一个 AI 工具，而是让所有工具共同遵守同一套规则、规格、契约、验证和归档链路。OpenSpec 是规格事实源，Superpowers 是可选但推荐的 Agent 执行方法层，TIC Workflow Orchestrator 是风险路由和治理入口。
 
 ## 1. 范式分层
 
@@ -10,7 +10,7 @@
 
 | 层级 | 目录建议 | 职责 |
 | --- | --- | --- |
-| 公司规则层 | `ai-rules/Team-Intelligence-Center/` | 通用角色、流程、Prompts、Skills、提交纪律 |
+| 组织规则层 | `ai-rules/Team-Intelligence-Center/` | 通用角色、流程、Prompts、Skills、提交纪律 |
 | OpenSpec 规格层 | `openspec/` | 活跃变更、稳定规格、设计说明、任务清单、归档 |
 | Superpowers 执行层 | AI 工具插件 / `.superpowers/` | 头脑风暴、计划、TDD、调试、代码审查、子代理执行 |
 | TIC 工作流路由层 | `Skills/tic-workflow-orchestrator.md` | 风险分级、risk_floor、Skill DAG、检查点、证据和归档触发 |
@@ -21,19 +21,19 @@
 
 ## 2. 模板组合
 
-公司可以把以下模板作为多端项目的默认基座：
+组织可以把以下模板作为多端项目的默认基座：
 
 | 端 | 推荐模板 | 主要职责 |
 | --- | --- | --- |
 | 后端 | [go-zero](https://go-zero.dev/zh-cn/) | API、鉴权、业务规则、回调、定时任务、数据一致性 |
-| 管理后台 | [NexusAI/admin-template](https://ycbl.xadazhihui.cn:18443/NexusAI/admin-template) | 运营后台、权限、配置、数据看板 |
+| 管理后台 | Admin Template（示例占位，请替换为团队实际模板） | 运营后台、权限、配置、数据看板 |
 | 用户前端 | [Unibest](https://unibest.tech/) | H5、小程序、移动端交互、端侧状态流 |
 
-模板决定工程起点，OpenSpec、Superpowers 和公司规则决定交付过程。一个推荐项目结构如下：
+模板决定工程起点，OpenSpec、Superpowers 和组织规则决定交付过程。一个推荐项目结构如下：
 
 ```text
 your-project/
-├── ai-rules/Team-Intelligence-Center/ # 公司规则子模块
+├── ai-rules/Team-Intelligence-Center/ # 组织规则子模块
 ├── openspec/                          # OpenSpec 规格层
 ├── .superpowers/                       # Superpowers 本地运行态，可加入 .gitignore
 ├── ai-harness/                        # 当前项目适配与记忆
@@ -62,9 +62,9 @@ your-project/
   -> /opsx:archive       # 归档完成变更
 ```
 
-对应到公司角色：
+对应到组织角色：
 
-| 阶段 | 公司角色 | 关键产物 |
+| 阶段 | 组织角色 | 关键产物 |
 | --- | --- | --- |
 | 需求拆解 | PM / Tech Lead | proposal、PRD、验收标准 |
 | 现状调研 | CI | 影响范围、候选规则、风险清单 |
@@ -226,7 +226,7 @@ OpenSpec 会按所选工具生成 commands 和 skills。常见位置：
 
 OpenSpec 负责“规格和变更工件”，`Team-Intelligence-Center` 负责“角色和工程纪律”。
 
-| OpenSpec 工件 | 应接合的公司规则 |
+| OpenSpec 工件 | 应接合的组织规则 |
 | --- | --- |
 | `proposal.md` | `Prompts/ai-prd-generator.rules.md`、`Skills/task-decomposer.md` |
 | `specs/` | `Prompts/ai-prd-editor.rules.md`、`Skills/code-investigator.md` 的 candidate rules 子流程 |
@@ -237,14 +237,14 @@ OpenSpec 负责“规格和变更工件”，`Team-Intelligence-Center` 负责�
 | 归档 | `Skills/changelog-writer.md`、`Skills/tic-workflow-orchestrator.md` 的 snapshot 输出规则 |
 | 项目接入 | `Skills/project-governance-bootstrap.md` |
 
-落地项目不应复制或改写公司规则原文。推荐作为 submodule 接入：
+落地项目不应复制或改写组织规则原文。推荐作为 submodule 接入：
 
 ```bash
 git submodule add <Team-Intelligence-Center-repo-url> ai-rules/Team-Intelligence-Center
 git submodule update --init --recursive
 ```
 
-升级公司规则时，只提交 submodule 指针变更，并在项目变更说明里记录升级影响。
+升级组织规则时，只提交 submodule 指针变更，并在项目变更说明里记录升级影响。
 
 ## 9. 与 Superpowers 的接合
 
@@ -306,7 +306,7 @@ Superpowers 负责“Agent 如何把任务做扎实”，不负责替代 OpenSpe
 
 ```text
 legacy-project/
-├── ai-rules/Team-Intelligence-Center/ # 公司规则子模块
+├── ai-rules/Team-Intelligence-Center/ # 组织规则子模块
 ├── openspec/                          # 从当前真实行为开始沉淀
 ├── .superpowers/                       # 可选，本地运行态，默认 gitignore
 ├── ai-harness/                        # 老项目适配、记忆、决策、runbook
@@ -318,7 +318,7 @@ legacy-project/
 
 ### 10.3 老项目接入步骤
 
-1. 添加公司规则：
+1. 添加组织规则：
 
    ```bash
    git submodule add <Team-Intelligence-Center-repo-url> ai-rules/Team-Intelligence-Center
@@ -441,7 +441,7 @@ legacy-project/
 
 ### Q5：已有老项目能接吗？
 
-可以。先把公司规则作为 submodule 接入，再 `openspec init --tools ...`，如团队使用 Superpowers 则安装对应插件，最后用 `ai-prd-editor` 和 `code-investigator` 反向梳理现状，逐步把稳定行为写入 `openspec/specs/`。
+可以。先把组织规则作为 submodule 接入，再 `openspec init --tools ...`，如团队使用 Superpowers 则安装对应插件，最后用 `ai-prd-editor` 和 `code-investigator` 反向梳理现状，逐步把稳定行为写入 `openspec/specs/`。
 
 ### Q6：不同工具生成的命令数量不一致怎么办？
 
@@ -452,9 +452,9 @@ openspec config list
 openspec update --force
 ```
 
-命令数量由 OpenSpec profile、workflow 和 delivery mode 决定，不要求所有工具文件数量完全相同；要求的是团队遵守同一套 OpenSpec 工件和公司规则。
+命令数量由 OpenSpec profile、workflow 和 delivery mode 决定，不要求所有工具文件数量完全相同；要求的是团队遵守同一套 OpenSpec 工件和组织规则。
 
-### Q7：老项目一定要迁移到公司推荐模板吗？
+### Q7：老项目一定要迁移到组织推荐模板吗？
 
 不需要。老项目优先接入规则层、规格层、项目适配层和文档层。技术栈迁移应作为独立变更评估，不应作为接入范式的前置条件。
 
