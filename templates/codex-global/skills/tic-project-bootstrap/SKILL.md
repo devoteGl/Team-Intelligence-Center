@@ -9,7 +9,7 @@ This is a Codex global wrapper for Team-Intelligence-Center.
 
 When invoked:
 1. Prefer the current project's TIC installation scripts if already present.
-2. If a project has `.tic-rules.lock`, prefer its project-relative `rules_path=`; otherwise use `.tic-rules.local` `rules_dir=` when present.
+2. If a project has `.tic-rules.lock`, prefer its non-empty project-relative `rules_path=`; otherwise use `.tic-rules.local` `rules_dir=` when present.
 3. Otherwise use fallback rules source: `{{TIC_RULES_DIR}}`.
 4. Read and follow `<rules_dir>/Skills/project-governance-bootstrap.md` when governance setup is requested.
 5. For lightweight install, prefer `<rules_dir>/tools/install.sh` or `<rules_dir>/tools/install.ps1`.

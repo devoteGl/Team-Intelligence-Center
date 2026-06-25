@@ -130,7 +130,7 @@ function Get-MaxReleaseVersion {
         }
     }
 
-    $releaseDir = Join-Path (Get-Location).Path "docs/releases"
+    $releaseDir = Join-Path $repoRoot "docs/releases"
     if (Test-Path -LiteralPath $releaseDir -PathType Container) {
         foreach ($dir in Get-ChildItem -LiteralPath $releaseDir -Directory) {
             if ($dir.Name -match '^([0-9]+)\.([0-9]+)\.([0-9]{3})$') {

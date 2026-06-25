@@ -19,11 +19,6 @@ $codegraphCommand = $null
 $codegraph = Get-Command codegraph -ErrorAction SilentlyContinue
 if ($codegraph) {
     $codegraphCommand = @($codegraph.Source)
-} else {
-    $npx = Get-Command npx -ErrorAction SilentlyContinue
-    if ($npx) {
-        $codegraphCommand = @($npx.Source, "codegraph")
-    }
 }
 
 $hasProjectGraph = Test-Path -LiteralPath (Join-Path $ProjectRoot ".codegraph") -PathType Container
@@ -45,6 +40,7 @@ function Write-CodeGraphStatus {
     Write-Host "建议:"
     if (-not $codegraphCommand) {
         Write-Host "- 未检测到 CodeGraph CLI。需要时请按官方文档安装 colbymchenry/codegraph。"
+        Write-Host "- 本 helper 不会通过 npx 自动下载或安装 CodeGraph。"
     }
     if (-not $hasProjectGraph) {
         Write-Host "- 如本项目是老项目、monorepo 或跨模块改动，可显式运行 init 初始化 .codegraph。"

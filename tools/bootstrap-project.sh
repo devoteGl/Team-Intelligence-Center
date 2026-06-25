@@ -353,12 +353,13 @@ NODE
 }
 
 generate_project_adapter_content() {
-  local package_manager stack_files common_dirs node_versions generated_at
+  local package_manager stack_files common_dirs node_versions generated_at project_name
   package_manager="$(detect_package_manager)"
   stack_files="$(detect_stack_files)"
   common_dirs="$(detect_common_dirs)"
   node_versions="$(node_version_summary)"
   generated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+  project_name="$(basename "$PROJECT_ROOT")"
 
   cat <<EOF
 # 项目适配说明
@@ -366,7 +367,8 @@ generate_project_adapter_content() {
 本文件由 Team-Intelligence-Center bootstrap 自动生成，用于让 AI 快速了解当前项目。请研发按真实情况补充业务背景、风险边界和缺失命令。
 
 生成时间：$generated_at
-项目路径：\`$PROJECT_ROOT\`
+项目标识：\`$project_name\`
+项目根：当前仓库根（安装脚本不写入本机绝对路径）
 
 ## 项目画像
 
@@ -459,7 +461,9 @@ write_lock() {
   local target="$PROJECT_ROOT/.tic-rules.lock"
   plan "write .tic-rules.lock"
   if [ "$DRY_RUN" -eq 0 ]; then
-    cat > "$target" <<EOF
+    local tmp line
+    tmp="$(mktemp)"
+    cat > "$tmp" <<EOF
 managed_by=team-intelligence-center
 version=2
 rules_version=$VERSION
@@ -469,6 +473,18 @@ rules_source=$RULES_SOURCE_MODE
 rules_path=$RULES_PROJECT_PATH
 local_config=.tic-rules.local
 EOF
+    if [ -f "$target" ]; then
+      while IFS= read -r line || [ -n "$line" ]; do
+        case "$line" in
+          managed_by=*|version=*|rules_version=*|package_id=*|install_mode=*|rules_source=*|rules_path=*|local_config=*|"")
+            ;;
+          *)
+            printf '%s\n' "$line" >> "$tmp"
+            ;;
+        esac
+      done < "$target"
+    fi
+    mv "$tmp" "$target"
   fi
 }
 
@@ -535,6 +551,9 @@ ensure_gitignore_local_config() {
 
 merge_agents
 install_template_file "$PACKAGE_ROOT/templates/docs/ai-rules-usage.md" "$PROJECT_ROOT/docs/ai-rules-usage.md"
+install_template_file "$PACKAGE_ROOT/templates/tool-rules/cursorrules.md" "$PROJECT_ROOT/.cursorrules"
+install_template_file "$PACKAGE_ROOT/templates/tool-rules/windsurfrules.md" "$PROJECT_ROOT/.windsurfrules"
+install_template_file "$PACKAGE_ROOT/templates/tool-rules/rules/team-intelligence-center.md" "$PROJECT_ROOT/.rules/team-intelligence-center.md"
 install_project_adapter
 write_lock
 write_local_config

@@ -11,6 +11,7 @@ inputs:
 outputs:
   - agents_entrypoint
   - ai_rules_usage
+  - tool_rule_entrypoints
   - project_adapter
   - openspec_workspace
 requires: []
@@ -23,7 +24,7 @@ delegates_to: []
 
 - 服务角色：**PM / DS / Tech Lead**
 - 触发时机：业务项目首次以 submodule 引入 `Team-Intelligence-Center` 后
-- 输出物：项目根目录 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/`、`openspec/` 基础治理文件，以及 Superpowers 协作边界说明
+- 输出物：项目根目录 `AGENTS.md`、`.cursorrules`、`.windsurfrules`、`.rules/team-intelligence-center.md`、`docs/ai-rules-usage.md`、`ai-harness/`、`openspec/` 基础治理文件，以及 Superpowers 协作边界说明
 - 适用场景：新项目接入组织研发范式、老项目补齐 AI 规则入口、不同编辑器统一 OpenSpec / OPSX 使用方式、声明 Superpowers 与 OpenSpec 的协作边界
 
 > 目标：让开发只关注业务需求和架构内实现，把规则入口、规格层、执行方法层、项目记忆层、文档层的初始化尽量自动化。
@@ -34,7 +35,7 @@ delegates_to: []
 
 **只迁开发范式，不强行迁技术栈。**
 
-本技能不要求项目使用 go-zero、admin-template 或 Unibest；这些模板只是新项目推荐基座。老项目接入时，应保留现有技术栈和目录结构。
+本技能不要求项目使用指定业务脚手架，也不提供示例工程。老项目接入时，应保留现有技术栈和目录结构。
 
 **绝对禁止**：
 
@@ -45,6 +46,7 @@ delegates_to: []
 - 把 `opsx` 当成终端命令；终端入口是 `openspec`。
 - 把 Superpowers 的临时 spec 或 brainstorm 材料当成 OpenSpec 主规格。
 - 未建立 OpenSpec change 就用 Superpowers 绕过跨端、跨模块或接口契约变更流程。
+- 新增绕过 OpenSpec / Superpowers 的独立 SDD/TDD Skill 链。
 
 ---
 
@@ -392,7 +394,7 @@ Gemini CLI：gemini extensions install https://github.com/obra/superpowers
 
 ## 老项目说明
 
-如果当前项目不是组织推荐模板，不需要迁移技术栈。先记录真实现状，再逐步把稳定行为写入 OpenSpec。
+接入 TIC 不要求迁移技术栈。先记录真实现状，再逐步把稳定行为写入 OpenSpec。
 ```
 
 ---

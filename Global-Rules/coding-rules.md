@@ -148,8 +148,10 @@ effective_tier = max(classified_tier, risk_floor)
 ### 3.2 标准流程
 
 ```
-Intake → Discovery → Planning → Execution → Verification → Closeout → Release(按需)
+Intake → Planning → Discovery(按需) → Contract(按需) → Execution → Verification → Closeout(按需) → Release(按需)
 ```
+
+新功能、行为变化和可先定义验收标准的任务，先由 PM / Tech Lead 完成 Planning，再按影响面决定是否进入 Discovery。老项目反推、跨模块影响不明、风险来源不清的任务，可以在 Planning 中把 Discovery 标记为必选并优先执行；不得绕过 `tic-workflow-orchestrator` 自行维护另一套线性流程。
 
 ### 3.3 快速通道（micro）
 

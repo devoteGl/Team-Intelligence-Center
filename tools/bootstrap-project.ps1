@@ -317,6 +317,7 @@ $($scriptLines -join "`r`n")
 
 function New-ProjectAdapterContent {
     $generatedAt = (Get-Date).ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ")
+    $projectName = Split-Path -Leaf $ProjectRoot
     $stackFiles = Get-DetectedStackFiles
     $commonDirs = Get-DetectedCommonDirs
     $packageManager = Get-PackageManager
@@ -335,7 +336,8 @@ function New-ProjectAdapterContent {
 本文件由 Team-Intelligence-Center bootstrap 自动生成，用于让 AI 快速了解当前项目。请研发按真实情况补充业务背景、风险边界和缺失命令。
 
 生成时间：$generatedAt
-项目路径：``$ProjectRoot``
+项目标识：``$projectName``
+项目根：当前仓库根（安装脚本不写入本机绝对路径）
 
 ## 项目画像
 
@@ -428,16 +430,38 @@ function Write-LockFile {
     $target = Join-Path $ProjectRoot ".tic-rules.lock"
     Add-Plan "write .tic-rules.lock"
     if (-not $DryRun) {
-        $content = @"
-managed_by=team-intelligence-center
-version=2
-rules_version=$Version
-package_id=$PackageId
-install_mode=minimal
-rules_source=$RulesSourceMode
-rules_path=$RulesProjectPath
-local_config=.tic-rules.local
-"@
+        $contentLines = @(
+            "managed_by=team-intelligence-center",
+            "version=2",
+            "rules_version=$Version",
+            "package_id=$PackageId",
+            "install_mode=minimal",
+            "rules_source=$RulesSourceMode",
+            "rules_path=$RulesProjectPath",
+            "local_config=.tic-rules.local"
+        )
+        if (Test-Path -LiteralPath $target) {
+            $knownKeys = @(
+                "managed_by",
+                "version",
+                "rules_version",
+                "package_id",
+                "install_mode",
+                "rules_source",
+                "rules_path",
+                "local_config"
+            )
+            foreach ($line in Get-Content -LiteralPath $target -Encoding UTF8) {
+                if ([string]::IsNullOrWhiteSpace($line)) {
+                    continue
+                }
+                $key = ($line -split "=", 2)[0]
+                if ($knownKeys -notcontains $key) {
+                    $contentLines += $line
+                }
+            }
+        }
+        $content = ($contentLines -join "`r`n") + "`r`n"
         Set-Content -LiteralPath $target -Value $content -Encoding UTF8
     }
 }
@@ -504,6 +528,9 @@ function Ensure-GitignoreLocalConfig {
 
 Merge-Agents
 Install-TemplateFile (Join-Path $PackageRoot "templates/docs/ai-rules-usage.md") (Join-Path $ProjectRoot "docs/ai-rules-usage.md")
+Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/cursorrules.md") (Join-Path $ProjectRoot ".cursorrules")
+Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/windsurfrules.md") (Join-Path $ProjectRoot ".windsurfrules")
+Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/rules/team-intelligence-center.md") (Join-Path (Join-Path $ProjectRoot ".rules") "team-intelligence-center.md")
 Install-ProjectAdapter
 Write-LockFile
 Write-LocalConfig

@@ -51,6 +51,9 @@ require_dir Design
 require_file templates/AGENTS.md
 require_file templates/docs/ai-rules-usage.md
 require_file templates/ai-harness/project-adapter.md
+require_file templates/tool-rules/cursorrules.md
+require_file templates/tool-rules/windsurfrules.md
+require_file templates/tool-rules/rules/team-intelligence-center.md
 require_file templates/codex-global/AGENTS.md
 require_file docs/automation.md
 require_file tools/bootstrap-project.ps1
@@ -85,7 +88,7 @@ else
 fi
 
 private_scan="$(mktemp)"
-grep -R -nE '(ycbl|xadazhihui|NexusAI|https://github.com/<owner>|https://your-repo|/Users/ctrlc|Downloads/dczd)' \
+grep -R -nE '(ycbl|xadazhihui|NexusAI|https://github.com/<owner>|https://your-repo|https://github.com/YOUR_ORG|YOUR_ORG|/Users/ctrlc|Downloads/dczd)' \
   README.md USAGE.md docs Design Skills templates Global-Rules Prompts tools manifest.json CONTRIBUTING.md SECURITY.md .github 2>/dev/null |
   grep -v '^tools/validate-pack.sh:' > "$private_scan" || true
 if [ -s "$private_scan" ]; then
@@ -95,11 +98,36 @@ else
 fi
 rm -f "$private_scan"
 
+template_stack_scan="$(mktemp)"
+grep -R -nE '(go-zero|Unibest|Admin Template|admin-template|项目模板组合|技术栈示例|模板组合|组织推荐模板|推荐模板|业务工程模板)' \
+  README.md USAGE.md docs Design Skills templates Global-Rules Prompts manifest.json CONTRIBUTING.md SECURITY.md .github 2>/dev/null > "$template_stack_scan" || true
+if [ -s "$template_stack_scan" ]; then
+  fail "business stack template references remain: $(head -5 "$template_stack_scan" | tr '\n' '; ')"
+else
+  pass "no business stack template bundle references in distributable docs"
+fi
+rm -f "$template_stack_scan"
+
+if grep -q '首次公开发布建议使用 `0.1.0` tag' README.md && ! grep -q 'v0.1.0' README.md; then
+  pass "public release tag guidance uses no-v project convention"
+else
+  fail "README release tag guidance must use 0.1.0 without v prefix"
+fi
+
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
 if [ "$skill_count" -ge 19 ]; then
   pass "skill count >= 19 ($skill_count)"
 else
   fail "expected at least 19 skill files, found $skill_count"
+fi
+
+if [ ! -e Skills/sdd-writer.md ] &&
+   [ ! -e Skills/tdd-operator.md ] &&
+   [ ! -d templates/codex-global/skills/tic-sdd-writer ] &&
+   [ ! -d templates/codex-global/skills/tic-tdd-operator ]; then
+  pass "SDD/TDD stays workflow semantics, not standalone skill chain"
+else
+  fail "do not add standalone sdd-writer/tdd-operator skills that bypass OpenSpec or Superpowers"
 fi
 
 while IFS= read -r skill_file; do
@@ -131,6 +159,51 @@ else
   fail "workflow orchestrator must stay lightweight, route-only, and risk_floor aware"
 fi
 
+if grep -q 'CP-1~CP-6' README.md &&
+   grep -q '检查点（CP-1~6）' USAGE.md &&
+   grep -q '| ✅ CP-6 | QA 不通过需回退时 |' Global-Rules/coding-rules.md &&
+   grep -q '| CP-6 | QA 不通过回退时 |' USAGE.md &&
+   grep -q 'CP-5: 交付验收' Global-Rules/coding-rules.md &&
+   ! grep -R -nE 'CP-1~5|CP-1~CP-5' README.md USAGE.md Global-Rules Skills templates docs manifest.json CONTRIBUTING.md SECURITY.md .github >/dev/null 2>&1; then
+  pass "checkpoint numbering is CP-1 through CP-6 across docs"
+else
+  fail "checkpoint numbering must consistently use CP-1 through CP-6"
+fi
+
+if grep -q 'Intake → Planning → Discovery(按需)' Global-Rules/coding-rules.md &&
+   grep -q 'Intake -> Planning -> Discovery(按需)' Skills/tic-workflow-orchestrator.md &&
+   grep -q 'Intake -> Planning -> Discovery(按需)' USAGE.md &&
+   ! grep -q 'Intake → Discovery → Planning' Global-Rules/coding-rules.md; then
+  pass "standard workflow phase order matches orchestrator"
+else
+  fail "standard workflow phase order must match tic-workflow-orchestrator"
+fi
+
+if grep -q 'standard / critical 任务、跨会话任务、存在冻结契约或待决策项时' Global-Rules/coding-rules.md &&
+   grep -q 'standard / critical 任务、跨会话任务、存在冻结契约或待决策项时' Skills/session-snapshot-manager.md &&
+   grep -q 'consulting / micro 任务可保持轻量' Skills/session-snapshot-manager.md &&
+   ! grep -R -nE '每次 AI 响应结束.*强制|每次响应结束.*强制|每次响应结束时自动执行' Global-Rules Skills README.md USAGE.md templates docs >/dev/null 2>&1; then
+  pass "session snapshot trigger policy is conditional and consistent"
+else
+  fail "session snapshot policy must be conditional, not every-response mandatory"
+fi
+
+alias_ok=1
+for alias_file in Skills/api-contract-freezer.md Skills/fe-be-handoff.md Skills/conflict-arbiter.md Skills/release-ops-handoff.md Skills/release-train-handoff.md; do
+  alias_lines="$(wc -l < "$alias_file" | tr -d '[:space:]')"
+  if [ "$alias_lines" -gt 90 ] ||
+     ! sed -n '1,24p' "$alias_file" | grep -q '^status: alias$' ||
+     ! grep -q '本文件是兼容入口，不再维护独立正文模板' "$alias_file" ||
+     ! grep -q 'canonical Skill' "$alias_file"; then
+    alias_ok=0
+  fi
+done
+if [ "$alias_ok" -eq 1 ]; then
+  pass "legacy alias skills are thin canonical redirects"
+else
+  fail "legacy alias skills must stay thin redirects to canonical skills"
+fi
+
 for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/install-codex-global.sh tools/install.sh tools/update.sh tools/validate-pack.sh; do
   if [ -x "$script" ]; then
     pass "script executable: $script"
@@ -151,11 +224,41 @@ else
   pass "PowerShell command invocation avoids brittle array indexing"
 fi
 
-if grep -q 'rules_path=' tools/bootstrap-project.sh && grep -q 'local_config=.tic-rules.local' tools/bootstrap-project.sh && grep -q '.tic-rules.local' tools/bootstrap-project.sh && grep -q '.tic-rules.local' tools/bootstrap-project.ps1 && ! grep -q '{{TIC_RULES_DIR}}' templates/AGENTS.md && ! grep -q '{{TIC_RULES_DIR}}' templates/docs/ai-rules-usage.md; then
+if grep -q 'rules_path=' tools/bootstrap-project.sh &&
+   grep -q 'local_config=.tic-rules.local' tools/bootstrap-project.sh &&
+   grep -q '.tic-rules.local' tools/bootstrap-project.sh &&
+   grep -q '.tic-rules.local' tools/bootstrap-project.ps1 &&
+   grep -q '非空 `rules_path=`' templates/AGENTS.md &&
+   grep -q '非空 `rules_path=`' templates/codex-global/AGENTS.md &&
+   ! grep -q '{{TIC_RULES_DIR}}' templates/AGENTS.md &&
+   ! grep -q '{{TIC_RULES_DIR}}' templates/docs/ai-rules-usage.md; then
   pass "project install avoids committed absolute rules paths"
 else
   fail "project install must keep absolute rules paths out of committed templates"
 fi
+
+bootstrap_tmp="$(mktemp -d)"
+bootstrap_project="$bootstrap_tmp/sample-project"
+mkdir -p "$bootstrap_project"
+cat > "$bootstrap_project/.tic-rules.lock" <<'EOF'
+managed_by=team-intelligence-center
+risk_floor=critical
+custom_policy=keep-me
+EOF
+if bash tools/bootstrap-project.sh --yes --force "$bootstrap_project" >/dev/null &&
+   ! grep -Fq "$bootstrap_tmp" "$bootstrap_project/ai-harness/project-adapter.md" &&
+   ! grep -q '项目路径：' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q '项目根：当前仓库根' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q '主线边界' "$bootstrap_project/.cursorrules" &&
+   grep -q '主线边界' "$bootstrap_project/.windsurfrules" &&
+   grep -q '主线边界' "$bootstrap_project/.rules/team-intelligence-center.md" &&
+   grep -q '^risk_floor=critical$' "$bootstrap_project/.tic-rules.lock" &&
+   grep -q '^custom_policy=keep-me$' "$bootstrap_project/.tic-rules.lock"; then
+  pass "bootstrap output is commit-safe and preserves lock custom fields"
+else
+  fail "bootstrap must not write absolute project paths and must preserve lock custom fields"
+fi
+rm -rf "$bootstrap_tmp"
 
 if grep -q 'git_workflow_advice_only' manifest.json && grep -q 'git switch, add, commit, push, merge, tag' tools/git-advice.ps1 && grep -q 'git switch, add, commit, push, merge, tag' tools/git-advice.sh; then
   pass "Git advice scripts are read-only by policy"
@@ -169,16 +272,48 @@ else
   fail "Git Flow branch naming must use business feature branches, versioned release/hotfix, no-v tags, and confirmation gates"
 fi
 
+if grep -q 'Join-Path \$repoRoot "docs/releases"' tools/git-advice.ps1; then
+  pass "PowerShell Git advice scans release records from repo root"
+else
+  fail "PowerShell Git advice must scan docs/releases from repo root"
+fi
+
 if grep -q 'adaptive workflow' templates/AGENTS.md && grep -q 'workflow_orchestrator' manifest.json && grep -q 'single_adaptive_with_risk_floor' manifest.json && grep -q 'risk_floor' manifest.json && grep -q 'tic-workflow-orchestrator.md' README.md && grep -q 'tic-workflow-orchestrator.md' USAGE.md; then
   pass "adaptive workflow orchestrator and risk_floor are declared"
 else
   fail "missing adaptive workflow orchestrator or risk_floor declaration"
 fi
 
-if grep -q 'SDD + TDD' templates/AGENTS.md && grep -q 'openspec_integration' manifest.json && grep -q 'sdd_tdd_required_for_standard_and_critical' manifest.json; then
-  pass "SDD + TDD principle and OpenSpec integration are declared"
+if grep -q 'SDD + TDD' templates/AGENTS.md &&
+   grep -q 'openspec_integration' manifest.json &&
+   grep -q 'sdd_tdd_required_for_standard_and_critical' manifest.json &&
+   grep -q 'sdd_tdd_as_workflow_semantics' manifest.json &&
+   grep -q 'OpenSpec 是规格事实源；Superpowers 是执行方法层' templates/AGENTS.md &&
+   grep -q 'OpenSpec 是规格事实源，Superpowers 是执行方法层' Skills/tic-workflow-orchestrator.md &&
+   grep -q '不是独立 Skill 链' README.md &&
+   grep -q '不是独立 Skill 链' USAGE.md &&
+   grep -q '不是独立 Skill 链' docs/automation.md; then
+  pass "SDD/TDD semantics preserve OpenSpec and Superpowers mainline"
 else
-  fail "missing SDD + TDD principle or OpenSpec integration declaration"
+  fail "SDD/TDD must remain workflow semantics with OpenSpec as source and Superpowers as method layer"
+fi
+
+if grep -q 'project_tool_rule_entries' manifest.json &&
+   grep -q 'templates/tool-rules/cursorrules.md' manifest.json &&
+   grep -q 'templates/tool-rules/windsurfrules.md' manifest.json &&
+   grep -q 'templates/tool-rules/rules/team-intelligence-center.md' manifest.json &&
+   grep -q '\.cursorrules' tools/bootstrap-project.sh &&
+   grep -q '\.windsurfrules' tools/bootstrap-project.sh &&
+   grep -q '\.rules/team-intelligence-center.md' tools/bootstrap-project.sh &&
+   grep -q '\.cursorrules' tools/bootstrap-project.ps1 &&
+   grep -q '\.windsurfrules' tools/bootstrap-project.ps1 &&
+   grep -q 'team-intelligence-center.md' tools/bootstrap-project.ps1 &&
+   grep -q '先读取项目根目录 `AGENTS.md`' templates/tool-rules/cursorrules.md &&
+   grep -q '先读取项目根目录 `AGENTS.md`' templates/tool-rules/windsurfrules.md &&
+   grep -q '先读取项目根目录 `AGENTS.md`' templates/tool-rules/rules/team-intelligence-center.md; then
+  pass "project-level tool rule entries point back to AGENTS.md"
+else
+  fail "project-level tool rule entries must be installed and point back to AGENTS.md"
 fi
 
 if grep -q 'post_dev_prd_sync' manifest.json && grep -q '开发后 PRD 同步' Skills/post-dev-prd-sync.md && grep -q '交付同步模式' Prompts/ai-prd-editor.rules.md && grep -q 'post-dev-prd-sync.md' templates/AGENTS.md; then
@@ -230,10 +365,16 @@ else
   fail "Codex global loader must stay wrapper-only and project-first"
 fi
 
-if grep -q 'codegraph_optional' manifest.json && grep -q 'does not install CodeGraph' tools/codegraph-helper.sh && grep -q '不替代 SDD + TDD' tools/codegraph-helper.sh && grep -q '不替代 SDD + TDD' tools/codegraph-helper.ps1; then
+if grep -q 'codegraph_optional' manifest.json &&
+   grep -q 'does not install CodeGraph' tools/codegraph-helper.sh &&
+   grep -q '不会通过 npx 自动下载或安装 CodeGraph' tools/codegraph-helper.sh &&
+   grep -q '不会通过 npx 自动下载或安装 CodeGraph' tools/codegraph-helper.ps1 &&
+   grep -q '不替代 SDD + TDD' tools/codegraph-helper.sh &&
+   grep -q '不替代 SDD + TDD' tools/codegraph-helper.ps1 &&
+   ! grep -q 'npx codegraph' tools/codegraph-helper.sh tools/codegraph-helper.ps1 docs/automation.md; then
   pass "CodeGraph helper is optional and non-core"
 else
-  fail "CodeGraph helper must remain optional and non-core"
+  fail "CodeGraph helper must remain optional, non-core, and avoid implicit npx installation"
 fi
 
 if grep -q 'ui_visual_verification' manifest.json && grep -q 'ui_design_skill_routing' manifest.json && grep -q 'UI 验证规则' templates/AGENTS.md && grep -q 'design-taste-frontend' templates/AGENTS.md && grep -q 'ui-ux-pro-max' templates/AGENTS.md && grep -q '@电脑' templates/AGENTS.md && grep -q 'plugin://computer-use@openai-bundled' templates/AGENTS.md && grep -q 'design-taste-frontend' templates/codex-global/AGENTS.md && grep -q 'ui-ux-pro-max' templates/docs/ai-rules-usage.md && grep -q 'UI 变更验证' docs/automation.md && grep -q '@电脑' docs/automation.md; then

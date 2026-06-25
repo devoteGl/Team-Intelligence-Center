@@ -9,8 +9,8 @@
 
 AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源：
 
-1. 若 `.tic-rules.lock` 中存在 `rules_path=`，按项目相对路径读取该目录。
-2. 否则读取 `.tic-rules.local` 中的 `rules_dir=`；该文件只保存个人本机绝对路径，必须保持 gitignored。
+1. 若 `.tic-rules.lock` 中存在非空 `rules_path=`，按项目相对路径读取该目录。
+2. 若 `rules_path=` 为空或不存在，则读取 `.tic-rules.local` 中的 `rules_dir=`；该文件只保存个人本机绝对路径，必须保持 gitignored。
 3. 若仍未找到，使用开发者已安装的 Codex 全局 Loader 或人工指定的规则库路径作为兜底。
 
 提交到仓库的 `AGENTS.md` 和 `.tic-rules.lock` 不应包含 `/Users/...`、`/home/...`、`C:\...` 等个人路径。
@@ -20,7 +20,7 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - 简单任务保持简单。咨询、只读查询、代码解释、微小非行为改动，不走完整 PRD/SDD/Plan 流程。
 - 默认使用 single adaptive workflow：先由 `tic-workflow-orchestrator` 判断 consulting / micro / standard / critical，再套用项目 `risk_floor`。强管控项目使用 `risk_floor=standard|critical`，不维护第二套 strict 流程。
 - standard / critical 任务执行 SDD + TDD。先明确行为规格，再基于验收标准编写或更新测试，最后实现。
-- 项目已有 `openspec/`，或任务涉及跨模块、API、数据模型、长期产品行为时，优先用 OpenSpec 承载规格；没有 OpenSpec 时，把 SDD 放到 `docs/sdd/` 或项目约定位置。
+- SDD/TDD 是工作流阶段语义，不是独立工具链。项目已有 `openspec/`，或任务涉及跨模块、API、数据模型、长期产品行为时，OpenSpec 是规格事实源；Superpowers 是执行方法层。
 - 按风险升级，而不是按关键词升级。支付、认证、数据迁移、生产配置、安全、删除、跨模块契约需要更严格处理。
 - 改代码前先读本项目上下文，优先复用现有模式、命令、测试和文档。
 - 完成前必须验证。最终说明要写清楚跑了哪些命令、哪些通过、哪些未测、还有什么风险。
@@ -49,7 +49,8 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - SDD 定义目标行为、范围、不做什么、验收标准和边界场景。
 - TDD 把 SDD 的验收标准转成失败测试或明确验证项，再进入实现。
 - 实现必须能追溯到 SDD 和测试。
-- OpenSpec 可以作为 SDD 的存储和生命周期承载方式，但 consulting 和 micro 任务不强制使用 OpenSpec。
+- OpenSpec 可以作为 SDD 语义的存储和生命周期承载方式，但 consulting 和 micro 任务不强制使用 OpenSpec。
+- 不新增绕过 OpenSpec / Superpowers 的独立 SDD/TDD Skill 链。
 - 不把未确认的代码反推当成既定业务事实；老项目反推规则要使用可信度标签和候选规则机制。
 
 ## UI 验证规则

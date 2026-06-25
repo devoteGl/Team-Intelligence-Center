@@ -12,8 +12,8 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - 自动生成项目适配说明，包含技术栈、依赖、Node 版本、包管理器、项目关系和常见命令线索。
 - single adaptive workflow：按风险分级处理任务，并通过 `risk_floor` 锁定强管控项目的最低档位。
 - 机器可读 `tic_skill.v1` contract，用于校验 Skill phase、风险档、canonical / alias / subflow 生命周期。
-- standard / critical 任务默认执行 SDD + TDD。
-- OpenSpec 作为可选规格承载层，用于已启用 OpenSpec 或需要长期行为追踪的变更。
+- standard / critical 任务默认执行 SDD + TDD；这是工作流阶段语义，不是独立 Skill 链。
+- OpenSpec 作为规格事实源，用于已启用 OpenSpec 或需要长期行为追踪的变更；Superpowers 作为执行方法层。
 - UI 相关变更优先核对真实界面，可使用 Playwright、浏览器截图、Computer Use 或 Chrome。
 - standard / critical 实现完成后，生成面向异步 review 和验收的交付 Walkthrough artifact。
 - standard / critical 交付后，如产品行为发生变化，生成基于证据的 PRD 更新草稿。
@@ -44,6 +44,9 @@ bootstrap 脚本只写入：
 AGENTS.md
 .tic-rules.lock
 docs/ai-rules-usage.md
+.cursorrules
+.windsurfrules
+.rules/team-intelligence-center.md
 ai-harness/project-adapter.md
 ```
 
@@ -56,7 +59,7 @@ ai-harness/project-adapter.md
 
 `AGENTS.md` 会写入 marker 块中，方便项目已有规则和 TIC 轻量规则共存。
 
-`.tic-rules.lock` 是可提交的稳定元信息，只保存规则版本、接入模式和项目相对 `rules_path`。当规则库不在业务项目目录内时，`rules_path` 为空，个人绝对路径只写入 `.tic-rules.local`。
+`.tic-rules.lock` 是可提交的稳定元信息，只保存规则版本、接入模式和项目相对 `rules_path`。当规则库不在业务项目目录内时，`rules_path` 为空；解析器必须把空值视为“没有项目内规则源”，再读取 `.tic-rules.local`。个人绝对路径只写入 `.tic-rules.local`。
 
 `ai-harness/project-adapter.md` 不是空模板。bootstrap 会自动探测：
 
@@ -103,11 +106,11 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 - consulting 和 micro 任务保持直接。
 - standard 和 critical 任务必须执行 SDD + TDD。
 - 项目可通过 `risk_floor=standard|critical` 禁止任务降级到过轻流程。
-- 业务项目已有 `openspec/` 时，把 SDD 写入或关联 OpenSpec change。
+- 业务项目已有 `openspec/` 时，把 SDD 语义写入或关联 OpenSpec change，OpenSpec 是规格事实源。
 - 没有 OpenSpec 时，使用 `docs/sdd/` 或项目认可的规格位置。
 - 测试或明确验证项应从 SDD 的验收标准推导出来，再进入实现。
 
-因此，OpenSpec 是规格承载层，不是每个任务都必须启动的重流程。
+因此，SDD/TDD 是阶段语义，不是独立 Skill 链；OpenSpec 是规格承载层，不是每个任务都必须启动的重流程。
 
 ## Adaptive Workflow Orchestrator
 
@@ -125,6 +128,7 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 - 复制子 Skill 模板正文。
 - 替代 Superpowers planning / TDD / debugging / review。
 - 替代 OpenSpec 成为规格事实源。
+- 引入绕过 OpenSpec / Superpowers 的独立 SDD/TDD Skill 链。
 - 接管 Git branch、tag、push、merge。
 
 推荐 canonical 技能：
@@ -234,14 +238,14 @@ powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command con
 powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command impact -ProjectRoot C:\path\to\project src\order\service.ts
 ```
 
-`status` 是只读检查；只有显式执行 `init` 才可能在业务项目生成 `.codegraph/`。原始 `.codegraph/` 是否提交由业务项目决定，不确定时只保留人工整理后的摘要。
+`status` 是只读检查；只有显式执行 `init` 才可能在业务项目生成 `.codegraph/`。helper 不会通过 `npx` 自动下载或安装 CodeGraph。原始 `.codegraph/` 是否提交由业务项目决定，不确定时只保留人工整理后的摘要。
 
 ## Skills 分发策略
 
 默认策略是“引用规则库，不复制 Skills”。
 
 - bootstrap / install 在业务项目写入 `AGENTS.md`、`.tic-rules.lock`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`，并生成本机 `.tic-rules.local`。
-- 业务项目优先通过 `.tic-rules.lock` 中的项目相对 `rules_path` 读取 `Skills/*.md`；没有项目内规则库时，再通过 gitignored 的 `.tic-rules.local` 读取个人本机规则源。
+- 业务项目优先通过 `.tic-rules.lock` 中的非空项目相对 `rules_path` 读取 `Skills/*.md`；没有项目内规则库时，再通过 gitignored 的 `.tic-rules.local` 读取个人本机规则源。
 - 不自动差量复制到项目本地 skills，也不写入 `~/.codex/skills` 等全局目录，避免覆盖研发个人配置或产生版本漂移。
 - 团队确实需要本地镜像时，应作为单独的显式同步任务执行，并记录来源版本、覆盖范围和回滚方式。
 
@@ -256,7 +260,7 @@ Codex 全局只适合安装发现入口，不适合承载整套项目规则。
 ~/.codex/skills/tic-*/SKILL.md        # Codex 原生 skill 包装器
 ```
 
-这些包装器只负责定位项目 `.tic-rules.lock` 的项目相对 `rules_path` 或 `.tic-rules.local` 的本机 `rules_dir`，再读取 `<rules_dir>/Skills/*.md`。它们不是 TIC Skill 正文本体。
+这些包装器只负责定位项目 `.tic-rules.lock` 的非空项目相对 `rules_path` 或 `.tic-rules.local` 的本机 `rules_dir`，再读取 `<rules_dir>/Skills/*.md`。它们不是 TIC Skill 正文本体。
 
 macOS / Linux / WSL：
 
@@ -292,14 +296,14 @@ powershell -ExecutionPolicy Bypass -File tools\install-codex-global.ps1 -Yes
 研发本机维护或试用规则库：
 
 ```bash
-git clone https://github.com/YOUR_ORG/Team-Intelligence-Center.git
+git clone https://github.com/devoteGl/Team-Intelligence-Center.git
 bash Team-Intelligence-Center/tools/update.sh --project /path/to/business-project
 ```
 
 业务项目需要锁定规则版本时，推荐使用 submodule：
 
 ```bash
-git submodule add https://github.com/YOUR_ORG/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
+git submodule add https://github.com/devoteGl/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
 git submodule update --init --recursive
 ```
 

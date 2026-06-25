@@ -133,11 +133,11 @@ Team-Intelligence-Center/
 ```bash
 # 方式一：作为 Git Submodule 引入
 cd your-project
-git submodule add https://github.com/YOUR_ORG/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
+git submodule add https://github.com/devoteGl/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
 git submodule update --init --recursive
 
 # 方式二：开发者本机单独 clone
-git clone https://github.com/YOUR_ORG/Team-Intelligence-Center.git
+git clone https://github.com/devoteGl/Team-Intelligence-Center.git
 ```
 
 长期业务项目推荐 submodule，因为可以锁定规则版本、随业务仓库 review 和升级；个人本地试用或维护规则库时直接 `git clone` 即可。然后在 AI 编辑器的配置中引用 `.ai-rules/Team-Intelligence-Center/` 或本机 clone 目录下的规则文件。
@@ -196,8 +196,13 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh --preview
 AGENTS.md
 .tic-rules.lock
 docs/ai-rules-usage.md
+.cursorrules
+.windsurfrules
+.rules/team-intelligence-center.md
 ai-harness/project-adapter.md
 ```
+
+开源版保留的 `templates/` 只服务于这组最小接入产物。`.cursorrules`、`.windsurfrules` 和 `.rules/team-intelligence-center.md` 只是让不同 AI 工具先读取 `AGENTS.md`，不引入第二套流程。它们不提供业务脚手架或示例工程；团队继续使用自己的脚手架和目录结构，只把 TIC 作为规则层接入。
 
 同时会生成本机配置：
 
@@ -210,7 +215,7 @@ ai-harness/project-adapter.md
 
 它也不会自动把 `Skills/` 差量复制到项目本地 skills 或开发者全局 skills。业务项目默认通过 `.tic-rules.lock` 的项目相对路径或 `.tic-rules.local` 的本机路径读取 Skills，避免覆盖个人配置和产生版本漂移。
 
-原则上，standard / critical 任务仍然执行 **SDD + TDD**：先明确行为规格和验收标准，再写或更新测试，最后实现和验证。项目已有 `openspec/` 时，SDD 应写入或关联 OpenSpec change；没有 OpenSpec 时，使用 `docs/sdd/` 或项目约定位置。
+原则上，standard / critical 任务仍然执行 **SDD + TDD**：先明确行为规格和验收标准，再写或更新测试，最后实现和验证。这里的 SDD/TDD 是工作流阶段语义，不是独立 Skill 链。项目已有 `openspec/` 时，OpenSpec 是规格事实源；Superpowers 是执行方法层，负责计划、TDD、调试、review 和子代理执行。
 
 其中 `ai-harness/project-adapter.md` 会自动生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、OpenSpec 和 monorepo 线索。已有文件默认不覆盖；需要刷新时使用 `--force` 或 PowerShell 的 `-Force`。
 
@@ -253,15 +258,15 @@ bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh --yes
 | AI Agent Team 角色定义 | 定义 PM/CI/FE/BE/QA/DS 六大角色 | 每次 AI 响应 |
 | 任务流转协议 | 约束阶段不可跳跃 | 贯穿整个任务生命周期 |
 | 文件域隔离 | 防止 FE/BE 并行时的代码冲突 | 并行开发阶段 |
-| 检查点（CP-1~5） | 强制人工确认的节点 | 关键决策节点 |
-| 会话快照 | 跨对话恢复上下文 | 每次响应结束 |
+| 检查点（CP-1~6） | 强制人工确认的节点，定义以 `Global-Rules/coding-rules.md` 第 6 节为准 | 关键决策节点 |
+| 会话快照 | 跨对话恢复上下文 | standard / critical、跨会话、存在冻结契约或待决策项时 |
 
 ### 4.2 如何验证规则生效
 
 规则加载成功后，AI 的每次响应应具备以下特征：
 - ✅ 响应以角色标签开头，如 `⚙️ [Tech Lead/PM]`
 - ✅ 新任务开始时，PM 输出任务清单
-- ✅ 响应末尾附带 SESSION SNAPSHOT
+- ✅ standard / critical、跨会话、存在冻结契约或待决策项时，响应末尾附带 SESSION SNAPSHOT
 - ✅ 在 CP 检查点主动暂停等待用户确认
 - ✅ 不跨越阶段直接写代码
 
@@ -468,7 +473,8 @@ critical:
 | CP-2 | CI 完成调研 | 可能基于错误理解推进 |
 | CP-3 | 并行阶段开始前 | FE/BE 可能基于未确认的契约开发 |
 | CP-4 | 删除/重构文件前 | 可能误删重要文件 |
-| CP-5 | QA 不通过回退时 | 可能回退范围不正确 |
+| CP-5 | 任务交付前（快速通道） | 可能在未验收时交付 |
+| CP-6 | QA 不通过回退时 | 可能回退范围不正确 |
 
 ---
 
@@ -485,7 +491,7 @@ critical:
 
 ```bash
 # 添加为子模块
-git submodule add https://github.com/YOUR_ORG/Team-Intelligence-Center.git .ai-rules
+git submodule add https://github.com/devoteGl/Team-Intelligence-Center.git .ai-rules
 
 # 更新子模块（获取最新规则）
 git submodule update --remote
@@ -615,7 +621,7 @@ AI 工具中使用 `/opsx:*`：
 
 ### 9.6 老项目接入
 
-老项目不要求使用组织推荐的 go-zero、admin-template 或 Unibest 模板，也不要求先迁移技术栈。
+老项目不要求使用指定业务脚手架，也不要求先迁移技术栈。
 
 推荐方式：
 
@@ -647,7 +653,7 @@ AI 工具中使用 `/opsx:*`：
 - `.tic-rules.local` 记录当前开发者机器上的规则库绝对路径，并自动加入 `.gitignore`。
 - `ai-harness/project-adapter.md` 自动生成项目画像，减少研发手填项目介绍、依赖和 Node 版本。
 - 任务按 `consulting / micro / standard / critical` 分级，简单事保持简单，高风险才升级流程。
-- standard / critical 任务坚持 SDD + TDD；OpenSpec 是可选规格承载层，不是每次对话的强制流程。
+- standard / critical 任务坚持 SDD + TDD；这是工作流阶段语义，不是独立 Skill 链。已有 OpenSpec 时，OpenSpec 是规格事实源；Superpowers 是执行方法层。
 
 ### 10.3 明确不吸收什么
 

@@ -53,8 +53,6 @@ PROJECT_ROOT="$(cd "$PROJECT_ROOT" && pwd)"
 codegraph_bin=""
 if command -v codegraph >/dev/null 2>&1; then
   codegraph_bin="$(command -v codegraph)"
-elif command -v npx >/dev/null 2>&1; then
-  codegraph_bin="npx codegraph"
 fi
 
 has_project_graph="no"
@@ -75,6 +73,7 @@ print_status() {
   echo "建议:"
   if [ -z "$codegraph_bin" ]; then
     echo "- 未检测到 CodeGraph CLI。需要时请按官方文档安装 colbymchenry/codegraph。"
+    echo "- 本 helper 不会通过 npx 自动下载或安装 CodeGraph。"
   fi
   if [ "$has_project_graph" = "no" ]; then
     echo "- 如本项目是老项目、monorepo 或跨模块改动，可显式运行 init 初始化 .codegraph。"
@@ -135,4 +134,3 @@ case "$COMMAND" in
     exit 1
     ;;
 esac
-

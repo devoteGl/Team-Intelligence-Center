@@ -7,6 +7,9 @@
 - `AGENTS.md`：项目级 AI 协作入口。
 - `.tic-rules.lock`：轻量安装元信息，用于诊断当前接入的规则版本。
 - `docs/ai-rules-usage.md`：本说明文件。
+- `.cursorrules`：Cursor 项目规则入口，指向 `AGENTS.md`。
+- `.windsurfrules`：Windsurf 项目规则入口，指向 `AGENTS.md`。
+- `.rules/team-intelligence-center.md`：支持 `.rules/` 目录的 AI 工具入口，指向 `AGENTS.md`。
 - `ai-harness/project-adapter.md`：项目命令、模块和风险边界适配说明。
 
 ## 如何与 AI 协作
@@ -20,6 +23,8 @@
 
 默认入口是 single adaptive workflow：`tic-workflow-orchestrator` 先判断 consulting / micro / standard / critical，再应用项目 `risk_floor`。如果项目配置 `risk_floor=standard|critical`，AI 不得自行降级到该档位以下。
 
+SDD/TDD 是工作流阶段语义，不是独立 Skill 链。项目已有 OpenSpec 时，OpenSpec 是规格事实源；Superpowers 是执行方法层，负责计划、TDD、调试、review 和子代理执行。
+
 涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `contract-handoff`。涉及共享文件域修改时，优先使用 `shared-domain-arbiter`。需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `release-handoff(mode=single|train)`。
 
 UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归相关变更，应使用 `design-taste-frontend` 与 `ui-ux-pro-max` 参与方案和实现判断，并优先核对真实界面。需要端到端验证功能、真实点击输入、登录、桌面 App、浏览器插件或账号态时，优先使用 `@电脑`（`plugin://computer-use@openai-bundled` / Computer Use）；无法自动核对时，在最终报告中说明替代验证和剩余 UI 风险。
@@ -30,7 +35,7 @@ standard / critical 任务完成后，如影响用户可见行为、UI、API、�
 
 ## 规则来源
 
-本项目不在可提交文件中记录个人本机绝对路径。AI 读取 TIC 正文规则或 Skills 时，应优先使用 `.tic-rules.lock` 中的项目相对 `rules_path`；若项目未内置规则库，则读取 `.tic-rules.local` 中的个人本机 `rules_dir`。
+本项目不在可提交文件中记录个人本机绝对路径。AI 读取 TIC 正文规则或 Skills 时，应优先使用 `.tic-rules.lock` 中的非空项目相对 `rules_path`；若 `rules_path` 为空或项目未内置规则库，则读取 `.tic-rules.local` 中的个人本机 `rules_dir`。
 
 `.tic-rules.local` 由安装脚本生成，只用于当前开发者机器，必须保持 gitignored。
 

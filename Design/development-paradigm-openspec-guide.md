@@ -1,6 +1,6 @@
 # 组织研发范式 + OpenSpec / Superpowers 落地指南
 
-本文面向组织内所有业务项目，说明如何把 `Team-Intelligence-Center`、OpenSpec、Superpowers、项目模板和不同 AI 编码工具组合成统一研发范式。
+本文面向组织内所有业务项目，说明如何把 `Team-Intelligence-Center`、OpenSpec、Superpowers、项目级规则入口和不同 AI 编码工具组合成统一研发范式。
 
 结论先行：这套组合可以作为组织的统一开发范式。关键不是绑定某一个 AI 工具，而是让所有工具共同遵守同一套规则、规格、契约、验证和归档链路。OpenSpec 是规格事实源，Superpowers 是可选但推荐的 Agent 执行方法层，TIC Workflow Orchestrator 是风险路由和治理入口。
 
@@ -19,17 +19,11 @@
 
 业务代码仍然放在各项目自己的工程目录。范式只管协作链路和产物边界，不替代业务工程本身。`.superpowers/` 是运行态辅助目录，默认不作为长期规格来源。
 
-## 2. 模板组合
+## 2. 业务工程边界
 
-组织可以把以下模板作为多端项目的默认基座：
+TIC 开源版不提供业务脚手架或示例工程，也不推荐固定的后端、管理后台或用户前端技术栈。团队继续使用自己的工程体系；TIC 只要求规则、规格、契约、验证、归档和项目适配入口清晰。
 
-| 端 | 推荐模板 | 主要职责 |
-| --- | --- | --- |
-| 后端 | [go-zero](https://go-zero.dev/zh-cn/) | API、鉴权、业务规则、回调、定时任务、数据一致性 |
-| 管理后台 | Admin Template（示例占位，请替换为团队实际模板） | 运营后台、权限、配置、数据看板 |
-| 用户前端 | [Unibest](https://unibest.tech/) | H5、小程序、移动端交互、端侧状态流 |
-
-模板决定工程起点，OpenSpec、Superpowers 和组织规则决定交付过程。一个推荐项目结构如下：
+业务工程自身决定代码起点，OpenSpec、Superpowers 和组织规则决定交付过程。一个通用接入结构如下：
 
 ```text
 your-project/
@@ -38,9 +32,7 @@ your-project/
 ├── .superpowers/                       # Superpowers 本地运行态，可加入 .gitignore
 ├── ai-harness/                        # 当前项目适配与记忆
 ├── docs/                              # PRD、契约、设计、外部服务
-├── backend/                           # go-zero 服务端
-├── frontend-admin/                    # 管理后台
-└── frontend-client/                   # Unibest 用户端
+└── <business-code>/                   # 项目既有或自选业务代码目录
 ```
 
 目录名可按项目实际调整，但职责边界应保持稳定。
@@ -151,9 +143,7 @@ schema: spec-driven
 
 context: |
   Project: your-project
-  Backend: backend (go-zero)
-  Admin: frontend-admin
-  Client: frontend-client (Unibest)
+  Business code: keep the existing project structure
   Governance: company AI rules live in ai-rules/Team-Intelligence-Center/
   Project adaptation: ai-harness/ stores project memory, decisions, and runbooks
   Documentation: docs/ stores PRDs, API contracts, vendor docs, and design notes
@@ -290,7 +280,7 @@ Superpowers 负责“Agent 如何把任务做扎实”，不负责替代 OpenSpe
 
 ## 10. 老项目接入模式
 
-老项目不要求使用 go-zero、admin-template 或 Unibest，也不要求先做技术栈迁移。
+老项目不要求使用指定业务脚手架，也不要求先做技术栈迁移。
 
 接入目标是把现有项目纳入统一的规则、规格、契约、验证和归档链路。不要为了接入范式而重构业务代码。
 
@@ -454,7 +444,7 @@ openspec update --force
 
 命令数量由 OpenSpec profile、workflow 和 delivery mode 决定，不要求所有工具文件数量完全相同；要求的是团队遵守同一套 OpenSpec 工件和组织规则。
 
-### Q7：老项目一定要迁移到组织推荐模板吗？
+### Q7：老项目一定要迁移到指定业务脚手架吗？
 
 不需要。老项目优先接入规则层、规格层、项目适配层和文档层。技术栈迁移应作为独立变更评估，不应作为接入范式的前置条件。
 

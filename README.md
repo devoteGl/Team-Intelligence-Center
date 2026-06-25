@@ -16,7 +16,7 @@
 - **License**：Apache-2.0，见 [LICENSE](./LICENSE)。
 - **定位**：Chinese-first、tool-neutral 的 AI 工程协作规则包。
 - **适用工具**：Codex、Cursor、Qoder、OpenCode、OpenSpec、Superpowers，以及其他能读取项目规则的 AI 编码工具。
-- **发布建议**：首次公开发布建议使用 `v0.1.0` / `public-preview` tag。
+- **发布建议**：首次公开发布建议使用 `0.1.0` tag，并在 release 说明中标注 `public-preview`。
 
 ## 🏗️ 核心资产目录说明
 
@@ -56,13 +56,13 @@
 
 ### 4. 🧭 Design (落地范式与工具接入)
 提供组织级研发范式、OpenSpec、Superpowers、Figma MCP 等跨项目落地指南：
-- **`development-paradigm-openspec-guide.md`**：组织研发范式 + OpenSpec / Superpowers 落地指南。说明如何把本规则库、OpenSpec、Superpowers、Codex/Cursor/Qoder/OpenCode 和项目模板组合成统一开发链路。
+- **`development-paradigm-openspec-guide.md`**：组织研发范式 + OpenSpec / Superpowers 落地指南。说明如何把本规则库、OpenSpec、Superpowers、Codex/Cursor/Qoder/OpenCode 和项目级规则入口组合成统一开发链路。
 - **`figma-mcp-skills-guide.md`**：Figma MCP + Skills 通用使用说明。说明设计读取、设计转代码、设计系统规则沉淀和 Code Connect 映射流程。
 
 ### 5. 🛠️ Automation (轻量自动化层)
 提供最小可用的规则接入与自检工具，吸收自动化思想但不复制重流程包：
 - **`manifest.json` / `VERSION`**：声明规则包版本、资产清单、安装产物与刻意排除项。
-- **`templates/`**：项目侧最小入口模板，包括 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`。
+- **`templates/`**：项目侧最小入口模板，包括 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`、`.cursorrules`、`.windsurfrules` 和 `.rules/team-intelligence-center.md`；它们是规则接入产物，不是业务技术栈脚手架。
 - **`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1`**：幂等接入业务项目，默认只合并最小规则入口、轻量 lock，并自动生成项目画像；不安装 Git hooks、不复制历史 PRD、不绑定 Codex-only。
 - **`tools/install.sh` / `tools/install.ps1`**：日常一条命令接入入口，默认安装到当前目录，底层复用 bootstrap。
 - **`tools/update.sh` / `tools/update.ps1`**：日常一条命令升级入口，拉取规则源并刷新 Codex 全局包装器和项目入口。
@@ -72,7 +72,7 @@
 - **`tools/validate-pack.sh`**：校验规则包文件、版本、Skill 结构和轻量化约束。
 - **`docs/automation.md`**：记录从 Codex_Project 吸收的有益机制，以及明确剔除的冗余部分。
 
-自动化默认原则是 **adaptive workflow + SDD + TDD**：consulting / micro 保持轻量；standard / critical 任务先明确行为规格，再从验收标准推导测试或验证；OpenSpec 可作为规格承载层，但不强制咨询和 micro 任务进入重流程。强管控项目通过 `risk_floor=standard|critical` 锁定最低档位，不维护第二套 strict 流程。
+自动化默认原则是 **adaptive workflow + SDD + TDD**：consulting / micro 保持轻量；standard / critical 任务先明确行为规格，再从验收标准推导测试或验证。这里的 SDD/TDD 是工作流阶段语义，不是独立 Skill 链；有 OpenSpec 时 OpenSpec 是规格事实源，Superpowers 是执行方法层。强管控项目通过 `risk_floor=standard|critical` 锁定最低档位，不维护第二套 strict 流程。
 
 ## 🔄 核心工作流理念
 
@@ -86,7 +86,7 @@
 6. **[QA] 测试准入验收**：核心流用例执行与边缘退回重测。
 7. **[DS/Release] 交付归档**：Walkthrough、PRD sync、Changelog、Release handoff 按风险和影响触发。
 
-**📍 用户挂载点控制（Human-in-the-loop）**：在这套设计中，人类用户作为唯一的 **Product Owner**。所有不可逆的高危操作（如：信息冲突仲裁、系统大篇幅逻辑覆写、旧业务删除）皆埋设被动拦截锁，强制配置检查点 (**CP-1~CP-5**) ，必须获取用户确认后 AI 才可向下一环流转。
+**📍 用户挂载点控制（Human-in-the-loop）**：在这套设计中，人类用户作为唯一的 **Product Owner**。所有不可逆的高危操作（如：信息冲突仲裁、系统大篇幅逻辑覆写、旧业务删除）皆埋设被动拦截锁，强制配置检查点 (**CP-1~CP-6**) ，必须获取用户确认后 AI 才可向下一环流转。检查点定义以 `Global-Rules/coding-rules.md` 第 6 节为唯一事实源。
 
 ## 🚀 如何使用本智能中枢
 
@@ -99,6 +99,6 @@
 - **日常规则升级**：在业务项目中执行 `bash /path/to/Team-Intelligence-Center/tools/update.sh`，一条命令拉取规则并刷新入口。
 - **Windows 原生接入**：PowerShell 环境执行 `powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1`。
 - **Codex 全局 Loader**：可选执行 `bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh --dry-run` 预览，只安装全局发现入口和 `tic-*` 包装器。
-- **OpenSpec 规格层**：参考 [组织研发范式 + OpenSpec / Superpowers 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路。
+- **OpenSpec 规格层**：参考 [组织研发范式 + OpenSpec / Superpowers 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路和规格事实源。
 - **Superpowers 执行方法层**：在已启用 Superpowers 的 AI 工具中，用 brainstorming、planning、TDD、debugging、code review、subagent-driven development 等能力承接 OpenSpec tasks；OpenSpec 仍是规格事实源。
 - **项目一键接入**：业务项目引入本仓库后，让 AI 执行 [project-governance-bootstrap](./Skills/project-governance-bootstrap.md)，自动补齐 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/` 与 `openspec/` 基础入口，并自动检测/尽力安装 Superpowers；无法静默安装的工具会写入人工待办。

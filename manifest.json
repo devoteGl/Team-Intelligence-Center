@@ -10,6 +10,7 @@
     "default_install_mode": "minimal",
     "tool_neutral": true,
     "principle": "adaptive workflow + SDD + TDD",
+    "mainline_policy": "TIC routes risk, checkpoints, evidence, and closeout; OpenSpec remains the specification source of truth; Superpowers remains the execution method layer; SDD/TDD are workflow semantics, not a separate toolchain",
     "workflow_orchestrator": "Skills/tic-workflow-orchestrator.md",
     "workflow_model": "single_adaptive_with_risk_floor",
     "risk_floor": "none",
@@ -37,6 +38,8 @@
     "git_workflow_advice_only": true,
     "no_forced_full_flow_for_readonly_or_micro_tasks": true,
     "sdd_tdd_required_for_standard_and_critical": true,
+    "sdd_tdd_as_workflow_semantics": true,
+    "project_tool_rule_entries": true,
     "no_codex_only_constraint": true
   },
   "skill_lifecycle": {
@@ -82,6 +85,9 @@
     "templates/AGENTS.md",
     "templates/docs/ai-rules-usage.md",
     "templates/ai-harness/project-adapter.md",
+    "templates/tool-rules/cursorrules.md",
+    "templates/tool-rules/windsurfrules.md",
+    "templates/tool-rules/rules/team-intelligence-center.md",
     "templates/codex-global/AGENTS.md"
   ],
   "tools": [
@@ -103,6 +109,9 @@
     "AGENTS.md",
     ".tic-rules.lock",
     "docs/ai-rules-usage.md",
+    ".cursorrules",
+    ".windsurfrules",
+    ".rules/team-intelligence-center.md",
     "ai-harness/project-adapter.md"
   ],
   "generated_local_files": [
@@ -122,6 +131,7 @@
     "artifact-style delivery walkthrough with summary, evidence, review guidance, media references, risks, and follow-up actions",
     "evidence-based post-development PRD sync draft",
     "one-command install wrapper",
+    "project-level tool rule entries that point back to AGENTS.md",
     "optional Codex global loader and tic-* skill wrappers",
     "risk based task routing",
     "single adaptive workflow with risk_floor",
@@ -140,6 +150,7 @@
     "RTK requirement",
     "project PRD history packaging",
     "forced SDD/Plan/Approval for readonly and micro tasks",
-    "branch lifecycle automation"
+    "branch lifecycle automation",
+    "standalone SDD/TDD skill chain that bypasses OpenSpec or Superpowers"
   ]
 }
