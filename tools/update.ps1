@@ -42,7 +42,12 @@ function Invoke-OrPrint {
     if ($Preview) {
         Write-Host ("  - would run: " + ($Command -join " "))
     } else {
-        & $Command[0] $Command[1..($Command.Count - 1)]
+        $executable = $Command[0]
+        $arguments = @()
+        if ($Command.Count -gt 1) {
+            $arguments = @($Command | Select-Object -Skip 1)
+        }
+        & $executable @arguments
     }
 }
 

@@ -145,6 +145,12 @@ else
   fail "PowerShell bootstrap missing TIC markers or lock writer"
 fi
 
+if grep -nE '&[[:space:]]+\$[A-Za-z0-9_]+\[0\]|[A-Za-z0-9_]+\[1\.\.\(\$[A-Za-z0-9_]+\.Count[[:space:]]*-[[:space:]]*1\)\]' tools/*.ps1 >/dev/null 2>&1; then
+  fail "PowerShell scripts contain brittle direct array invocation or range slicing"
+else
+  pass "PowerShell command invocation avoids brittle array indexing"
+fi
+
 if grep -q 'rules_path=' tools/bootstrap-project.sh && grep -q 'local_config=.tic-rules.local' tools/bootstrap-project.sh && grep -q '.tic-rules.local' tools/bootstrap-project.sh && grep -q '.tic-rules.local' tools/bootstrap-project.ps1 && ! grep -q '{{TIC_RULES_DIR}}' templates/AGENTS.md && ! grep -q '{{TIC_RULES_DIR}}' templates/docs/ai-rules-usage.md; then
   pass "project install avoids committed absolute rules paths"
 else

@@ -61,11 +61,13 @@ function Invoke-CodeGraph {
     }
     Push-Location $ProjectRoot
     try {
+        $executable = $codegraphCommand[0]
         $baseArgs = @()
         if ($codegraphCommand.Count -gt 1) {
             $baseArgs = @($codegraphCommand | Select-Object -Skip 1)
         }
-        & $codegraphCommand[0] @($baseArgs + $Arguments)
+        $allArgs = @($baseArgs + $Arguments)
+        & $executable @allArgs
     } finally {
         Pop-Location
     }
