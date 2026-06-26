@@ -45,9 +45,19 @@ AI 不得静默创建分支、合并、tag 或 push。分支创建必须先给�
 1. `git fetch --all --prune`（若网络或权限不允许，说明缺口）。
 2. 扫描本地和远端分支：`release/[0-9]+.[0-9]+.[0-9]{3}`、`hotfix/[0-9]+.[0-9]+.[0-9]{3}`。
 3. 扫描可见 tag、`docs/releases/`、发版记录和项目约定中的版本号。
+   - `docs/releases/` 仅把匹配 `数字.数字.三位数字` 的一级目录视为版本目录，例如 `1.0.004`。
+   - 日期、业务名或其他非版本号目录只能作为历史遗留资料，不参与最大版本推导。
 4. 按 `major.minor.patch` 数值比较取历史最大版本，默认递增第三段，生成候选分支。
 5. 若没有任何历史版本，默认从 `1.0.001` 开始；若第三段已到 `999`，暂停让用户确认是否进位。
 6. 输出版本证据和候选命令，等待用户确认。
+
+**Release 目录主键**：
+
+- 发版交接目录一律以版本号为一级入口：`docs/releases/<version>/`。
+- `<version>` 必须与本次 release/hotfix tag 完全一致，格式为 `数字.数字.三位数字`，例如 `1.0.004`。
+- 禁止在 `docs/releases/` 下新建日期、业务名、需求名或其他非版本号一级目录。
+- 业务名、需求名或变更主题应放入版本目录内的 `changes/<business-slug>/`，具体结构由 `Skills/release-handoff.md` 定义。
+- 版本号是发版容器唯一主键，对齐分支、tag、父仓库子模块指针和发版证据；业务名只是容器内容。
 
 **必须显式确认**：
 
@@ -130,6 +140,8 @@ AI 不得静默创建分支、合并、tag 或 push。分支创建必须先给�
 4. 多项目发版时，在参与项目创建或切换同名 release 分支。
 5. 冻结父仓库、子模块、独立目录、SQL/脚本、外部制品版本。
 6. 生成或更新 `docs/releases/<version>/`。
+   - 不得使用日期或业务名作为 `docs/releases/` 一级目录。
+   - 单需求 release train 也使用版本号目录，业务名放入 `changes/<business-slug>/`。
 7. release 分支只允许：
    - 修复发版阻塞问题。
    - 调整配置、版本号、SQL/脚本。
@@ -184,6 +196,7 @@ release 分支不得继续塞新需求。
 - 总冒烟和项目级冒烟通过或有明确豁免。
 - SQL/脚本 manifest 已执行并记录结果。
 - 回滚方案可执行，不可逆数据点已披露。
+- `docs/releases/<version>/` 已随 release 结果回灌到 `develop`，或已记录用户明确延后/豁免。
 
 ---
 
@@ -210,6 +223,7 @@ release 分支不得继续塞新需求。
 release/hotfix 创建 tag 后，Git Flow 任务不得视为完成。AI 必须继续处理回灌状态，直到满足以下任一条件：
 
 - `develop` 已包含 release/hotfix 的回灌结果，并记录目标分支、回灌方式、commit 和验证命令。
+- `develop` 已包含对应的 `docs/releases/<version>/` 发版目录和发版证据；缺失时 Git Flow 收尾不得标为完成。
 - 所有仍活跃且受影响的 `release/*` 已完成 hotfix 回灌，或已记录“不受影响”的判断依据。
 - 用户明确要求延后或豁免回灌，并记录负责人、原因、后续命令和风险；此时最终状态必须标为“回灌未完成”，不得标为完成。
 
@@ -219,6 +233,7 @@ tag 创建后的下一步输出必须包含：
 - 待执行或已执行命令：如 `git switch develop && git merge --no-ff release/<version>`。
 - tag 落点证据：`git rev-parse <tag>^{commit}` 与 `master` 发布提交。
 - 回灌证据：`git log --oneline --decorate -n 5 develop`、`git merge-base --is-ancestor <release-or-hotfix-tip> develop`，或 cherry-pick 对应 commit 证据。
+- 发版目录证据：`docs/releases/<version>/` 在 `develop` 中存在，且目录名与 tag 完全一致。
 - push 状态：未 push / 已 push `master` / 已 push `develop` / 已 push tag。
 
 默认不得在 `develop` 回灌完成前标记 Git Flow 收尾完成；若用户要求先 push tag，AI 仍必须把 `develop` 回灌列为阻塞中的下一步。

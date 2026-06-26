@@ -92,7 +92,7 @@ Walkthrough 是“完成态交付走查”，不是开工前计划，也不是�
 
 未声明时建议：
 - 单变更 Walkthrough：`docs/walkthroughs/<change-id>.md`
-- 发版批次内 Walkthrough：`docs/releases/<release-id>/walkthrough.md`
+- 发版批次内 Walkthrough：`docs/releases/<version>/walkthrough.md`
 - 脚本 / 工具使用 Walkthrough：放在该工具目录或 `docs/operations/`
 - UI 证据资产：`docs/walkthroughs/assets/<change-id>/`
 

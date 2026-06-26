@@ -44,13 +44,22 @@ Release Handoff 把“研发完成”转化为“可发布、会使用、能回�
 
 | mode | 使用场景 | 输出位置建议 |
 | --- | --- | --- |
-| `single` | 单个功能、单个服务、单个跨项目变更 | `docs/releases/<release-id>/changes/<change-id>.md` |
-| `train` | 多服务、多项目、SQL/脚本、全量发版、统一回滚 | `docs/releases/<release-id>/` |
+| `single` | 单个功能、单个服务、单个跨项目变更 | `docs/releases/<version>/changes/<business-slug>/README.md` |
+| `train` | 多服务、多项目、SQL/脚本、全量发版、统一回滚 | `docs/releases/<version>/` |
 
 选择规则：
 - 只有一个交付对象且无 SQL/脚本：默认 `single`。
 - 超过一个服务/端/脚本/SQL/定时任务/第三方回调：默认 `train`。
 - 用户明确要求“发版批次 / release train / 总控包”：使用 `train`。
+- `<version>` 必须与 Git Flow release/hotfix tag 完全一致，格式为 `数字.数字.三位数字`，例如 `1.0.004`。
+- 不得在 `docs/releases/` 下新建日期、业务名、需求名或其他非版本号一级目录。
+- 版本号是发版容器唯一主键；业务名、需求名或变更主题是容器内容，应放入 `changes/<business-slug>/`。
+
+业务 slug 规则：
+
+- 使用稳定 kebab-case，例如 `wechat-shop-auto-whitelist`。
+- 不带日期，不带 release 版本号，不使用中文目录名。
+- 单需求 release train 也必须创建 `changes/<business-slug>/`，不得把业务内容平铺到版本根目录。
 
 ---
 
@@ -70,7 +79,10 @@ Release Handoff 把“研发完成”转化为“可发布、会使用、能回�
 ### mode=single
 
 ```markdown
-# <change-id> Release Handoff
+docs/releases/<version>/
+└── changes/
+    └── <business-slug>/
+        └── README.md
 
 ## 1. 发版概览
 ## 2. 本次变更范围
@@ -87,16 +99,35 @@ Release Handoff 把“研发完成”转化为“可发布、会使用、能回�
 ### mode=train
 
 ```text
-docs/releases/<release-id>/
+docs/releases/<version>/
 ├── README.md
-├── services/
 ├── changes/
+│   └── <business-slug>/
+│       └── README.md
 ├── database/
 ├── scripts/
+├── services/
 ├── smoke-checklist.md
 ├── rollback.md
 └── evidence.md
 ```
+
+`changes/<business-slug>/README.md` 建议以 YAML front matter 开头，便于按业务反查版本：
+
+```yaml
+---
+business: wechat-shop-auto-whitelist
+version: 1.0.004
+date: 2026-06-25
+---
+```
+
+版本根 `README.md` 负责记录本版本总览、发布对象、服务顺序、跨业务依赖和回灌状态；`database/` 中的 SQL/脚本应保留跨业务全局执行顺序，不应只按业务拆散。
+
+历史兼容：
+
+- 本规则生效前已存在的日期或业务名一级目录可视为遗留归档，但不得新增同类目录。
+- 若需要规范化迁移，优先迁移到对应的 `docs/releases/<version>/changes/<business-slug>/` 或版本根发版包；确认无外部链接依赖时可删除旧目录。
 
 ---
 
