@@ -25,7 +25,7 @@
 
 - 不自动复制 TIC `Skills/` 到项目本地 skills 或全局 skills。
 - 不覆盖研发个人全局规则；本 Loader 只提供发现项目 TIC 的方法。
-- 不默认执行 Git 分支、提交、推送、合并或 tag。涉及 Git Flow 操作时，应读取项目 TIC 的 `Skills/git-flow-operator.md`，先给出候选分支、版本/tag 证据和待执行命令，等待用户确认。
+- 不默认执行 Git 分支、提交、推送、合并或 tag。涉及 Git Flow 操作时，应读取项目 TIC 的 `Skills/git-flow-operator.md`，先给出候选分支、版本/tag 证据和待执行命令，等待用户确认；release/hotfix 打 tag 后必须继续输出 `develop` 回灌状态、命令和证据，不得把 tag 视为完成态。
 - 默认使用 single adaptive workflow：`tic-workflow-orchestrator` 判断 consulting / micro / standard / critical，并应用项目 `risk_floor`。`strict` 仅作为 `risk_floor=critical` 的兼容说法。
 - consulting / micro 任务保持轻量，不强制 PRD / SDD / OpenSpec。
 - standard / critical 任务在项目已接入 TIC 时执行 SDD + TDD。

@@ -272,6 +272,18 @@ else
   fail "Git Flow branch naming must use business feature branches, versioned release/hotfix, no-v tags, and confirmation gates"
 fi
 
+if grep -q 'Tag 后回灌门禁' Skills/git-flow-operator.md &&
+   grep -q 'develop 回灌状态' Skills/git-flow-operator.md &&
+   grep -q '回灌未完成' Skills/git-flow-operator.md &&
+   grep -q '打 tag 后必须继续输出 `develop` 回灌状态' templates/AGENTS.md &&
+   grep -q '打 tag 后必须继续输出 `develop` 回灌状态' templates/codex-global/AGENTS.md &&
+   grep -q 'post-tag `develop` back-merge status' templates/codex-global/skills/tic-git-flow-operator/SKILL.md &&
+   grep -q 'release/hotfix 创建 tag 后不得把 Git Flow 任务标记为完成' Global-Rules/coding-rules.md; then
+  pass "Git Flow tag closeout requires develop back-merge evidence"
+else
+  fail "Git Flow tag closeout must keep develop back-merge as a completion gate"
+fi
+
 if grep -q 'Join-Path \$repoRoot "docs/releases"' tools/git-advice.ps1; then
   pass "PowerShell Git advice scans release records from repo root"
 else

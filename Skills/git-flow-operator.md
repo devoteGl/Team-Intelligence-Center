@@ -170,11 +170,11 @@ release 分支不得继续塞新需求。
 
 ## 7. Release 收尾
 
-用户明确确认后，按顺序执行：
+用户明确确认后，按顺序执行。确认卡必须一次性列出完整链路，不得只确认到 tag：
 
 1. 合并 `release/<version>` 到 `master`。
 2. 在 `master` 的 release 合并提交上创建 tag：`<version>`，不得加 `v` 前缀。
-3. 合并 `release/<version>` 回 `develop`。
+3. 立即进入 tag 后回灌门禁，合并 `release/<version>` 回 `develop`。
 4. 更新父工作区子模块指针与发版证据。
 5. 按需 push 分支和 tag。
 
@@ -189,11 +189,11 @@ release 分支不得继续塞新需求。
 
 ## 8. Hotfix 收尾
 
-用户明确确认后，按顺序执行：
+用户明确确认后，按顺序执行。确认卡必须一次性列出完整链路，不得只确认到 tag：
 
 1. 合并 `hotfix/<version>` 到 `master`。
 2. 在 `master` 的 hotfix 合并提交上创建 hotfix tag：`<version>`，不得加 `v` 前缀。不得直接在 `hotfix/*` 分支提交上创建发布 tag。
-3. 合并或 cherry-pick 回 `develop`。
+3. 立即进入 tag 后回灌门禁，合并或 cherry-pick 回 `develop`。
 4. 回灌所有活跃且受影响的 `release/*`。
 5. 更新事故记录和发版记录。
 
@@ -205,7 +205,27 @@ release 分支不得继续塞新需求。
 
 ---
 
-## 9. 输出模板
+## 9. Tag 后回灌门禁
+
+release/hotfix 创建 tag 后，Git Flow 任务不得视为完成。AI 必须继续处理回灌状态，直到满足以下任一条件：
+
+- `develop` 已包含 release/hotfix 的回灌结果，并记录目标分支、回灌方式、commit 和验证命令。
+- 所有仍活跃且受影响的 `release/*` 已完成 hotfix 回灌，或已记录“不受影响”的判断依据。
+- 用户明确要求延后或豁免回灌，并记录负责人、原因、后续命令和风险；此时最终状态必须标为“回灌未完成”，不得标为完成。
+
+tag 创建后的下一步输出必须包含：
+
+- `develop` 回灌状态：未开始 / 已确认待执行 / 已完成 / 用户明确延后。
+- 待执行或已执行命令：如 `git switch develop && git merge --no-ff release/<version>`。
+- tag 落点证据：`git rev-parse <tag>^{commit}` 与 `master` 发布提交。
+- 回灌证据：`git log --oneline --decorate -n 5 develop`、`git merge-base --is-ancestor <release-or-hotfix-tip> develop`，或 cherry-pick 对应 commit 证据。
+- push 状态：未 push / 已 push `master` / 已 push `develop` / 已 push tag。
+
+默认不得在 `develop` 回灌完成前标记 Git Flow 收尾完成；若用户要求先 push tag，AI 仍必须把 `develop` 回灌列为阻塞中的下一步。
+
+---
+
+## 10. 输出模板
 
 ```markdown
 ## Git Flow 操作结果
@@ -223,6 +243,13 @@ release 分支不得继续塞新需求。
 ### 等待人工确认
 - 分支创建 / 合并 / tag / push：
 - 待执行命令：
+
+### Tag 后回灌门禁
+- develop 回灌状态：未开始 / 已确认待执行 / 已完成 / 用户明确延后
+- tag 落点证据：
+- 回灌证据：
+- push 状态：
+- 最终状态：完成 / 回灌未完成
 
 ### 分支映射
 | 项目 | 分支 | commit | 状态 |

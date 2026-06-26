@@ -284,6 +284,7 @@ FE/BE 并行开始前，PM 必须执行 `contract-handoff`，冻结 API、共享
 - 多项目联动时，AI 应在父工作区和涉及子项目使用同名分支，并记录分支映射。
 - AI 不得静默合并到 `master`，不得静默打 tag，不得静默 push 生产相关分支。
 - `release/*` 合并到 `master`、tag、回灌 `develop`、`hotfix/*` 回灌必须由用户显式调用或明确确认。
+- release/hotfix 创建 tag 后不得把 Git Flow 任务标记为完成；必须继续输出 `develop` 回灌状态、待执行命令、tag 落点证据和回灌证据，直到回灌完成或用户明确记录延后/豁免。
 
 ### 8.3 发版门禁
 
