@@ -257,6 +257,39 @@ FE/BE 并行开始前，PM 必须执行 `contract-handoff`，冻结 API、共享
 - 若 `design-taste-frontend` 明确判定场景不适用（如密集后台、数据表或多步骤产品 UI），仍需记录该判断，并按项目设计系统与 `ui-ux-pro-max` 执行。
 - 需要端到端验证功能、真实点击输入、登录、桌面 App、用户本机状态、真实浏览器插件或账号态时，优先使用 `@电脑`（`plugin://computer-use@openai-bundled` / Computer Use）；不可用时说明原因，再用 Playwright、Browser 或 Chrome 替代。
 
+### 7.2 CLI 输出压缩工具（如 rtk）
+
+rtk 等 CLI 输出压缩工具是可选效率辅助，用于降低长输出对 AI 上下文的污染。它只能改变 AI 阅读输出的方式，不得改变工作流判定成败的依据。
+
+**依赖等级**：
+
+- rtk 为 optional 依赖；未安装或未启用时，所有 TIC 工作流必须能以原生命令无损完成。
+- 项目如需启用，应在 `ai-harness/project-adapter.md` 或项目规则中显式声明；未声明时默认使用原生命令。
+- 不得把 rtk 写死到必须依赖的项目脚本、CI 门禁或生产部署路径中。
+
+**允许场景**：
+
+- 目录与文件查看：`rtk ls`、`rtk find`、`rtk read`、`rtk grep`。
+- 日常 Git 只读：`rtk git status`、`rtk git log`、`rtk git diff`（仅用于阅读或 review 预览）。
+- 测试、构建、lint 的长输出摘要：`rtk test`、`rtk jest`、`rtk vitest`、`rtk go test`、`rtk tsc`、`rtk lint`。
+- 容器、集群、日志的只读诊断：`rtk docker ps`、`rtk kubectl get ...`、`rtk log`。
+
+**禁止或绕开场景**：
+
+- 改变仓库状态或远端状态的 Git 操作：`git push`、`git merge`、`git cherry-pick`、`git rebase`、`git tag`、`git reset`、force push。
+- Git Flow 发版操作：创建/合并 `release/*`、`hotfix/*`、打 tag、回灌 `develop`、更新父仓库子模块指针。
+- 数据迁移、schema 变更、数据修复脚本、生产部署、回滚、切流量。
+- 破坏性操作：`rm -rf`、drop database、`kubectl delete`、`docker compose down -v`、`pulumi destroy` 等。
+- 已失败命令的调试过程，或任何必须完整读取 stderr、exit code、影响行数和审计日志的命令。
+
+**审计与安全**：
+
+- 关键证据以原生命令 exit code、stderr 和完整日志为准；rtk 摘要只能作为辅助阅读，不得替代审计底稿。
+- delivery walkthrough、release handoff、Git Flow 证据中如引用 rtk 摘要，必须说明过滤方式，并保留原始日志或重跑原生命令。
+- 团队/公司环境启用 rtk 前必须确认 telemetry 已关闭，建议设置 `RTK_TELEMETRY_DISABLED=1`。
+- 涉及密钥、凭据、生产数据或敏感参数的命令，不得在 telemetry 开启时经过 rtk。
+- 有疑问时默认走原生命令。
+
 ---
 
 ## 8. Git Flow 与发版分支约束

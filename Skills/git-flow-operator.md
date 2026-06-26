@@ -30,6 +30,8 @@ delegates_to: []
 
 AI 不得静默创建分支、合并、tag 或 push。分支创建必须先给出候选分支、命名依据和执行命令，等待用户确认无误后再执行。
 
+Git Flow 的状态变更和最终证据必须使用原生 `git` 命令或保留 raw/proxy 原始输出。rtk 等输出压缩工具只可用于只读预览（如 status/log/diff 的辅助阅读），不得替代创建分支、合并、tag、push、回灌、子模块指针更新和最终审计证据。
+
 **分支与 tag 命名规则**：
 
 - `feature/<business-slug>`：用于新需求和常规修复，后缀表达业务目的或 issue，例如 `feature/offline-refund`、`feature/1234-offline-refund`。
@@ -235,6 +237,7 @@ tag 创建后的下一步输出必须包含：
 - 回灌证据：`git log --oneline --decorate -n 5 develop`、`git merge-base --is-ancestor <release-or-hotfix-tip> develop`，或 cherry-pick 对应 commit 证据。
 - 发版目录证据：`docs/releases/<version>/` 在 `develop` 中存在，且目录名与 tag 完全一致。
 - push 状态：未 push / 已 push `master` / 已 push `develop` / 已 push tag。
+- 输出过滤状态：若过程中查看过 rtk 摘要，必须同时保留 raw 输出或重跑原生命令作为最终证据。
 
 默认不得在 `develop` 回灌完成前标记 Git Flow 收尾完成；若用户要求先 push tag，AI 仍必须把 `develop` 回灌列为阻塞中的下一步。
 
@@ -263,6 +266,7 @@ tag 创建后的下一步输出必须包含：
 - develop 回灌状态：未开始 / 已确认待执行 / 已完成 / 用户明确延后
 - tag 落点证据：
 - 回灌证据：
+- 输出过滤状态：
 - push 状态：
 - 最终状态：完成 / 回灌未完成
 

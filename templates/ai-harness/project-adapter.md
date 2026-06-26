@@ -24,6 +24,23 @@ bootstrap 默认会基于目标项目自动生成 `ai-harness/project-adapter.md
 # 构建
 ```
 
+## 可选工具
+
+| 工具 | 默认启用 | 用途 | 限制 |
+| --- | --- | --- | --- |
+| rtk | false | 只读、高噪音、幂等命令的输出压缩 | Git Flow、迁移、生产、破坏性操作和失败调试使用原生命令或 raw 输出 |
+
+项目如需启用 rtk，应在本文件或项目规则中显式改为 `true`，并确认团队环境已关闭 telemetry。
+
+```yaml
+rtk_enabled: false
+rtk_native_only:
+  - git push/merge/cherry-pick/rebase/tag/reset
+  - release/hotfix/tag/back-merge
+  - migration/schema/data-repair
+  - production deploy/rollback/destructive-ops
+```
+
 ## 模块地图
 
 | 区域 | 路径 | 说明 |

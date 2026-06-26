@@ -102,6 +102,8 @@ effective_tier = max(classified_tier, risk_floor)
 | Closeout | 交付走查、PRD 草稿、Changelog | `delivery-walkthrough`、`post-dev-prd-sync`、`changelog-writer` |
 | Release | 运维/运营/QA 发版交接 | `release-handoff` |
 
+项目显式启用 rtk 等 CLI 输出压缩工具时，Verification 可在只读、高噪音、幂等命令中使用摘要输出提升阅读效率。Git Flow、发版、迁移、破坏性操作、生产命令、失败调试和 critical 证据必须保留原生命令或 raw 输出。
+
 ---
 
 ## 3. 各档位模板

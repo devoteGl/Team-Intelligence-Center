@@ -33,6 +33,16 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - 需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `Skills/release-handoff.md`；单变更使用 `mode=single`，多项目、多服务、SQL/脚本使用 `mode=train`。
 - standard / critical 任务完成后，如涉及用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程变化，应自动生成 PRD 更新草稿和待确认项。
 
+## CLI 输出压缩工具（可选）
+
+rtk 等 CLI 输出压缩工具只用于降低长输出对 AI 上下文的污染，不是 TIC 工作流必需依赖。
+
+- 未安装或项目未显式启用时，所有命令必须能按原生命令正常执行。
+- 仅在只读、高噪音、幂等场景优先使用 rtk，例如 `rtk git status/log/diff`、`rtk grep/find/read`、测试 / lint / build 的摘要输出。
+- 涉及 `git push/merge/cherry-pick/rebase/tag/reset`、Git Flow 发版、数据迁移、生产部署、回滚、破坏性操作或失败调试时，必须使用原生命令或保留 raw/proxy 原始输出。
+- 关键证据以原生命令 exit code、stderr 和完整日志为准；rtk 摘要只能作为辅助阅读，不得替代审计底稿。
+- 团队/公司环境启用 rtk 前必须确认 telemetry 已关闭，建议设置 `RTK_TELEMETRY_DISABLED=1`。
+
 ## 任务分级
 
 | 档位 | 适用场景 | 处理要求 |
