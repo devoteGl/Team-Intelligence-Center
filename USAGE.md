@@ -58,6 +58,7 @@ Team-Intelligence-Center/
 │   ├── changelog-writer.md             #    [DS] 双层 Changelog 编写
 │   ├── task-decomposer.md              #    [PM] 任务拆解方法
 │   ├── shared-domain-arbiter.md        #    [PM/Tech Lead] 共享文件域仲裁
+│   ├── agent-session-protocol.md       #    [PM/Tech Lead] 多 agent 会话信箱协议
 │   ├── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
 │   ├── delivery-walkthrough.md         #    [PM/Tech Lead/QA/DS] 交付走查
 │   ├── release-handoff.md              #    [PM/Release/DS] 单变更/发版批次交接
@@ -68,7 +69,9 @@ Team-Intelligence-Center/
 ├── templates/                          # 🧩 业务项目最小接入模板
 │   ├── AGENTS.md
 │   ├── docs/ai-rules-usage.md
-│   └── ai-harness/project-adapter.md
+│   └── ai-harness/
+│       ├── project-adapter.md
+│       └── agent-session-protocol.md
 │
 ├── tools/                              # 🛠️ 轻量自动化脚本
 │   ├── bootstrap-project.sh
@@ -200,6 +203,7 @@ docs/ai-rules-usage.md
 .windsurfrules
 .rules/team-intelligence-center.md
 ai-harness/project-adapter.md
+ai-harness/agent-session-protocol.md
 ```
 
 开源版保留的 `templates/` 只服务于这组最小接入产物。`.cursorrules`、`.windsurfrules` 和 `.rules/team-intelligence-center.md` 只是让不同 AI 工具先读取 `AGENTS.md`，不引入第二套流程。它们不提供业务脚手架或示例工程；团队继续使用自己的脚手架和目录结构，只把 TIC 作为规则层接入。
@@ -335,6 +339,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 | `changelog-writer` | DS | QA 验收通过后归档 | P0 |
 | `task-decomposer` | PM | 新任务开始时拆解 | P2 |
 | `shared-domain-arbiter` | PM/Tech Lead | 需要修改 router/types/constants/全局配置等共享域 | P2 |
+| `agent-session-protocol` | PM/Tech Lead | standard / critical 任务需要多 agent 独立会话、mailbox、证据和收敛记录 | P1 |
 | `project-governance-bootstrap` | PM/DS | 项目首次接入组织范式 | P0 |
 | `delivery-walkthrough` | PM/Tech Lead/QA/DS | 实现完成后生成交付走查、Review 指引和验证证据 | P0 |
 | `release-handoff` | PM/Release/DS | 单变更或发版批次的运维、运营、QA、回滚、上线观察交接 | P0 |
@@ -367,7 +372,20 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 "请按照 project-governance-bootstrap 技能初始化本项目 AI 治理入口"
 ```
 
-### 6.3 Skill 在工作流中的位置
+### 6.3 Intent Intake 与用户类型
+
+TIC 不要求用户懂流程。用户可以只说“帮我把登录体验优化一下”或“全自动做掉”，AI 先做轻量 Intent Intake，再决定要不要追问、进入哪个风险档、是否触发检查点。
+
+Intake 至少识别：
+- 目标：用户真正想达成什么。
+- 危险词：全自动、顺便、重构、删除、上线、迁移、清空、登录、支付、权限等。
+- 自治诉求：用户希望 AI 自主推进到什么程度。
+- 缺失信息：范围、验收、数据安全、不可逆授权等。
+- 确认方式：直接执行、先给计划、等待 CP、或要求人工确认。
+
+用户类型判断只影响沟通方式，不降低门禁。懂流程的用户可以少解释、快执行；不懂流程或表达模糊的用户，AI 要把风险和下一步翻译清楚。“全自动”“你看着办”“不用问我”只授权可逆低风险步骤；删除、迁移、发版、push、merge、tag、生产配置或 PRD/OpenSpec 转正仍必须暂停确认。
+
+### 6.4 Skill 在工作流中的位置
 
 ```text
 [Orchestrator] 风险分级 + 路由
@@ -385,6 +403,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
        │
 [FE/BE] 并行实现
   └─ Skill: shared-domain-arbiter（共享域修改时）
+      └─ 可选：agent-session-protocol（独立会话 / mailbox / 证据收口）
        │
 [QA] 测试验收
   └─ Checklist: prd-review-checklist
@@ -610,14 +629,18 @@ AI 工具中使用 `/opsx:*`：
 - 稳定规格最终回写 `openspec/specs/`，不要把 `docs/superpowers/specs/` 当主事实源。
 - 小修、小 bug 可直接用 Superpowers 的 TDD 或 debugging，不强制开 OpenSpec change。
 - Superpowers 产生的临时状态默认不提交；确需保留的计划或复盘应归入 `docs/` 或 `ai-harness/memory/`。
+- 多 agent / subagent 是执行层 fan-out 能力，不是新的顶层工作流；启用前必须由 `tic-workflow-orchestrator` 判断风险、冻结契约、分配文件域，并由主 Agent 收口验证证据。
+- 多 agent 如果拆成独立会话，应使用 `agent-session-protocol`：run 目录给用户看，`run_id` / `agent_id` / `session_id` 写入 manifest/status，agent 只通过结构化 outbox 和 evidence 协作。
+- 社区 agent 或工具原生 agent 只能作为专业能力适配，不替代 TIC 的 PM/CI/FE/BE/QA/DS/Release 角色合同；不建议全量安装外部 agent 后自由接管 standard / critical 任务。
 
 ### 9.5 与本规则库的关系
 
 - `Team-Intelligence-Center` 定义角色、流程、Prompts、Skills 和工程纪律。
 - OpenSpec 定义 proposal、specs、design、tasks、archive 等规格工件。
 - Superpowers 定义 Agent 执行方法，例如计划、测试驱动、系统化调试、代码审查和子代理开发。
+- 社区 agent 库可作为专家能力来源，但必须被 TIC Agent Contract 包裹，遵守文件 ownership、检查点、契约冻结和证据要求。
 - 项目 `docs/` 保存长期 PRD、API 契约、外部服务和设计资料。
-- 项目 `ai-harness/` 保存项目适配、长期记忆、决策和 runbook。
+- 项目 `ai-harness/` 保存项目适配、agent 会话协议、长期记忆、决策和 runbook。
 
 ### 9.6 老项目接入
 

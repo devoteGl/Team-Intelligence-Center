@@ -21,11 +21,17 @@
 - standard 任务：使用相关 TIC 技能，执行 SDD + TDD，并完成验证。
 - critical 任务：需要明确人工确认、回滚思路和更强验证。
 
+不懂流程也可以只说目标。AI 会先做轻量 Intent Intake，识别目标、危险词、自治诉求、缺失信息、建议档位和确认方式。用户说“全自动”“你看着办”“不用问我”时，AI 只能自主推进可逆低风险步骤；删除、迁移、发版、push、merge、tag、生产配置或 PRD/OpenSpec 转正仍需明确确认。
+
 默认入口是 single adaptive workflow：`tic-workflow-orchestrator` 先判断 consulting / micro / standard / critical，再应用项目 `risk_floor`。如果项目配置 `risk_floor=standard|critical`，AI 不得自行降级到该档位以下。
 
 SDD/TDD 是工作流阶段语义，不是独立 Skill 链。项目已有 OpenSpec 时，OpenSpec 是规格事实源；Superpowers 是执行方法层，负责计划、TDD、调试、review 和子代理执行。
 
 涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `contract-handoff`。涉及共享文件域修改时，优先使用 `shared-domain-arbiter`。需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `release-handoff(mode=single|train)`。
+
+如项目启用 subagent / multi-agent / 社区 agent，TIC 角色仍是协作合同。外部 agent 只能作为专业能力适配，必须由 `tic-workflow-orchestrator` 决定是否 fan-out，并遵守契约冻结、共享域仲裁、文件 ownership、检查点和交付证据要求。不建议全量安装外部 agent 库后由模型自由选择角色处理 standard / critical 任务。
+
+如果每个 agent 单独开会话，应使用 `agent-session-protocol`。项目侧入口是 `ai-harness/agent-session-protocol.md`，运行态目录建议为 `.tic/agent-runs/YYYYMMDD-HHMM-任务短标题/`。目录名给人看，`run_id` / `agent_id` / `session_id` 放入 manifest/status 给机器追踪；agent 通过 inbox/outbox/status/evidence 协作，不自由群聊。
 
 UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归相关变更，应使用 `design-taste-frontend` 与 `ui-ux-pro-max` 参与方案和实现判断，并优先核对真实界面。需要端到端验证功能、真实点击输入、登录、桌面 App、浏览器插件或账号态时，优先使用 `@电脑`（`plugin://computer-use@openai-bundled` / Computer Use）；无法自动核对时，在最终报告中说明替代验证和剩余 UI 风险。
 

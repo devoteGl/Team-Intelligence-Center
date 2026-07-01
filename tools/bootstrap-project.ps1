@@ -17,7 +17,7 @@ Usage:
 Options:
   -DryRun        Show planned writes without changing files.
   -Yes          Skip interactive confirmation.
-  -Force        Overwrite existing docs/ai-rules-usage.md and ai-harness/project-adapter.md after backing them up.
+  -Force        Overwrite existing docs/ai-rules-usage.md and ai-harness/*.md after backing them up.
   -RulesDir     Path to Team-Intelligence-Center. Project-local paths are recorded as relative; external paths are written only to .tic-rules.local.
   -ProjectRoot  Target project root. Defaults to the current directory.
 "@
@@ -485,16 +485,24 @@ updated_at=$updatedAt
 
 function Ensure-GitignoreLocalConfig {
     $target = Join-Path $ProjectRoot ".gitignore"
+    $needsHeader = $true
     $needsLocal = $true
     $needsBackups = $true
+    $needsAgentRuns = $true
 
     if (Test-Path -LiteralPath $target) {
         $lines = @(Get-Content -LiteralPath $target -Encoding UTF8)
+        $needsHeader = -not (
+            ($lines -contains "# Team-Intelligence-Center local files") -or
+            ($lines -contains ".tic-rules.local") -or
+            ($lines -contains ".tic-backups/")
+        )
         $needsLocal = -not ($lines -contains ".tic-rules.local")
         $needsBackups = -not ($lines -contains ".tic-backups/")
+        $needsAgentRuns = -not ($lines -contains ".tic/agent-runs/")
     }
 
-    if (-not $needsLocal -and -not $needsBackups) {
+    if (-not $needsLocal -and -not $needsBackups -and -not $needsAgentRuns) {
         Add-Plan "skip .gitignore TIC local entries"
         return
     }
@@ -513,9 +521,10 @@ function Ensure-GitignoreLocalConfig {
         }
 
         $additions = New-Object System.Collections.Generic.List[string]
-        [void]$additions.Add("# Team-Intelligence-Center local files")
+        if ($needsHeader) { [void]$additions.Add("# Team-Intelligence-Center local files") }
         if ($needsLocal) { [void]$additions.Add(".tic-rules.local") }
         if ($needsBackups) { [void]$additions.Add(".tic-backups/") }
+        if ($needsAgentRuns) { [void]$additions.Add(".tic/agent-runs/") }
 
         $content = if ([string]::IsNullOrWhiteSpace($existing)) {
             ($additions -join "`r`n") + "`r`n"
@@ -532,6 +541,7 @@ Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/cursorrules.m
 Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/windsurfrules.md") (Join-Path $ProjectRoot ".windsurfrules")
 Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/rules/team-intelligence-center.md") (Join-Path (Join-Path $ProjectRoot ".rules") "team-intelligence-center.md")
 Install-ProjectAdapter
+Install-TemplateFile (Join-Path $PackageRoot "templates/ai-harness/agent-session-protocol.md") (Join-Path (Join-Path $ProjectRoot "ai-harness") "agent-session-protocol.md")
 Write-LockFile
 Write-LocalConfig
 Ensure-GitignoreLocalConfig

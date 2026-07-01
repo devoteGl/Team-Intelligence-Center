@@ -122,6 +122,7 @@ Team-Intelligence-Center/
 AGENTS.md
 docs/ai-rules-usage.md
 ai-harness/project-adapter.md
+ai-harness/agent-session-protocol.md
 ai-harness/memory/README.md
 ai-harness/memory/project-context.md
 ai-harness/memory/decision-log.md
@@ -241,6 +242,7 @@ test -d ".superpowers"
 - `ai-rules/Team-Intelligence-Center/Design/development-paradigm-openspec-guide.md`
 - `docs/ai-rules-usage.md`
 - `ai-harness/project-adapter.md`
+- `ai-harness/agent-session-protocol.md`
 - `openspec/config.yaml`
 
 ## 工作方式
@@ -387,6 +389,7 @@ Gemini CLI：gemini extensions install https://github.com/obra/superpowers
 | 管理后台 | TODO | TODO |
 | 文档 | `docs/` | PRD、API 契约、外部服务、设计资料 |
 | 规格 | `openspec/` | 活跃变更和稳定规格 |
+| Agent 会话 | `ai-harness/agent-session-protocol.md` / `.tic/agent-runs/` | 多 agent 独立会话的协议和运行态证据 |
 | 项目记忆 | `ai-harness/memory/` | 项目事实、决策、runbook |
 | 组织规则 | `ai-rules/Team-Intelligence-Center/` | 通用规则来源 |
 | Superpowers | `.superpowers/` | 可选，本地执行状态，默认不提交 |
@@ -491,6 +494,7 @@ The project SHALL distinguish stable facts from assumptions.
 - [ ] `docs/ai-rules-usage.md` 已说明终端用 `openspec`、AI 工具用 `/opsx:*`。
 - [ ] `docs/ai-rules-usage.md` 已说明 Superpowers 是执行方法层，不是规格事实源。
 - [ ] `ai-harness/project-adapter.md` 已记录项目边界。
+- [ ] `ai-harness/agent-session-protocol.md` 已说明多 agent 独立会话的目录、状态和收敛规则。
 - [ ] `ai-harness/memory/` 已有 README、project-context、decision-log、runbooks。
 - [ ] `openspec/config.yaml` 已包含项目上下文。
 - [ ] `openspec/specs/workspace/spec.md` 使用 OpenSpec 合法格式：`## Purpose` + `## Requirements`。

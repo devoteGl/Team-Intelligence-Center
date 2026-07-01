@@ -19,9 +19,11 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 
 - 简单任务保持简单。咨询、只读查询、代码解释、微小非行为改动，不走完整 PRD/SDD/Plan 流程。
 - 默认使用 single adaptive workflow：先由 `tic-workflow-orchestrator` 判断 consulting / micro / standard / critical，再套用项目 `risk_floor`。强管控项目使用 `risk_floor=standard|critical`，不维护第二套 strict 流程。
+- AI 应先做轻量 Intent Intake：识别目标、危险词、自治诉求、缺失信息、建议档位和确认方式。用户类型判断只影响解释粒度和追问方式，不降低检查点或高危动作确认要求。
 - standard / critical 任务执行 SDD + TDD。先明确行为规格，再基于验收标准编写或更新测试，最后实现。
 - SDD/TDD 是工作流阶段语义，不是独立工具链。项目已有 `openspec/`，或任务涉及跨模块、API、数据模型、长期产品行为时，OpenSpec 是规格事实源；Superpowers 是执行方法层。
 - 按风险升级，而不是按关键词升级。支付、认证、数据迁移、生产配置、安全、删除、跨模块契约需要更严格处理。
+- “全自动”“你看着办”“不用问我”只授权可逆低风险步骤；遇到删除、迁移、发版、push、merge、tag、生产配置或 PRD/OpenSpec 转正时仍必须暂停确认。
 - 改代码前先读本项目上下文，优先复用现有模式、命令、测试和文档。
 - 完成前必须验证。最终说明要写清楚跑了哪些命令、哪些通过、哪些未测、还有什么风险。
 - 不编造业务事实。反推到的行为要标注可信度，候选规则确认前不得写成正式需求。
@@ -29,6 +31,8 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - 涉及创建分支、release/hotfix、merge、tag、push 或回灌时，必须执行 `Skills/git-flow-operator.md`。`feature/*` 使用业务名或 issue + 业务名；`release/*`、`hotfix/*` 和 tag 使用 `数字.数字.三位数字`，tag 不加 `v` 前缀。创建前必须输出候选分支和待执行命令，等待用户确认；release/hotfix 打 tag 后必须继续输出 `develop` 回灌状态、命令和证据，不得把 tag 视为完成态。
 - 涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `Skills/contract-handoff.md`；旧 `api-contract-freezer.md` 与 `fe-be-handoff.md` 仅作为兼容入口。
 - 涉及共享文件域修改时，优先使用 `Skills/shared-domain-arbiter.md`；旧 `conflict-arbiter.md` 仅作为兼容入口。
+- 如启用 subagent / multi-agent / 社区 agent，必须由 `tic-workflow-orchestrator` 先判断是否允许 fan-out；外部 agent 只能作为能力适配，必须遵守 TIC Agent Contract、文件 ownership、检查点和证据要求。禁止全量外部 agent 自由接管 standard / critical 任务。
+- 如每个 agent 独立开会话，必须遵守 `Skills/agent-session-protocol.md` 或项目 `ai-harness/agent-session-protocol.md`：目录名给人看，`session_id` 只做追踪，通信通过结构化 artifact，冲突或越权时收敛回主 Agent。
 - standard / critical 任务实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明或用户要求 walkthrough，应生成交付 Walkthrough。
 - 需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `Skills/release-handoff.md`；单变更使用 `mode=single`，多项目、多服务、SQL/脚本使用 `mode=train`。
 - standard / critical 任务完成后，如涉及用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程变化，应自动生成 PRD 更新草稿和待确认项。
@@ -102,6 +106,7 @@ rtk 等 CLI 输出压缩工具只用于降低长输出对 AI 上下文的污染�
 - Git Flow 分支操作：`Skills/git-flow-operator.md`
 - 契约冻结与交接：`Skills/contract-handoff.md`
 - 共享域仲裁：`Skills/shared-domain-arbiter.md`
+- Agent 会话协议：`Skills/agent-session-protocol.md`
 - 发版交接：`Skills/release-handoff.md`
 
 默认从规则来源目录读取这些 Skills，不自动复制到项目本地 skills 或全局 skills。只有团队明确维护镜像时，才做显式同步。

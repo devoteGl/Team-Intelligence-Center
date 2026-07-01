@@ -18,7 +18,7 @@ Usage:
 Options:
   --dry-run        Show planned writes without changing files.
   --yes, -y        Skip interactive confirmation.
-  --force          Overwrite existing docs/ai-rules-usage.md and ai-harness/project-adapter.md after backing them up.
+  --force          Overwrite existing docs/ai-rules-usage.md and ai-harness/*.md after backing them up.
   --rules-dir PATH Path to Team-Intelligence-Center. Project-local paths are recorded as relative; external paths are written only to .tic-rules.local.
   --help, -h       Show this help.
 USAGE
@@ -505,19 +505,29 @@ EOF
 
 ensure_gitignore_local_config() {
   local target="$PROJECT_ROOT/.gitignore"
+  local needs_header=1
   local needs_local=1
   local needs_backups=1
+  local needs_agent_runs=1
 
   if [ -f "$target" ]; then
+    if grep -Fxq "# Team-Intelligence-Center local files" "$target" ||
+       grep -Fxq ".tic-rules.local" "$target" ||
+       grep -Fxq ".tic-backups/" "$target"; then
+      needs_header=0
+    fi
     if grep -Fxq ".tic-rules.local" "$target"; then
       needs_local=0
     fi
     if grep -Fxq ".tic-backups/" "$target"; then
       needs_backups=0
     fi
+    if grep -Fxq ".tic/agent-runs/" "$target"; then
+      needs_agent_runs=0
+    fi
   fi
 
-  if [ "$needs_local" -eq 0 ] && [ "$needs_backups" -eq 0 ]; then
+  if [ "$needs_local" -eq 0 ] && [ "$needs_backups" -eq 0 ] && [ "$needs_agent_runs" -eq 0 ]; then
     plan "skip .gitignore TIC local entries"
     return
   fi
@@ -537,12 +547,17 @@ ensure_gitignore_local_config() {
         cat "$target"
         printf '\n'
       fi
-      printf '# Team-Intelligence-Center local files\n'
+      if [ "$needs_header" -eq 1 ]; then
+        printf '# Team-Intelligence-Center local files\n'
+      fi
       if [ "$needs_local" -eq 1 ]; then
         printf '.tic-rules.local\n'
       fi
       if [ "$needs_backups" -eq 1 ]; then
         printf '.tic-backups/\n'
+      fi
+      if [ "$needs_agent_runs" -eq 1 ]; then
+        printf '.tic/agent-runs/\n'
       fi
     } > "$target.tmp"
     mv "$target.tmp" "$target"
@@ -555,6 +570,7 @@ install_template_file "$PACKAGE_ROOT/templates/tool-rules/cursorrules.md" "$PROJ
 install_template_file "$PACKAGE_ROOT/templates/tool-rules/windsurfrules.md" "$PROJECT_ROOT/.windsurfrules"
 install_template_file "$PACKAGE_ROOT/templates/tool-rules/rules/team-intelligence-center.md" "$PROJECT_ROOT/.rules/team-intelligence-center.md"
 install_project_adapter
+install_template_file "$PACKAGE_ROOT/templates/ai-harness/agent-session-protocol.md" "$PROJECT_ROOT/ai-harness/agent-session-protocol.md"
 write_lock
 write_local_config
 ensure_gitignore_local_config

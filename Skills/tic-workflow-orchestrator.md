@@ -19,6 +19,7 @@ delegates_to:
   - code-investigator
   - contract-handoff
   - shared-domain-arbiter
+  - agent-session-protocol
   - delivery-walkthrough
   - release-handoff
   - post-dev-prd-sync
@@ -45,12 +46,15 @@ delegates_to:
 - **只路由，不复制**：不得复制子 Skill 的正文模板、检查表或写作规则。
 - **单一 adaptive 工作流**：不维护第二套 strict 流程；强管控通过 `risk_floor` 实现。
 - **OpenSpec 是规格事实源，Superpowers 是执行方法层**：本技能只决定何时需要规格、证据、确认和归档。
+- **TIC Agent Contract 是协作底座**：社区 agent、工具原生 subagent 和外部编排器只能作为能力适配，不得替代 TIC 角色、检查点和证据链。
+- **Agent Session Protocol 是运行态信箱**：独立 agent 会话只能通过可审计 artifact 协作，`session_id` 只做追踪，不做事实源。
 - **可解释跳过**：每个未触发的 Skill 必须说明跳过原因，避免“看起来漏了”。
 
 绝对禁止：
 - 把 `task-decomposer`、`code-investigator`、`delivery-walkthrough` 等子 Skill 的模板正文内联到本技能。
 - 为 micro / consulting 任务强制完整 PRD、OpenSpec、Walkthrough 或 release handoff。
 - 让 Superpowers 临时产物成为稳定规格事实源。
+- 让社区 agent 库、工具原生 orchestrator 或“一句话自治”入口绕过 `tic-workflow-orchestrator`。
 - 绕过用户确认执行分支创建、tag、push、合并、删除、迁移或生产配置修改。
 
 ---
@@ -88,19 +92,36 @@ effective_tier = max(classified_tier, risk_floor)
 - 删除旧逻辑、大规模重构、跨服务发版、第三方回调、生产配置。
 - 用户明确要求“大版本”“发版”“上线交接”“严格管控”。
 
+### 1.3 Intent Intake 与受控 Fan-out
+
+Intake 先把用户原话归一化为：
+- 目标：用户真正要达成的结果。
+- 危险词：全自动、顺便、重构、删除、上线、迁移、清空、登录、支付、权限等。
+- 自治诉求：用户希望 AI 自主到什么程度。
+- 缺失信息：影响风险分级、范围、验收或不可逆动作授权的信息。
+- 建议档位与确认方式：consulting / micro / standard / critical，以及是否需要 CP。
+
+用户类型判断只影响解释粒度和追问方式，不降低安全边界。流程熟练用户可少解释、快执行；流程不熟或表达模糊用户要把目标、范围和风险翻译清楚。危险词不得按字面降级，“全自动”只授权可逆低风险步骤，不授权删除、迁移、发版、push、merge、tag、生产配置或 PRD/OpenSpec 转正。
+
+多 Agent 是执行层 fan-out 策略，不是独立工作流。总控只判断是否允许 fan-out，并输出理由、任务边界、文件 ownership 和收口责任。
+Fan-out 准入：子任务可独立验证；API/字段/错误码/FE-BE 并行已完成 `contract-handoff`；共享域写入已完成 `shared-domain-arbiter`；子 agent 不跨 CP-1~CP-6，不执行 Git Flow、发版、迁移、删除或生产动作。
+默认策略：consulting / micro 不启用写入型 fan-out；standard 可受控 fan-out；critical 启用前必须确认边界和风险。
+
+如每个 agent 需要单独会话，必须启用 `agent-session-protocol`：run 目录使用“时间 + 任务短标题”，agent 目录使用“序号 + 中文角色 + 本次职责”；`run_id`、`agent_id`、`session_id` 写入 manifest/status。总控只读取结构化 outbox 和 evidence，禁止 agent 之间自由群聊。出现契约冲突、越权请求、范围漂移或重复阻塞时，立即停止 fan-out 并收敛回主 Agent。
+
 ---
 
 ## 2. Phase 路由
 
-| Phase | 目标 | 默认 Skill |
-| --- | --- | --- |
-| Intake | 识别任务、风险、规则源、risk floor | `tic-workflow-orchestrator` |
-| Discovery | 调研现状、影响面、候选规则、风险 | `code-investigator` |
-| Planning | 拆任务、规格、验收、契约 | `task-decomposer`、OpenSpec/SDD、`contract-handoff` |
-| Execution | 实现、并行开发、共享域仲裁 | 具体工程技能、Superpowers、`shared-domain-arbiter` |
-| Verification | 测试、构建、lint、联调、UI/接口证据 | 项目命令、Superpowers TDD/debug/review |
-| Closeout | 交付走查、PRD 草稿、Changelog | `delivery-walkthrough`、`post-dev-prd-sync`、`changelog-writer` |
-| Release | 运维/运营/QA 发版交接 | `release-handoff` |
+| Phase | 目标 | 默认 Skill | Fan-out |
+| --- | --- | --- | --- |
+| Intake | 识别任务、风险、规则源、risk floor | `tic-workflow-orchestrator` | 否 |
+| Discovery | 调研现状、影响面、候选规则、风险 | `code-investigator` | 条件可，只读优先 |
+| Planning | 拆任务、规格、验收、契约 | `task-decomposer`、OpenSpec/SDD、`contract-handoff` | 否，方案可多视角评审 |
+| Execution | 实现、并行开发、共享域仲裁 | 具体工程技能、Superpowers、`shared-domain-arbiter` | 条件可，需契约和文件域边界 |
+| Verification | 测试、构建、lint、联调、UI/接口证据 | 项目命令、Superpowers TDD/debug/review | 条件可，主 Agent 收口 |
+| Closeout | 交付走查、PRD 草稿、Changelog | `delivery-walkthrough`、`post-dev-prd-sync`、`changelog-writer` | 否，主 Agent 收口 |
+| Release | 运维/运营/QA 发版交接 | `release-handoff` | 否 |
 
 项目显式启用 rtk 等 CLI 输出压缩工具时，Verification 可在只读、高噪音、幂等命令中使用摘要输出提升阅读效率。Git Flow、发版、迁移、破坏性操作、生产命令、失败调试和 critical 证据必须保留原生命令或 raw 输出。
 
@@ -169,6 +190,8 @@ Intake -> Discovery -> OpenSpec/SDD -> Contract-Handoff
 - Risk floor: none / standard / critical
 - Effective tier: consulting / micro / standard / critical
 - Reason: <分级依据>
+- Intent intake: <目标 / 危险词 / 自治诉求 / 缺失信息 / 确认方式>
+- User handling: concise / guided / confirm-first
 
 ### Phases
 | 顺序 | Phase | Skill / Method | Required artifact | Checkpoint |
@@ -183,6 +206,8 @@ Intake -> Discovery -> OpenSpec/SDD -> Contract-Handoff
 ### Superpowers / OpenSpec 接合
 - OpenSpec change: required / optional / not required
 - Superpowers: planning / TDD / debugging / review / subagent / not required
+- Fan-out mode: disabled / read-only review / controlled execution
+- Agent session artifact: not required / .tic/agent-runs/<run-dir>
 ```
 
 ---
@@ -204,7 +229,10 @@ TIC Orchestrator 决定“是否需要规格、证据、门禁和归档”；Sup
 输出计划卡前检查：
 - [ ] 是否只做路由，没有复制子 Skill 正文。
 - [ ] 是否应用 `risk_floor`。
+- [ ] 是否完成 Intent Intake，区分“用户原话”和“用户授权”。
 - [ ] 是否说明跳过项。
 - [ ] 是否识别 OpenSpec / Superpowers 接合点。
+- [ ] 如启用 fan-out / 社区 agent，是否冻结契约、分配文件域、保留主 Agent 收口责任。
+- [ ] 如启用独立 agent 会话，是否使用 `agent-session-protocol` 落盘 manifest、outbox、status 和证据。
 - [ ] 是否区分事实、推断、待确认。
 - [ ] 是否保留 AI 在实现、工具选择和调试路径上的合理自主权。

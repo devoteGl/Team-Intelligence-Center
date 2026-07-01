@@ -50,6 +50,10 @@ rtk_native_only:
 | 测试 |  |  |
 | 文档 |  |  |
 
+## Agent 会话协议
+
+如项目需要多 agent 独立会话或异步执行，使用 `ai-harness/agent-session-protocol.md` 和 `.tic/agent-runs/` 记录运行态。目录名面向用户可读；`run_id`、`agent_id`、`session_id` 只用于机器追踪。
+
 ## 风险边界
 
 列出需要额外谨慎、人工确认或回滚方案的区域：

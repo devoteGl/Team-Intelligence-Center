@@ -26,6 +26,7 @@
     "codex_global_loader": "optional_global_loader_and_tic_skill_wrappers_only",
     "ui_visual_verification": "use_playwright_browser_screenshots_computer_use_or_chrome_when_ui_risk_requires_real_interface_checks",
     "ui_design_skill_routing": "use_design_taste_frontend_and_ui_ux_pro_max_for_ui_changes_and_computer_use_for_end_to_end_real_interface_validation",
+    "agent_session_protocol": "use_human_readable_agent_run_artifacts_for_controlled_multi_agent_sessions; session_id_is_trace_only_not_source_of_truth",
     "risk_routing": [
       "consulting",
       "micro",
@@ -49,6 +50,7 @@
       "code-investigator",
       "contract-handoff",
       "shared-domain-arbiter",
+      "agent-session-protocol",
       "delivery-walkthrough",
       "release-handoff",
       "post-dev-prd-sync",
@@ -85,6 +87,7 @@
     "templates/AGENTS.md",
     "templates/docs/ai-rules-usage.md",
     "templates/ai-harness/project-adapter.md",
+    "templates/ai-harness/agent-session-protocol.md",
     "templates/tool-rules/cursorrules.md",
     "templates/tool-rules/windsurfrules.md",
     "templates/tool-rules/rules/team-intelligence-center.md",
@@ -112,7 +115,8 @@
     ".cursorrules",
     ".windsurfrules",
     ".rules/team-intelligence-center.md",
-    "ai-harness/project-adapter.md"
+    "ai-harness/project-adapter.md",
+    "ai-harness/agent-session-protocol.md"
   ],
   "generated_local_files": [
     ".tic-rules.local",
@@ -135,7 +139,8 @@
     "optional Codex global loader and tic-* skill wrappers",
     "risk based task routing",
     "single adaptive workflow with risk_floor",
-    "machine-readable TIC skill contracts"
+    "machine-readable TIC skill contracts",
+    "human-readable agent session artifacts for controlled multi-agent fan-out"
   ],
   "intentionally_excluded": [
     "Codex-only workflow binding",
@@ -151,6 +156,7 @@
     "project PRD history packaging",
     "forced SDD/Plan/Approval for readonly and micro tasks",
     "branch lifecycle automation",
-    "standalone SDD/TDD skill chain that bypasses OpenSpec or Superpowers"
+    "standalone SDD/TDD skill chain that bypasses OpenSpec or Superpowers",
+    "free-form cross-session agent group chat without orchestrator-owned artifacts"
   ]
 }

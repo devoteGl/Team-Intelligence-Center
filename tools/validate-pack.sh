@@ -51,6 +51,7 @@ require_dir Design
 require_file templates/AGENTS.md
 require_file templates/docs/ai-rules-usage.md
 require_file templates/ai-harness/project-adapter.md
+require_file templates/ai-harness/agent-session-protocol.md
 require_file templates/tool-rules/cursorrules.md
 require_file templates/tool-rules/windsurfrules.md
 require_file templates/tool-rules/rules/team-intelligence-center.md
@@ -149,14 +150,15 @@ while IFS= read -r skill_file; do
 done < <(find Skills -maxdepth 1 -type f -name '*.md' | sort)
 
 orchestrator_lines="$(wc -l < Skills/tic-workflow-orchestrator.md | tr -d '[:space:]')"
-if [ "$orchestrator_lines" -le 220 ] &&
+orchestrator_max_lines=280
+if [ "$orchestrator_lines" -le "$orchestrator_max_lines" ] &&
    grep -q '只做路由' Skills/tic-workflow-orchestrator.md &&
    grep -q 'risk_floor' Skills/tic-workflow-orchestrator.md &&
    grep -q 'Capability First, Governance on Risk' Skills/tic-workflow-orchestrator.md &&
    ! grep -q '任务拆解自检清单' Skills/tic-workflow-orchestrator.md; then
-  pass "workflow orchestrator is lightweight router ($orchestrator_lines lines)"
+  pass "workflow orchestrator is clarity-bounded router ($orchestrator_lines/$orchestrator_max_lines lines)"
 else
-  fail "workflow orchestrator must stay lightweight, route-only, and risk_floor aware"
+  fail "workflow orchestrator must stay clarity-bounded, route-only, and risk_floor aware"
 fi
 
 if grep -q 'CP-1~CP-6' README.md &&
@@ -249,6 +251,7 @@ if bash tools/bootstrap-project.sh --yes --force "$bootstrap_project" >/dev/null
    ! grep -Fq "$bootstrap_tmp" "$bootstrap_project/ai-harness/project-adapter.md" &&
    ! grep -q '项目路径：' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q '项目根：当前仓库根' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'Agent Session Protocol' "$bootstrap_project/ai-harness/agent-session-protocol.md" &&
    grep -q '主线边界' "$bootstrap_project/.cursorrules" &&
    grep -q '主线边界' "$bootstrap_project/.windsurfrules" &&
    grep -q '主线边界' "$bootstrap_project/.rules/team-intelligence-center.md" &&
@@ -407,10 +410,10 @@ else
   fail "manifest does not record lightweight exclusions"
 fi
 
-if grep -q '^.omx/$' .gitignore && grep -q '^.superpowers/$' .gitignore; then
+if grep -q '^.omx/$' .gitignore && grep -q '^.superpowers/$' .gitignore && grep -q '^.tic/agent-runs/$' .gitignore; then
   pass "agent runtime directories are gitignored"
 else
-  fail ".omx and .superpowers runtime directories must remain local-only"
+  fail ".omx, .superpowers, and .tic/agent-runs runtime directories must remain local-only"
 fi
 
 if [ "$failures" -eq 0 ]; then

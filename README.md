@@ -40,6 +40,7 @@
 | `changelog-writer.md` | DS | 双层 Changelog 编写规范（全局总纲 + 版本详情，严格对齐 PRD Editor §11） |
 | `task-decomposer.md` | PM | 任务拆解方法论（三维拆解 + 依赖链标注 + 质量自检） |
 | `shared-domain-arbiter.md` | PM/Tech Lead | 共享文件域仲裁（router/types/constants/global config 等） |
+| `agent-session-protocol.md` | PM/Tech Lead | 多 agent 独立会话的运行态信箱协议（可读目录、manifest、outbox、status、收敛规则） |
 | `project-governance-bootstrap.md` | PM/DS | 项目首次接入组织范式时，生成 AGENTS、AI 规则说明、ai-harness、OpenSpec 基础治理文件，并声明 Superpowers 协作边界 |
 | `delivery-walkthrough.md` | PM/Tech Lead/QA/DS | 完成实现后的交付走查 artifact（变更摘要、证据、截图/录屏、Review 指引、风险和后续动作） |
 | `release-handoff.md` | PM/Release Manager/DS | 发版交接统一入口，`mode=single` 单变更，`mode=train` 多项目/SQL/脚本发版总控 |
@@ -62,7 +63,7 @@
 ### 5. 🛠️ Automation (轻量自动化层)
 提供最小可用的规则接入与自检工具，吸收自动化思想但不复制重流程包：
 - **`manifest.json` / `VERSION`**：声明规则包版本、资产清单、安装产物与刻意排除项。
-- **`templates/`**：项目侧最小入口模板，包括 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`、`.cursorrules`、`.windsurfrules` 和 `.rules/team-intelligence-center.md`；它们是规则接入产物，不是业务技术栈脚手架。
+- **`templates/`**：项目侧最小入口模板，包括 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`、`ai-harness/agent-session-protocol.md`、`.cursorrules`、`.windsurfrules` 和 `.rules/team-intelligence-center.md`；它们是规则接入产物，不是业务技术栈脚手架。
 - **`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1`**：幂等接入业务项目，默认只合并最小规则入口、轻量 lock，并自动生成项目画像；不安装 Git hooks、不复制历史 PRD、不绑定 Codex-only。
 - **`tools/install.sh` / `tools/install.ps1`**：日常一条命令接入入口，默认安装到当前目录，底层复用 bootstrap。
 - **`tools/update.sh` / `tools/update.ps1`**：日常一条命令升级入口，拉取规则源并刷新 Codex 全局包装器和项目入口。
@@ -78,11 +79,11 @@
 
 本中枢要求任意系统开发迭代不仅生成代码，更强制遵循工程纪律上的阶段卡点推进：
 
-1. **[Orchestrator] 风险路由**：识别 consulting / micro / standard / critical，并应用 `risk_floor`。
+1. **[Orchestrator] Intent Intake 与风险路由**：先区分用户原话、危险词、自治诉求和真实授权，再识别 consulting / micro / standard / critical，并应用 `risk_floor`。
 2. **[PM] 任务拆解设计**：将自然语言提炼为任务清单及可被执行验证的验收标准。
 3. **[CI] 代码基现状调研**：不带主观推测地盘点老代码现状并生成现状交接报告。
 4. **[PM/FE/BE] 契约与交接**：通过 `contract-handoff` 冻结契约和 FE/BE 交接清单。
-5. **[FE/BE] 并行执行隔离**：依照已冻结契约工作，修改共享域需 `shared-domain-arbiter`。
+5. **[FE/BE] 并行执行隔离**：依照已冻结契约工作，修改共享域需 `shared-domain-arbiter`；如启用多 Agent / subagent，只能作为受控 fan-out 执行策略，必须遵守 TIC Agent Contract。跨独立会话时使用 `agent-session-protocol`，以人可读 run 目录和结构化 artifact 收口。
 6. **[QA] 测试准入验收**：核心流用例执行与边缘退回重测。
 7. **[DS/Release] 交付归档**：Walkthrough、PRD sync、Changelog、Release handoff 按风险和影响触发。
 

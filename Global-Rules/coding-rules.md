@@ -61,6 +61,15 @@ BREAKING CHANGE: <描述不兼容变更内容>（如适用）
 | QA | QA Engineer | FE/BE 完成后 | 测试用例、测试报告 |
 | DS | Doc Specialist | QA 通过后 | 文档更新 |
 
+### 1.1 Agent Contract 与外部角色库
+
+TIC 角色是协作合同，不是普通人格提示词。外部社区 agent、工具原生 subagent 或第三方 orchestrator 只能作为专业能力来源，必须接受 TIC 的角色、范围、文件 ownership、检查点和证据要求。
+
+- PM / Tech Lead 是唯一工作流总控，负责风险分级、是否启用 fan-out、检查点和最终收口。
+- CI / FE / BE / QA / DS / Release 等角色可以由不同 agent 承担，但每个 agent 只能领取明确范围内的任务。
+- 社区 agent 不得直接获得 Git Flow、发版、迁移、删除、共享域修改或 PRD/OpenSpec 转正权限。
+- 不建议全量安装外部 agent 库；项目应按白名单映射少量专家能力，并在派发时包裹 TIC Agent Contract。
+
 ---
 
 ## 2. Adaptive Workflow 任务分级模型
@@ -114,14 +123,24 @@ effective_tier = max(classified_tier, risk_floor)
   10+分:  critical    → 强证据链（完整门禁 + 回滚/发版/归档）
 ```
 
-### 2.3 例外条款
+### 2.3 Intent Intake：用户原话 ≠ 用户授权
+
+每个新任务先做轻量 Intent Intake，把自然语言归一化为：目标、危险词、自治诉求、缺失信息、建议档位和确认方式。该 Intake 可简短输出，也可在计划卡中呈现；不得把用户随口表达直接当成不可逆授权。
+
+- 用户类型判断只影响表达方式和追问密度，不降低安全边界。熟悉流程的用户可少解释、快执行；不熟悉流程或表达模糊的用户要补足目标、范围和验收口径。
+- “全自动”“你看着办”“不用问我”只授权可逆低风险步骤；遇到 CP-1~CP-6、Git Flow、发版、迁移、删除、生产配置、PRD/OpenSpec 转正时仍必须暂停确认。
+- “顺便”“优化”“重构”“清理”等词要触发范围澄清或风险复核，避免把小任务扩大成隐性大改。
+- “删除”“上线”“迁移”“清空”“登录”“支付”“权限”“生产”等词最低按 `standard` 复核；涉及不可逆、生产数据或安全边界时升级到 `critical`。
+- “拉 agent”“多 agent”“社区 agent”“subagent”不代表授权外部角色自由接管；必须先由 PM 判断是否允许 fan-out，并写清任务边界、文件 ownership 和主 Agent 收口责任。
+
+### 2.4 例外条款
 
 - 任何**支付/登录/权限**相关变更，最低按 `standard` 处理
 - 任何**删除现有功能**必须人工确认（无论分数）
 - 数据库 Migration / 环境配置变更最低按 `critical` 处理
 - 项目 `.tic-rules.lock`、`ai-harness/project-adapter.md` 或人工要求声明 `risk_floor` 时，不得自行降级到该 floor 以下
 
-### 2.4 实战示例
+### 2.5 实战示例
 
 | 场景 | 范围 | 深度 | 路径 | 总分 | 分级 |
 |------|------|------|------|------|------|
@@ -167,7 +186,39 @@ Intake → Execution → Verification → Short Closeout
 
 FE/BE 并行开始前，PM 必须执行 `contract-handoff`，冻结 API、共享类型、字段、枚举、错误码、权限点和 Mock/fixture 约定。双方基于已冻结契约各自实现，不得在并行期间私自修改共享定义。
 
-### 3.5 失败回退协议
+如启用 subagent / multi-agent 受控并行，PM 必须先输出 fan-out 边界：子任务、角色、文件域、共享域仲裁状态、验证方式和主 Agent 收口责任。子 agent 无权跨越 CP-1~CP-6，也不得自行执行 Git Flow、发版、迁移、删除或生产动作。
+
+### 3.5 Agent Session Protocol（跨会话 fan-out）
+
+如果每个 agent 单独开会话，必须使用可审计的 agent session protocol，而不是让 agent 依赖隐式会话记忆互相传话。
+
+- 目录名给人看：`.tic/agent-runs/YYYYMMDD-HHMM-任务短标题/`。
+- agent 子目录给人看：`01-中文角色-本次职责/`。
+- `run_id`、`agent_id`、`session_id` 只写入 `manifest.json` 或 `status.json`，用于机器追踪。
+- 每个 agent 只读自己的 `inbox.md`，只写自己的 `outbox.md`、`status.json` 和授权证据。
+- agent 之间不得自由群聊；跨 agent 信息必须通过主 Agent 或落盘 artifact 传递。
+- `session_id` 不是事实源。事实源是契约、决策、证据和 outbox。
+- 出现契约冲突、共享域冲突、越权请求、范围漂移或重复阻塞时，必须停止 fan-out，收敛回 PM / Tech Lead。
+
+推荐产物：
+
+```text
+.tic/agent-runs/
+  INDEX.md
+  CURRENT.md
+  20260630-1405-直播间商品同步问题/
+    README.md
+    manifest.json
+    decisions.md
+    evidence/
+    agents/
+      01-产品经理-需求收敛/
+        inbox.md
+        outbox.md
+        status.json
+```
+
+### 3.6 失败回退协议
 
 - **QA 不通过** → 打回对应 FE/BE 修复 → 修复完成后重新提交 QA，不跳过 QA 阶段
 - **CI 调研发现范围超出预期** → 交回 PM 重新拆解任务，不自行缩减范围
@@ -195,6 +246,7 @@ FE/BE 并行开始前，PM 必须执行 `contract-handoff`，冻结 API、共享
 1. 需要修改方向 PM 提出申请，说明修改原因和影响范围
 2. PM 使用 `shared-domain-arbiter` 评估后给出仲裁结论
 3. 仲裁结论必须记录在当次会话状态快照中
+4. 子 agent 或社区 agent 需要修改共享文件域时，必须在派发前完成仲裁；未获授权不得领取包含共享域写入的任务
 
 ### 4.3 删除/重构前置要求
 
@@ -238,6 +290,8 @@ FE/BE 并行开始前，PM 必须执行 `contract-handoff`，冻结 API、共享
 | ✅ CP-4 | 任何删除/重构现有文件前 | 用户明确授权 |
 | ✅ CP-5 | 任务交付前（快速通道） | 用户验收确认 |
 | ✅ CP-6 | QA 不通过需回退时 | 用户确认回退范围 |
+
+用户表达“全自动”“你看着办”“不用问我”不豁免 CP-1~CP-6。AI 可以先完成只读调研、可逆小改和验证准备，但一旦触发检查点必须暂停等待明确确认。
 
 ---
 
