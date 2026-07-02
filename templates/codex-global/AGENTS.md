@@ -25,7 +25,7 @@
 
 - 不自动复制 TIC `Skills/` 到项目本地 skills 或全局 skills。
 - 不覆盖研发个人全局规则；本 Loader 只提供发现项目 TIC 的方法。
-- 不默认执行 Git 分支、提交、推送、合并或 tag。涉及 Git Flow 操作时，应读取项目 TIC 的 `Skills/git-flow-operator.md`，先给出候选分支、版本/tag 证据、release owner、release registry root 和待执行命令，等待用户确认；release/hotfix 打 tag 后必须继续输出 `develop` 回灌状态、tag 落点、发版目录、命令和证据，不得把 tag 视为完成态。
+- 不默认执行 Git 分支、提交、推送、合并或 tag。涉及 Git Flow 操作时，应读取项目 TIC 的 `Skills/git-flow-operator.md`，先执行或要求执行 `git fetch --all --prune --tags`，再给出候选分支、版本/tag 证据、release owner、release registry root、基线同步状态、同名分支检查和待执行命令，等待用户确认；release/hotfix 打 tag 后必须继续输出 `develop` 回灌状态、tag 落点、发版目录、命令和证据，不得把 tag 视为完成态。
 - rtk 等 CLI 输出压缩工具只作为项目级可选效率工具；未检测到项目显式启用时不强制使用。Git Flow、发版、迁移、破坏性和生产命令必须保留原生命令或 raw 输出；团队启用前必须确认 telemetry 已关闭。
 - 默认使用 single adaptive workflow：`tic-workflow-orchestrator` 判断 consulting / micro / standard / critical，并应用项目 `risk_floor`。`strict` 仅作为 `risk_floor=critical` 的兼容说法。
 - 新任务先做轻量 Intent Intake，识别目标、危险词、自治诉求、缺失信息、建议档位和确认方式；用户类型判断只影响解释粒度，不降低高危动作确认要求。

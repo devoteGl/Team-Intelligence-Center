@@ -32,6 +32,13 @@ AI 不得静默创建分支、合并、tag 或 push。分支创建必须先给�
 
 Git Flow 的状态变更和最终证据必须使用原生 `git` 命令或保留 raw/proxy 原始输出。rtk 等输出压缩工具只可用于只读预览（如 status/log/diff 的辅助阅读），不得替代创建分支、合并、tag、push、回灌、子模块指针更新和最终审计证据。
 
+**分支创建新鲜度门禁**：
+
+- 创建任何 `feature/*`、`release/*`、`hotfix/*` 分支前，必须先执行 `git fetch --all --prune --tags`。若网络或权限不允许，必须说明远端状态可能过期，并等待用户明确确认是否继续；不得把过期本地引用当成权威事实。
+- 创建前必须同时检查 `refs/heads/<branch>` 和 `refs/remotes/*/<branch>`。任一位置已存在同名分支，或本地/远端同名分支指向不同 commit，必须暂停并让用户裁决。
+- 创建前必须校验基线新鲜度：`feature/*` 和 `release/*` 默认基于 `develop`，`hotfix/*` 默认基于 `master`；本地基线必须与 upstream 或指定远端基线一致。若本地落后、领先或分叉，必须先同步、改用明确远端基线或等待用户确认。
+- `tools/git-advice.*` 是只读建议脚本，不主动 fetch，不替代本门禁。只有在刚完成 fetch 或脚本输出的远端状态缺口已被人工接受后，才可把建议用于确认卡。
+
 **分支与 tag 命名规则**：
 
 - `feature/<business-slug>`：用于新需求和常规修复，后缀表达业务目的或 issue，例如 `feature/offline-refund`、`feature/1234-offline-refund`。
@@ -44,7 +51,7 @@ Git Flow 的状态变更和最终证据必须使用原生 `git` 命令或保留 
 
 **版本推导必须先扫描历史最大值**：
 
-1. `git fetch --all --prune`（若网络或权限不允许，说明缺口）。
+1. 先完成“分支创建新鲜度门禁”中的 `git fetch --all --prune --tags`。
 2. 扫描本地和远端分支：`release/[0-9]+.[0-9]+.[0-9]{3}`、`hotfix/[0-9]+.[0-9]+.[0-9]{3}`。
 3. 扫描可见 tag、发版登记根、发版记录和项目约定中的版本号。
    - 默认扫描 `docs/releases/`；若 `ai-harness/project-adapter.md` 声明 `release_registry_root`，同时扫描该登记根。
@@ -97,6 +104,9 @@ Git Flow 的状态变更和最终证据必须使用原生 `git` 命令或保留 
 - 目标基线：develop / master / <commit>
 - 命名依据：业务名 / issue / 历史最大版本
 - 已扫描来源：本地分支、远端分支、tag、发版登记根、发版记录
+- 远端刷新状态：已 fetch / fetch 失败并已确认风险
+- 基线同步状态：up-to-date / behind / ahead / diverged / no-upstream
+- 同名分支检查：refs/heads=<存在/不存在>；refs/remotes=<存在/不存在>；diverged=<yes/no>
 - 历史最大版本：<release/hotfix/tag 适用；feature 可写不适用>
 - 候选分支：<feature/business-slug | release/version | hotfix/version>
 - 候选 tag：<release/hotfix 适用；无 v 前缀>
@@ -116,20 +126,24 @@ Git Flow 的状态变更和最终证据必须使用原生 `git` 命令或保留 
 ### 3.1 单项目
 
 1. 确认当前仓库为目标项目。
-2. 确认当前分支或目标基线为 `develop`。
-3. 从用户需求、issue 编号或 OpenSpec change id 推导候选 `feature/<business-slug>`。
-4. 等待用户确认。
-5. 用户确认后创建分支并记录起点 commit。
+2. 执行 `git fetch --all --prune --tags`，并记录刷新结果。
+3. 确认当前分支或目标基线为 `develop`，且本地 `develop` 与 upstream 或指定远端基线一致。
+4. 从用户需求、issue 编号或 OpenSpec change id 推导候选 `feature/<business-slug>`。
+5. 同时检查 `refs/heads/<candidate>` 和 `refs/remotes/*/<candidate>` 是否已存在或分叉；若已占用，暂停并要求用户裁决。
+6. 等待用户确认。
+7. 用户确认后创建分支并记录起点 commit。
 
 ### 3.2 多项目联动
 
 1. 识别父工作区、子模块、独立目录和涉及项目。
-2. 推导同一个候选 `feature/<business-slug>`。
-3. 对所有涉及仓库检查是否已存在同名分支；若已占用，暂停并要求用户裁决。
-4. 输出分支映射表和待执行命令。
-5. 等待用户确认。
-6. 用户确认后，在父工作区和涉及项目创建同名 `feature/<business-slug>`。
-7. 不涉及项目不强制开分支，但必须记录冻结 commit。
+2. 对所有涉及仓库执行 `git fetch --all --prune --tags`，并记录刷新结果。
+3. 推导同一个候选 `feature/<business-slug>`。
+4. 对所有涉及仓库同时检查 `refs/heads/<candidate>` 和 `refs/remotes/*/<candidate>` 是否已存在或分叉；若已占用，暂停并要求用户裁决。
+5. 确认所有需要开分支的仓库目标基线与 upstream 或指定远端基线一致。
+6. 输出分支映射表和待执行命令。
+7. 等待用户确认。
+8. 用户确认后，在父工作区和涉及项目创建同名 `feature/<business-slug>`。
+9. 不涉及项目不强制开分支，但必须记录冻结 commit。
 
 分支映射表：
 
@@ -140,17 +154,19 @@ Git Flow 的状态变更和最终证据必须使用原生 `git` 命令或保留 
 
 ## 4. Release 开始
 
-1. 按“版本推导”推导候选 `release/<version>` 和 tag `<version>`。
-2. 等待用户确认。
-3. 用户确认后，从 `develop` 创建 `release/<version>`。
-4. 多项目发版时，在参与项目创建或切换同名 release 分支。
-5. 冻结父仓库、子模块、独立目录、SQL/脚本、外部制品版本。
-6. 生成或更新 `<release-registry-root>/<version>/`。
+1. 执行“分支创建新鲜度门禁”，确认 `develop` 与 upstream 或指定远端基线一致。
+2. 按“版本推导”推导候选 `release/<version>` 和 tag `<version>`。
+3. 同时检查 `refs/heads/release/<version>` 和 `refs/remotes/*/release/<version>` 是否已存在或分叉；若已占用，暂停并要求用户裁决。
+4. 等待用户确认。
+5. 用户确认后，从已确认新鲜的 `develop` 创建 `release/<version>`。
+6. 多项目发版时，在参与项目创建或切换同名 release 分支。
+7. 冻结父仓库、子模块、独立目录、SQL/脚本、外部制品版本。
+8. 生成或更新 `<release-registry-root>/<version>/`。
    - 默认登记根为 `docs/releases`；如项目声明其他 `release_registry_root`，按项目声明执行。
    - 不得使用日期或业务名作为发版登记根一级目录。
    - 单需求 release train 也使用版本号目录，业务名放入 `changes/<business-slug>/`。
    - 发版目录必须记录 `release_owner`、`release_tag`、tag 目标 commit、远端 tag 状态、部署触发方式，以及 SDD/TDD/PRD 落盘状态。
-7. release 分支只允许：
+9. release 分支只允许：
    - 修复发版阻塞问题。
    - 调整配置、版本号、SQL/脚本。
    - 补充发版文档、冒烟清单、证据记录。
@@ -162,12 +178,14 @@ release 分支不得继续塞新需求。
 
 ## 5. Hotfix 开始
 
-1. 按“版本推导”推导候选 `hotfix/<version>` 和 tag `<version>`。
-2. 等待用户确认。
-3. 用户确认后，从 `master` 创建目标 hotfix 分支。
-4. 只修改修复必需范围。
-5. 记录事故背景、影响面、修复验证、回滚方式。
-6. 完成后必须回灌：
+1. 执行“分支创建新鲜度门禁”，确认 `master` 与 upstream 或指定远端基线一致。
+2. 按“版本推导”推导候选 `hotfix/<version>` 和 tag `<version>`。
+3. 同时检查 `refs/heads/hotfix/<version>` 和 `refs/remotes/*/hotfix/<version>` 是否已存在或分叉；若已占用，暂停并要求用户裁决。
+4. 等待用户确认。
+5. 用户确认后，从已确认新鲜的 `master` 创建目标 hotfix 分支。
+6. 只修改修复必需范围。
+7. 记录事故背景、影响面、修复验证、回滚方式。
+8. 完成后必须回灌：
    - `master`
    - `develop`
    - 所有仍活跃且受影响的 `release/*`
@@ -259,6 +277,9 @@ tag 创建后的下一步输出必须包含：
 - 仓库：
 - 当前分支：
 - 目标分支：
+- 远端刷新状态：
+- 基线同步状态：
+- 同名分支检查：
 - 历史最大版本：
 - 候选版本来源：
 - release owner：

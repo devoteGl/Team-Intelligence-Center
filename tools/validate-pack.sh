@@ -267,7 +267,9 @@ else
 fi
 rm -rf "$bootstrap_tmp"
 
-if grep -q 'git_workflow_advice_only' manifest.json && grep -q 'git switch, add, commit, push, merge, tag' tools/git-advice.ps1 && grep -q 'git switch, add, commit, push, merge, tag' tools/git-advice.sh; then
+if grep -q 'git_workflow_advice_only' manifest.json &&
+   grep -q 'git fetch, switch, add, commit, push, merge, tag' tools/git-advice.ps1 &&
+   grep -q 'git fetch, switch, add, commit, push, merge, tag' tools/git-advice.sh; then
   pass "Git advice scripts are read-only by policy"
 else
   fail "Git advice scripts or manifest do not record read-only policy"
@@ -277,6 +279,30 @@ if grep -q 'feature/<business-slug>' Skills/git-flow-operator.md && grep -q '1.0
   pass "Git Flow branch naming uses business feature branches and versioned release/hotfix tags"
 else
   fail "Git Flow branch naming must use business feature branches, versioned release/hotfix, no-v tags, and confirmation gates"
+fi
+
+if grep -q 'git fetch --all --prune --tags' Skills/git-flow-operator.md &&
+   grep -q 'git_branch_creation_remote_freshness_gate' manifest.json &&
+   grep -q 'git_advice_reports_remote_freshness_gap' manifest.json &&
+   grep -q 'refs/heads/<branch>' Skills/git-flow-operator.md &&
+   grep -q 'refs/remotes/\*/<branch>' Skills/git-flow-operator.md &&
+   grep -q '基线新鲜度' Skills/git-flow-operator.md &&
+   grep -q 'git fetch --all --prune --tags' Global-Rules/coding-rules.md &&
+   grep -q '本地/远端同名分支' templates/AGENTS.md &&
+   grep -q '基线同步状态' templates/codex-global/AGENTS.md &&
+   grep -q 'remote_fetch_status' tools/git-advice.sh &&
+   grep -q 'remote_fetch_status' tools/git-advice.ps1 &&
+   grep -q 'base_branch_sync_status' tools/git-advice.sh &&
+   grep -q 'base_branch_sync_status' tools/git-advice.ps1 &&
+   grep -q 'suggested_branch_exists_remote' tools/git-advice.sh &&
+   grep -q 'suggested_branch_exists_remote' tools/git-advice.ps1 &&
+   grep -q 'suggested_branch_diverged' tools/git-advice.sh &&
+   grep -q 'suggested_branch_diverged' tools/git-advice.ps1 &&
+   grep -q 'not_run_by_git_advice' tools/git-advice.sh &&
+   grep -q 'not_run_by_git_advice' tools/git-advice.ps1; then
+  pass "Git Flow branch creation checks remote freshness, base sync, and local/remote branch occupancy"
+else
+  fail "Git Flow branch creation must fetch, check base freshness, and inspect local/remote same-name branches"
 fi
 
 if grep -q 'Tag 后回灌门禁' Skills/git-flow-operator.md &&

@@ -38,6 +38,8 @@
     "no_vendor_assets": true,
     "no_git_hooks_by_default": true,
     "git_workflow_advice_only": true,
+    "git_branch_creation_remote_freshness_gate": "require git_fetch_all_prune_tags, base_branch_sync_check, and local_remote_same_name_branch_check before feature_release_hotfix_branch_creation",
+    "git_advice_reports_remote_freshness_gap": true,
     "no_forced_full_flow_for_readonly_or_micro_tasks": true,
     "sdd_tdd_required_for_standard_and_critical": true,
     "sdd_tdd_as_workflow_semantics": true,

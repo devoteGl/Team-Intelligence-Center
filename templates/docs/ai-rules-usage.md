@@ -29,6 +29,8 @@ SDD/TDD 是工作流阶段语义，不是独立 Skill 链。项目已有 OpenSpe
 
 涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `contract-handoff`。涉及共享文件域修改时，优先使用 `shared-domain-arbiter`。需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `release-handoff(mode=single|train)`；发版计划必须写清 release owner、release registry root、发布 tag、tag 目标 commit、远端 tag 状态、部署触发方式和 SDD/TDD/PRD 落盘状态。
 
+创建任何 `feature/*`、`release/*`、`hotfix/*` 分支前，AI 必须先执行或要求执行 `git fetch --all --prune --tags`，再检查本地/远端同名分支和基线分支新鲜度。`tools/git-advice.*` 是只读建议脚本，不主动 fetch；它的版本和 tag 建议不能替代 Git Flow 确认卡。
+
 如项目启用 subagent / multi-agent / 社区 agent，TIC 角色仍是协作合同。外部 agent 只能作为专业能力适配，必须由 `tic-workflow-orchestrator` 决定是否 fan-out，并遵守契约冻结、共享域仲裁、文件 ownership、检查点和交付证据要求。不建议全量安装外部 agent 库后由模型自由选择角色处理 standard / critical 任务。
 
 如果每个 agent 单独开会话，应使用 `agent-session-protocol`。项目侧入口是 `ai-harness/agent-session-protocol.md`，运行态目录建议为 `.tic/agent-runs/YYYYMMDD-HHMM-任务短标题/`。目录名给人看，`run_id` / `agent_id` / `session_id` 放入 manifest/status 给机器追踪；agent 通过 inbox/outbox/status/evidence 协作，不自由群聊。

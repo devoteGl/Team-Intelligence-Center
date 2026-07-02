@@ -745,7 +745,7 @@ bash tools/git-advice.sh --type feature "lightweight automation"
 powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lightweight automation"
 ```
 
-Git Flow 分支命名采用混合规则：`feature/*` 使用业务名或 issue + 业务名，例如 `feature/offline-refund`、`feature/1234-offline-refund`；`release/*`、`hotfix/*` 和发布 tag 使用版本号式编号，格式为 `数字.数字.三位数字`，例如 `release/1.0.004`、`hotfix/1.0.005`、`1.0.005`。发布 tag 不加 `v` 前缀。AI 创建分支前必须给出候选分支、命名依据、release owner、release registry root、起点 commit 和待执行命令，等待用户确认后才执行；创建 release/hotfix 前还必须扫描本地/远端分支、tag 和发版登记根中的可见最大版本。release/hotfix 打 tag 后不得视为完成，必须继续输出 `develop` 回灌状态、tag 落点、发版目录、命令和证据，直到回灌完成或用户明确延后/豁免。发版计划必须写清发布 tag、tag 目标 commit、远端 tag 状态、部署触发方式和 SDD/TDD/PRD 落盘状态。
+Git Flow 分支命名采用混合规则：`feature/*` 使用业务名或 issue + 业务名，例如 `feature/offline-refund`、`feature/1234-offline-refund`；`release/*`、`hotfix/*` 和发布 tag 使用版本号式编号，格式为 `数字.数字.三位数字`，例如 `release/1.0.004`、`hotfix/1.0.005`、`1.0.005`。发布 tag 不加 `v` 前缀。AI 创建任何分支前必须先 `git fetch --all --prune --tags`，同时检查本地/远端同名分支和基线新鲜度；创建前必须给出候选分支、命名依据、release owner、release registry root、远端刷新状态、基线同步状态、起点 commit 和待执行命令，等待用户确认后才执行。`tools/git-advice.*` 是只读建议脚本，不主动 fetch；创建 release/hotfix 前还必须扫描刷新后的本地/远端分支、tag 和发版登记根中的可见最大版本。release/hotfix 打 tag 后不得视为完成，必须继续输出 `develop` 回灌状态、tag 落点、发版目录、命令和证据，直到回灌完成或用户明确延后/豁免。发版计划必须写清发布 tag、tag 目标 commit、远端 tag 状态、部署触发方式和 SDD/TDD/PRD 落盘状态。
 
 可选 CodeGraph helper 用于老项目、monorepo、跨模块改动或重构前的上下文和影响面分析。它不默认安装 CodeGraph，也不默认初始化 `.codegraph/`：
 

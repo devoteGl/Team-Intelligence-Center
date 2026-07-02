@@ -102,7 +102,7 @@ function Get-ReleaseRegistryRoots {
     if (Test-Path -LiteralPath $adapter -PathType Leaf) {
         foreach ($line in Get-Content -LiteralPath $adapter) {
             if ($line -match '^\s*release_registry_root:\s*["'']?([^"#'']+)["'']?.*$') {
-                $custom = $Matches[1].Trim()
+                $custom = $Matches[1].Trim().TrimEnd("/")
                 if (-not [string]::IsNullOrWhiteSpace($custom) -and -not $roots.Contains($custom)) {
                     $roots.Add($custom)
                 }
@@ -118,12 +118,12 @@ function Get-MaxReleaseVersion {
     $maxVersion = ""
     $refs = @()
     try {
-        $refs = @(git for-each-ref --format='%(refname:short)' refs/heads refs/remotes 2>$null)
+        $refs = @(git for-each-ref --format='%(refname)' refs/heads refs/remotes 2>$null)
     } catch {
         $refs = @()
     }
     foreach ($ref in $refs) {
-        if ($ref -match '^(?:[^/]+/)?(?:release|hotfix)/([0-9]+)\.([0-9]+)\.([0-9]{3})$') {
+        if ($ref -match '^refs/(?:heads|remotes/[^/]+)/(?:release|hotfix)/([0-9]+)\.([0-9]+)\.([0-9]{3})$') {
             $key = ([int]$Matches[1] * 1000000) + ([int]$Matches[2] * 1000) + [int]$Matches[3]
             if ($key -gt $maxKey) {
                 $maxKey = $key
@@ -176,11 +176,11 @@ function Get-NextReleaseVersion {
     }
     $major = [int]$Matches[1]
     $minor = [int]$Matches[2]
-    $patch = [int]$Matches[3] + 1
-    if ($patch -gt 999) {
-        $minor += 1
-        $patch = 0
+    $patch = [int]$Matches[3]
+    if ($patch -ge 999) {
+        return "needs-user-decision"
     }
+    $patch += 1
     return ("{0}.{1}.{2:D3}" -f $major, $minor, $patch)
 }
 
@@ -212,10 +212,115 @@ function Get-VisibleTagStyle {
     return "none"
 }
 
+function Test-LocalBranchExists {
+    param([string]$Name)
+    try {
+        git show-ref --verify --quiet "refs/heads/$Name"
+        return ($LASTEXITCODE -eq 0)
+    } catch {
+        return $false
+    }
+}
+
+function Get-RemoteBranchRefs {
+    param([string]$Name)
+    try {
+        return @(git for-each-ref --format='%(refname:short)' "refs/remotes/*/$Name" 2>$null)
+    } catch {
+        return @()
+    }
+}
+
+function Get-BranchDivergenceStatus {
+    param([string]$Name)
+    $localSha = ""
+    try {
+        $localSha = git rev-parse --verify "refs/heads/$Name" 2>$null
+    } catch {
+        $localSha = ""
+    }
+    $remoteShas = @()
+    try {
+        $remoteShas = @(git for-each-ref --format='%(objectname)' "refs/remotes/*/$Name" 2>$null | Sort-Object -Unique)
+    } catch {
+        $remoteShas = @()
+    }
+    if ($remoteShas.Count -eq 0) {
+        return "no"
+    }
+    if (-not [string]::IsNullOrWhiteSpace($localSha)) {
+        foreach ($sha in $remoteShas) {
+            if ($sha -ne $localSha) {
+                return "yes"
+            }
+        }
+        return "no"
+    }
+    if ($remoteShas.Count -gt 1) {
+        return "yes"
+    }
+    return "no"
+}
+
+function Get-FirstRemoteBaseRef {
+    param([string]$Name)
+    try {
+        $refs = @(git for-each-ref --format='%(refname:short)' "refs/remotes/*/$Name" 2>$null)
+        if ($refs.Count -gt 0) {
+            return $refs[0]
+        }
+    } catch {
+    }
+    return ""
+}
+
+function Get-BaseSyncStatus {
+    param([string]$Base, [string]$Remote)
+    $localRef = ""
+    try {
+        $localRef = git rev-parse --verify $Base 2>$null
+    } catch {
+        $localRef = ""
+    }
+    if ([string]::IsNullOrWhiteSpace($localRef)) {
+        return "local-missing"
+    }
+    if ([string]::IsNullOrWhiteSpace($Remote)) {
+        return "no-upstream"
+    }
+    $remoteRef = ""
+    try {
+        $remoteRef = git rev-parse --verify $Remote 2>$null
+    } catch {
+        $remoteRef = ""
+    }
+    if ([string]::IsNullOrWhiteSpace($remoteRef)) {
+        return "remote-missing"
+    }
+    if ($localRef -eq $remoteRef) {
+        return "up-to-date"
+    }
+    git merge-base --is-ancestor $Base $Remote 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        return "behind"
+    }
+    git merge-base --is-ancestor $Remote $Base 2>$null
+    if ($LASTEXITCODE -eq 0) {
+        return "ahead"
+    }
+    return "diverged"
+}
+
 $maxVersion = Get-MaxReleaseVersion
 $nextVersion = Get-NextReleaseVersion $maxVersion
 $tagStyle = Get-VisibleTagStyle
 $releaseRegistryRoots = Get-ReleaseRegistryRoots
+$remoteFetchStatus = "not_run_by_git_advice"
+$remoteFetchRequired = "git fetch --all --prune --tags"
+$versionRolloverStatus = "ok"
+if ($nextVersion -eq "needs-user-decision") {
+    $versionRolloverStatus = "needs-user-decision"
+}
 
 $longLived = "no"
 if ($branch -in @("main", "master", "develop", "dev") -or $branch -like "release/*" -or $branch -like "hotfix/*") {
@@ -230,11 +335,34 @@ if ($scope -eq "business-slug-required") {
 if ($branchPrefix -in @("release", "hotfix")) {
     $suggestedBranch = "$branchPrefix/$nextVersion"
     $suggestedTag = $nextVersion
+    if ($tagStyle -in @("mixed", "legacy-v-prefix")) {
+        $suggestedTag = "needs-user-decision:$tagStyle"
+    }
 } else {
     $suggestedBranch = "$branchPrefix/$slug"
     $suggestedTag = "n/a"
 }
 $suggestedCommit = "$commitType($scope): describe change in Chinese"
+
+$expectedBase = "develop"
+if ($branchPrefix -eq "hotfix") {
+    $expectedBase = "master"
+}
+$baseUpstream = ""
+try {
+    $baseUpstream = git rev-parse --abbrev-ref --symbolic-full-name "$expectedBase@{u}" 2>$null
+} catch {
+    $baseUpstream = ""
+}
+if ([string]::IsNullOrWhiteSpace($baseUpstream)) {
+    $baseUpstream = Get-FirstRemoteBaseRef $expectedBase
+}
+$baseBranchSyncStatus = Get-BaseSyncStatus $expectedBase $baseUpstream
+$suggestedBranchExistsLocal = if (Test-LocalBranchExists $suggestedBranch) { "yes" } else { "no" }
+$suggestedBranchRemoteRefs = @(Get-RemoteBranchRefs $suggestedBranch)
+$suggestedBranchExistsRemote = if ($suggestedBranchRemoteRefs.Count -gt 0) { "yes" } else { "no" }
+$suggestedBranchRemoteRefsText = if ($suggestedBranchRemoteRefs.Count -gt 0) { $suggestedBranchRemoteRefs -join "," } else { "none" }
+$suggestedBranchDiverged = Get-BranchDivergenceStatus $suggestedBranch
 
 Write-Host "TIC Git Advice"
 Write-Host "repo: $repoRoot"
@@ -246,8 +374,18 @@ if ([string]::IsNullOrWhiteSpace($upstream)) {
 }
 Write-Host "changed_files: $changedCount"
 Write-Host "long_lived_branch: $longLived"
+Write-Host "remote_fetch_status: $remoteFetchStatus"
+Write-Host "remote_fetch_required: $remoteFetchRequired"
+Write-Host "expected_base_branch: $expectedBase"
+if ([string]::IsNullOrWhiteSpace($baseUpstream)) {
+    Write-Host "base_upstream: none"
+} else {
+    Write-Host "base_upstream: $baseUpstream"
+}
+Write-Host "base_branch_sync_status: $baseBranchSyncStatus"
 Write-Host "feature_branch_policy: business slug or issue-business slug"
 Write-Host "release_hotfix_version_policy: version-style *.*.*** max + patch increment"
+Write-Host "version_rollover_status: $versionRolloverStatus"
 Write-Host "tag_policy: pure version *.*.*** without v prefix"
 Write-Host "release_registry_roots: $($releaseRegistryRoots -join ',')"
 if ([string]::IsNullOrWhiteSpace($maxVersion)) {
@@ -257,6 +395,10 @@ if ([string]::IsNullOrWhiteSpace($maxVersion)) {
 }
 Write-Host "visible_tag_style: $tagStyle"
 Write-Host "suggested_branch: $suggestedBranch"
+Write-Host "suggested_branch_exists_local: $suggestedBranchExistsLocal"
+Write-Host "suggested_branch_exists_remote: $suggestedBranchExistsRemote"
+Write-Host "suggested_branch_remote_refs: $suggestedBranchRemoteRefsText"
+Write-Host "suggested_branch_diverged: $suggestedBranchDiverged"
 Write-Host "suggested_tag: $suggestedTag"
 Write-Host "suggested_commit: $suggestedCommit"
 if ($branchPrefix -eq "feature") {
@@ -264,8 +406,16 @@ if ($branchPrefix -eq "feature") {
 }
 Write-Host ""
 Write-Host "Read-only recommendations:"
+Write-Host "- Run git fetch --all --prune --tags before creating any feature/release/hotfix branch or trusting version/tag advice."
 if ($longLived -eq "yes") {
     Write-Host "- Prepare a branch creation confirmation card before code changes."
+}
+if ($baseBranchSyncStatus -ne "up-to-date") {
+    $baseLabel = if ([string]::IsNullOrWhiteSpace($baseUpstream)) { "upstream" } else { $baseUpstream }
+    Write-Host "- Resolve base branch sync status before creating a branch: $expectedBase is $baseBranchSyncStatus against $baseLabel."
+}
+if ($suggestedBranchExistsLocal -eq "yes" -or $suggestedBranchExistsRemote -eq "yes" -or $suggestedBranchDiverged -eq "yes") {
+    Write-Host "- Suggested branch is already present or diverged locally/remotely; pause for user decision."
 }
 if ($branchPrefix -in @("release", "hotfix")) {
     Write-Host "- Confirm the version-style branch and no-v tag candidate with the user before running git switch -c."
@@ -280,6 +430,9 @@ if ($tagStyle -eq "mixed") {
 } elseif ($tagStyle -eq "legacy-v-prefix") {
     Write-Host "- Existing tags use v-prefix style; confirm migration before creating a no-v tag."
 }
+if ($versionRolloverStatus -eq "needs-user-decision") {
+    Write-Host "- Release patch version reached 999; pause and ask the user to decide the next version line."
+}
 if ($changedCount -gt 0) {
     Write-Host "- Review existing working tree changes before editing or staging."
     Write-Host "- Stage explicit paths only; avoid broad add commands."
@@ -287,4 +440,4 @@ if ($changedCount -gt 0) {
 if (($statusLines -join "`n") -match '(^|\s)(\.env|.*\.local|\.DS_Store|\.omx/)') {
     Write-Host "- Local/runtime files are present; do not stage secrets, local config, or runtime state."
 }
-Write-Host "- This script will not execute git switch, add, commit, push, merge, tag, or branch deletion."
+Write-Host "- This script will not execute git fetch, switch, add, commit, push, merge, tag, or branch deletion."
