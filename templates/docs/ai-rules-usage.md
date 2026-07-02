@@ -25,9 +25,9 @@
 
 默认入口是 single adaptive workflow：`tic-workflow-orchestrator` 先判断 consulting / micro / standard / critical，再应用项目 `risk_floor`。如果项目配置 `risk_floor=standard|critical`，AI 不得自行降级到该档位以下。
 
-SDD/TDD 是工作流阶段语义，不是独立 Skill 链。项目已有 OpenSpec 时，OpenSpec 是规格事实源；Superpowers 是执行方法层，负责计划、TDD、调试、review 和子代理执行。
+SDD/TDD 是工作流阶段语义，不是独立 Skill 链。项目已有 OpenSpec 时，OpenSpec 是规格事实源；Superpowers 是执行方法层，负责计划、TDD、调试、review 和子代理执行。SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根以 `ai-harness/project-adapter.md` 为准；未声明时，SDD 默认使用 `openspec/changes/` 或 `docs/sdd/`，TDD 证据索引默认使用 `docs/test-evidence/`，PRD 草稿默认使用 `docs/PRD/drafts/`。
 
-涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `contract-handoff`。涉及共享文件域修改时，优先使用 `shared-domain-arbiter`。需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `release-handoff(mode=single|train)`。
+涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `contract-handoff`。涉及共享文件域修改时，优先使用 `shared-domain-arbiter`。需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `release-handoff(mode=single|train)`；发版计划必须写清 release owner、release registry root、发布 tag、tag 目标 commit、远端 tag 状态、部署触发方式和 SDD/TDD/PRD 落盘状态。
 
 如项目启用 subagent / multi-agent / 社区 agent，TIC 角色仍是协作合同。外部 agent 只能作为专业能力适配，必须由 `tic-workflow-orchestrator` 决定是否 fan-out，并遵守契约冻结、共享域仲裁、文件 ownership、检查点和交付证据要求。不建议全量安装外部 agent 库后由模型自由选择角色处理 standard / critical 任务。
 
@@ -37,7 +37,7 @@ UI、页面布局、交互状态、样式、响应式、表单流程或可视化
 
 standard / critical 任务实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明，或你明确要求“walkthrough / 交付走查”，AI 应生成交付 Walkthrough。它应说明交付摘要、用户可见变化、技术走查、变更文件、验证证据、Review 指引、未测项、风险和后续动作。
 
-standard / critical 任务完成后，如影响用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程，AI 应生成 PRD 更新草稿和待确认项。草稿必须基于证据，不自动转正为正式 PRD。
+standard / critical 任务完成后，如影响用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程，AI 应生成 PRD 更新草稿和待确认项。草稿必须基于证据，不自动转正为正式 PRD。多项目变更只能有一个 PRD 主归属，其他项目作为引用或子项。
 
 ## 规则来源
 

@@ -46,8 +46,9 @@ Git Flow 的状态变更和最终证据必须使用原生 `git` 命令或保留 
 
 1. `git fetch --all --prune`（若网络或权限不允许，说明缺口）。
 2. 扫描本地和远端分支：`release/[0-9]+.[0-9]+.[0-9]{3}`、`hotfix/[0-9]+.[0-9]+.[0-9]{3}`。
-3. 扫描可见 tag、`docs/releases/`、发版记录和项目约定中的版本号。
-   - `docs/releases/` 仅把匹配 `数字.数字.三位数字` 的一级目录视为版本目录，例如 `1.0.004`。
+3. 扫描可见 tag、发版登记根、发版记录和项目约定中的版本号。
+   - 默认扫描 `docs/releases/`；若 `ai-harness/project-adapter.md` 声明 `release_registry_root`，同时扫描该登记根。
+   - 发版登记根仅把匹配 `数字.数字.三位数字` 的一级目录视为版本目录，例如 `1.0.004`。
    - 日期、业务名或其他非版本号目录只能作为历史遗留资料，不参与最大版本推导。
 4. 按 `major.minor.patch` 数值比较取历史最大版本，默认递增第三段，生成候选分支。
 5. 若没有任何历史版本，默认从 `1.0.001` 开始；若第三段已到 `999`，暂停让用户确认是否进位。
@@ -55,11 +56,12 @@ Git Flow 的状态变更和最终证据必须使用原生 `git` 命令或保留 
 
 **Release 目录主键**：
 
-- 发版交接目录一律以版本号为一级入口：`docs/releases/<version>/`。
+- 发版交接目录一律以版本号为一级入口：`<release-registry-root>/<version>/`，默认 `docs/releases/<version>/`。
 - `<version>` 必须与本次 release/hotfix tag 完全一致，格式为 `数字.数字.三位数字`，例如 `1.0.004`。
-- 禁止在 `docs/releases/` 下新建日期、业务名、需求名或其他非版本号一级目录。
+- 禁止在发版登记根下新建日期、业务名、需求名或其他非版本号一级目录。
 - 业务名、需求名或变更主题应放入版本目录内的 `changes/<business-slug>/`，具体结构由 `Skills/release-handoff.md` 定义。
-- 版本号是发版容器唯一主键，对齐分支、tag、父仓库子模块指针和发版证据；业务名只是容器内容。
+- 版本号是发版容器在该登记根内的唯一主键，对齐分支、tag、父仓库子模块指针和发版证据；业务名只是容器内容。
+- 发版计划归属于拥有发布窗口、版本号/tag、上线顺序和统一回滚的 `release_owner`；多项目场景必须在父工作区、子项目或外部协调仓之间明确一个主归属。
 
 **必须显式确认**：
 
@@ -94,10 +96,12 @@ Git Flow 的状态变更和最终证据必须使用原生 `git` 命令或保留 
 - 目标类型：feature / release / hotfix
 - 目标基线：develop / master / <commit>
 - 命名依据：业务名 / issue / 历史最大版本
-- 已扫描来源：本地分支、远端分支、tag、docs/releases、发版记录
+- 已扫描来源：本地分支、远端分支、tag、发版登记根、发版记录
 - 历史最大版本：<release/hotfix/tag 适用；feature 可写不适用>
 - 候选分支：<feature/business-slug | release/version | hotfix/version>
 - 候选 tag：<release/hotfix 适用；无 v 前缀>
+- release owner：<workspace / project / subproject / external + owner id>
+- release registry root：<默认 docs/releases 或项目声明路径>
 - 起点 commit：<sha>
 - 待执行命令：git switch -c <branch> <base>
 - 等待用户确认：是
@@ -141,9 +145,11 @@ Git Flow 的状态变更和最终证据必须使用原生 `git` 命令或保留 
 3. 用户确认后，从 `develop` 创建 `release/<version>`。
 4. 多项目发版时，在参与项目创建或切换同名 release 分支。
 5. 冻结父仓库、子模块、独立目录、SQL/脚本、外部制品版本。
-6. 生成或更新 `docs/releases/<version>/`。
-   - 不得使用日期或业务名作为 `docs/releases/` 一级目录。
+6. 生成或更新 `<release-registry-root>/<version>/`。
+   - 默认登记根为 `docs/releases`；如项目声明其他 `release_registry_root`，按项目声明执行。
+   - 不得使用日期或业务名作为发版登记根一级目录。
    - 单需求 release train 也使用版本号目录，业务名放入 `changes/<business-slug>/`。
+   - 发版目录必须记录 `release_owner`、`release_tag`、tag 目标 commit、远端 tag 状态、部署触发方式，以及 SDD/TDD/PRD 落盘状态。
 7. release 分支只允许：
    - 修复发版阻塞问题。
    - 调整配置、版本号、SQL/脚本。
@@ -198,7 +204,8 @@ release 分支不得继续塞新需求。
 - 总冒烟和项目级冒烟通过或有明确豁免。
 - SQL/脚本 manifest 已执行并记录结果。
 - 回滚方案可执行，不可逆数据点已披露。
-- `docs/releases/<version>/` 已随 release 结果回灌到 `develop`，或已记录用户明确延后/豁免。
+- `<release-registry-root>/<version>/` 已随 release 结果回灌到 `develop`，或已记录用户明确延后/豁免。
+- Release Handoff 已记录 `release_owner`、`release_tag`、tag 目标 commit、远端状态、部署触发方式，以及 SDD/TDD/PRD 落盘状态。
 
 ---
 
@@ -216,7 +223,7 @@ release 分支不得继续塞新需求。
 
 - `git rev-parse <tag>^{commit}` 目标必须等于 `master` 当前发布提交。
 - 若多仓同版本发布，每个仓库都必须分别确认 `master` 发布提交、tag 名、tag 落点和远端是否已有同名 tag。
-- 发现 tag 名正确但落点不在 `master`，或落点正确但 tag 名错误时，先暂停说明；删除、重建或推送远端 tag 必须等待用户明确确认。
+- 已 push 的发布 tag 默认不可移动；发现 tag 名正确但落点不在 `master`，或落点正确但 tag 名错误时，先暂停说明；删除、重建或推送远端 tag 必须等待用户明确确认。
 
 ---
 
@@ -225,7 +232,7 @@ release 分支不得继续塞新需求。
 release/hotfix 创建 tag 后，Git Flow 任务不得视为完成。AI 必须继续处理回灌状态，直到满足以下任一条件：
 
 - `develop` 已包含 release/hotfix 的回灌结果，并记录目标分支、回灌方式、commit 和验证命令。
-- `develop` 已包含对应的 `docs/releases/<version>/` 发版目录和发版证据；缺失时 Git Flow 收尾不得标为完成。
+- `develop` 已包含对应的 `<release-registry-root>/<version>/` 发版目录和发版证据；缺失时 Git Flow 收尾不得标为完成。
 - 所有仍活跃且受影响的 `release/*` 已完成 hotfix 回灌，或已记录“不受影响”的判断依据。
 - 用户明确要求延后或豁免回灌，并记录负责人、原因、后续命令和风险；此时最终状态必须标为“回灌未完成”，不得标为完成。
 
@@ -235,7 +242,7 @@ tag 创建后的下一步输出必须包含：
 - 待执行或已执行命令：如 `git switch develop && git merge --no-ff release/<version>`。
 - tag 落点证据：`git rev-parse <tag>^{commit}` 与 `master` 发布提交。
 - 回灌证据：`git log --oneline --decorate -n 5 develop`、`git merge-base --is-ancestor <release-or-hotfix-tip> develop`，或 cherry-pick 对应 commit 证据。
-- 发版目录证据：`docs/releases/<version>/` 在 `develop` 中存在，且目录名与 tag 完全一致。
+- 发版目录证据：`<release-registry-root>/<version>/` 在 `develop` 中存在，且目录名与 tag 完全一致。
 - push 状态：未 push / 已 push `master` / 已 push `develop` / 已 push tag。
 - 输出过滤状态：若过程中查看过 rtk 摘要，必须同时保留 raw 输出或重跑原生命令作为最终证据。
 
@@ -254,6 +261,8 @@ tag 创建后的下一步输出必须包含：
 - 目标分支：
 - 历史最大版本：
 - 候选版本来源：
+- release owner：
+- release registry root：
 
 ### 已执行
 - 
@@ -266,6 +275,7 @@ tag 创建后的下一步输出必须包含：
 - develop 回灌状态：未开始 / 已确认待执行 / 已完成 / 用户明确延后
 - tag 落点证据：
 - 回灌证据：
+- 发版目录证据：
 - 输出过滤状态：
 - push 状态：
 - 最终状态：完成 / 回灌未完成

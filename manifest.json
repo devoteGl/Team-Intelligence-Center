@@ -27,6 +27,7 @@
     "ui_visual_verification": "use_playwright_browser_screenshots_computer_use_or_chrome_when_ui_risk_requires_real_interface_checks",
     "ui_design_skill_routing": "use_design_taste_frontend_and_ui_ux_pro_max_for_ui_changes_and_computer_use_for_end_to_end_real_interface_validation",
     "agent_session_protocol": "use_human_readable_agent_run_artifacts_for_controlled_multi_agent_sessions; session_id_is_trace_only_not_source_of_truth",
+    "artifact_ownership": "project_adapter_declares_owner_and_roots_for_sdd_tdd_evidence_prd_walkthrough_and_release_registry",
     "risk_routing": [
       "consulting",
       "micro",

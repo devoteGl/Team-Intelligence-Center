@@ -15,4 +15,4 @@ When invoked:
 5. Do not create branches, merge, tag, push, or back-merge until the user confirms the proposed command.
 6. After any release/hotfix tag, keep the operation open until `develop` back-merge evidence or an explicit user deferral/waiver is recorded.
 
-If the target TIC Skill is missing, produce a Git Flow confirmation card with business-named feature branch or `*.*.***` release/hotfix branch, no-v-prefix tag candidate when relevant, scanned branch/tag evidence, base commit, proposed command, post-tag `develop` back-merge status, and wait for user confirmation.
+If the target TIC Skill is missing, produce a Git Flow confirmation card with business-named feature branch or `*.*.***` release/hotfix branch, no-v-prefix tag candidate when relevant, release owner, release registry root, scanned branch/tag evidence, base commit, proposed command, post-tag `develop` back-merge status, release directory evidence, and wait for user confirmation.

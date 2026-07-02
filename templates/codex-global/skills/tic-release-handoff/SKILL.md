@@ -15,4 +15,4 @@ When invoked:
 5. If missing, fall back to `<rules_dir>/Skills/release-ops-handoff.md` for single-change handoff or `<rules_dir>/Skills/release-train-handoff.md` for release-train handoff.
 6. Do not copy TIC Skills into project-local or global skills.
 
-If the target TIC Skill is missing, produce a release handoff with mode single/train, scope, deploy steps, validation, operations/usage notes, monitoring, rollback, evidence, risks, and pending confirmations.
+If the target TIC Skill is missing, produce a release handoff with mode single/train, release owner, release registry root, release tag, tag target commit, remote tag status, SDD/TDD/PRD landing status, scope, deploy steps, validation, operations/usage notes, monitoring, rollback, evidence, risks, and pending confirmations.

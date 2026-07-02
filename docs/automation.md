@@ -68,6 +68,7 @@ ai-harness/project-adapter.md
 - `pnpm-lock.yaml`、`yarn.lock`、`package-lock.json`、`bun.lock*` 推断包管理器。
 - `package.json` 中的 scripts、dependencies、devDependencies、peerDependencies 和 workspaces。
 - `openspec/`、`apps/`、`packages/` 等项目关系线索。
+- `artifact_ownership`、`artifact_roots` 和 `release_ownership` 默认块，用于声明 SDD、TDD 证据、PRD、Walkthrough 和发版登记根的归属与落盘位置。
 
 已有 `ai-harness/project-adapter.md` 默认不会覆盖；需要刷新画像时使用 `--force` / `-Force`。
 
@@ -109,6 +110,8 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 - 业务项目已有 `openspec/` 时，把 SDD 语义写入或关联 OpenSpec change，OpenSpec 是规格事实源。
 - 没有 OpenSpec 时，使用 `docs/sdd/` 或项目认可的规格位置。
 - 测试或明确验证项应从 SDD 的验收标准推导出来，再进入实现。
+- SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根以 `ai-harness/project-adapter.md` 为准；未声明时使用轻量默认路径。
+- TDD 证据索引默认写入 `docs/test-evidence/<change-id>/README.md`，具体测试代码仍放在项目测试目录。
 
 因此，SDD/TDD 是阶段语义，不是独立 Skill 链；OpenSpec 是规格承载层，不是每个任务都必须启动的重流程。
 
@@ -165,6 +168,8 @@ session-snapshot-manager -> 总控/全局规则快照模板
 - standard / critical 任务完成后，若影响用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程，应执行 `Skills/post-dev-prd-sync.md`。
 - 证据来源包括 OpenSpec / SDD、git diff、commit、测试结果、UI 验证、API 契约和用户确认。
 - 输出为 PRD 更新草稿、证据清单、候选规则和待确认项。
+- PRD 草稿默认写入 `docs/PRD/drafts/<change-id>-prd-update.md`；正式 PRD 默认归 `docs/PRD/` 或项目声明位置。
+- 多项目变更只能有一个 PRD 主归属，其他项目作为引用或子项，避免同一业务事实在多个项目各自转正。
 - S2/S3 代码反推内容不得自动转正；人工确认后再同步到正式 PRD、OpenSpec specs 或项目约定位置。
 
 ## 交付 Walkthrough
@@ -207,7 +212,7 @@ powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lig
 
 - 当前仓库根目录、分支、上游和变更文件数量。
 - 当前分支是否像长期分支。
-- 本地 / 远端 `release/<version>`、`hotfix/<version>`、tag 和 `docs/releases/` 中的可见最大版本号。
+- 本地 / 远端 `release/<version>`、`hotfix/<version>`、tag 和发版登记根中的可见最大版本号；默认登记根是 `docs/releases/`。
 - 建议的业务名 feature 分支、版本号式 release/hotfix 分支、无 `v` 前缀 tag 和提交标题。
 - 本地运行态文件、密钥和本地配置风险。
 

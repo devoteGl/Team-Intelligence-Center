@@ -10,6 +10,32 @@ bootstrap 默认会基于目标项目自动生成 `ai-harness/project-adapter.md
 - 主要入口：
 - 部署目标：
 
+## 项目关系与产物归属
+
+请按真实情况维护。父工作区、多子项目、独立项目或多仓联动时，AI 以这里的归属为准；未确认项写“待确认”。
+
+```yaml
+artifact_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "待确认"
+  parent_workspace: ""
+  child_projects: []
+  related_repositories: []
+artifact_roots:
+  sdd_root: "openspec/changes" # 无 OpenSpec 时可用 docs/sdd
+  tdd_evidence_root: "docs/test-evidence"
+  prd_root: "docs/PRD"
+  prd_draft_root: "docs/PRD/drafts"
+  walkthrough_root: "docs/walkthroughs"
+release_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "待确认"
+  release_registry_root: "docs/releases"
+  version_policy: independent # shared | independent | external
+  tag_policy: "pure-version-no-v-prefix"
+  deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
+```
+
 ## 常用命令
 
 ```bash

@@ -95,6 +95,24 @@ switch ($Type) {
     }
 }
 
+function Get-ReleaseRegistryRoots {
+    $roots = New-Object System.Collections.Generic.List[string]
+    $roots.Add("docs/releases")
+    $adapter = Join-Path $repoRoot "ai-harness/project-adapter.md"
+    if (Test-Path -LiteralPath $adapter -PathType Leaf) {
+        foreach ($line in Get-Content -LiteralPath $adapter) {
+            if ($line -match '^\s*release_registry_root:\s*["'']?([^"#'']+)["'']?.*$') {
+                $custom = $Matches[1].Trim()
+                if (-not [string]::IsNullOrWhiteSpace($custom) -and -not $roots.Contains($custom)) {
+                    $roots.Add($custom)
+                }
+                break
+            }
+        }
+    }
+    return @($roots)
+}
+
 function Get-MaxReleaseVersion {
     $maxKey = -1
     $maxVersion = ""
@@ -130,14 +148,16 @@ function Get-MaxReleaseVersion {
         }
     }
 
-    $releaseDir = Join-Path $repoRoot "docs/releases"
-    if (Test-Path -LiteralPath $releaseDir -PathType Container) {
-        foreach ($dir in Get-ChildItem -LiteralPath $releaseDir -Directory) {
-            if ($dir.Name -match '^([0-9]+)\.([0-9]+)\.([0-9]{3})$') {
-                $key = ([int]$Matches[1] * 1000000) + ([int]$Matches[2] * 1000) + [int]$Matches[3]
-                if ($key -gt $maxKey) {
-                    $maxKey = $key
-                    $maxVersion = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
+    foreach ($releaseRoot in Get-ReleaseRegistryRoots) {
+        $releaseDir = Join-Path $repoRoot $releaseRoot
+        if (Test-Path -LiteralPath $releaseDir -PathType Container) {
+            foreach ($dir in Get-ChildItem -LiteralPath $releaseDir -Directory) {
+                if ($dir.Name -match '^([0-9]+)\.([0-9]+)\.([0-9]{3})$') {
+                    $key = ([int]$Matches[1] * 1000000) + ([int]$Matches[2] * 1000) + [int]$Matches[3]
+                    if ($key -gt $maxKey) {
+                        $maxKey = $key
+                        $maxVersion = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
+                    }
                 }
             }
         }
@@ -195,6 +215,7 @@ function Get-VisibleTagStyle {
 $maxVersion = Get-MaxReleaseVersion
 $nextVersion = Get-NextReleaseVersion $maxVersion
 $tagStyle = Get-VisibleTagStyle
+$releaseRegistryRoots = Get-ReleaseRegistryRoots
 
 $longLived = "no"
 if ($branch -in @("main", "master", "develop", "dev") -or $branch -like "release/*" -or $branch -like "hotfix/*") {
@@ -228,6 +249,7 @@ Write-Host "long_lived_branch: $longLived"
 Write-Host "feature_branch_policy: business slug or issue-business slug"
 Write-Host "release_hotfix_version_policy: version-style *.*.*** max + patch increment"
 Write-Host "tag_policy: pure version *.*.*** without v prefix"
+Write-Host "release_registry_roots: $($releaseRegistryRoots -join ',')"
 if ([string]::IsNullOrWhiteSpace($maxVersion)) {
     Write-Host "max_visible_release_version: none"
 } else {

@@ -20,7 +20,7 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - 简单任务保持简单。咨询、只读查询、代码解释、微小非行为改动，不走完整 PRD/SDD/Plan 流程。
 - 默认使用 single adaptive workflow：先由 `tic-workflow-orchestrator` 判断 consulting / micro / standard / critical，再套用项目 `risk_floor`。强管控项目使用 `risk_floor=standard|critical`，不维护第二套 strict 流程。
 - AI 应先做轻量 Intent Intake：识别目标、危险词、自治诉求、缺失信息、建议档位和确认方式。用户类型判断只影响解释粒度和追问方式，不降低检查点或高危动作确认要求。
-- standard / critical 任务执行 SDD + TDD。先明确行为规格，再基于验收标准编写或更新测试，最后实现。
+- standard / critical 任务执行 SDD + TDD。先明确行为规格，再基于验收标准编写或更新测试，最后实现；SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 必须按 `ai-harness/project-adapter.md` 的归属与落盘根写入。
 - SDD/TDD 是工作流阶段语义，不是独立工具链。项目已有 `openspec/`，或任务涉及跨模块、API、数据模型、长期产品行为时，OpenSpec 是规格事实源；Superpowers 是执行方法层。
 - 按风险升级，而不是按关键词升级。支付、认证、数据迁移、生产配置、安全、删除、跨模块契约需要更严格处理。
 - “全自动”“你看着办”“不用问我”只授权可逆低风险步骤；遇到删除、迁移、发版、push、merge、tag、生产配置或 PRD/OpenSpec 转正时仍必须暂停确认。
@@ -28,13 +28,13 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - 完成前必须验证。最终说明要写清楚跑了哪些命令、哪些通过、哪些未测、还有什么风险。
 - 不编造业务事实。反推到的行为要标注可信度，候选规则确认前不得写成正式需求。
 - 不覆盖人的工作。保留项目已有规则和用户未提交改动。
-- 涉及创建分支、release/hotfix、merge、tag、push 或回灌时，必须执行 `Skills/git-flow-operator.md`。`feature/*` 使用业务名或 issue + 业务名；`release/*`、`hotfix/*` 和 tag 使用 `数字.数字.三位数字`，tag 不加 `v` 前缀。创建前必须输出候选分支和待执行命令，等待用户确认；release/hotfix 打 tag 后必须继续输出 `develop` 回灌状态、命令和证据，不得把 tag 视为完成态。
+- 涉及创建分支、release/hotfix、merge、tag、push 或回灌时，必须执行 `Skills/git-flow-operator.md`。`feature/*` 使用业务名或 issue + 业务名；`release/*`、`hotfix/*` 和 tag 使用 `数字.数字.三位数字`，tag 不加 `v` 前缀。创建前必须输出候选分支、release owner、release registry root 和待执行命令，等待用户确认；release/hotfix 打 tag 后必须继续输出 `develop` 回灌状态、tag 落点、发版目录、命令和证据，不得把 tag 视为完成态。
 - 涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `Skills/contract-handoff.md`；旧 `api-contract-freezer.md` 与 `fe-be-handoff.md` 仅作为兼容入口。
 - 涉及共享文件域修改时，优先使用 `Skills/shared-domain-arbiter.md`；旧 `conflict-arbiter.md` 仅作为兼容入口。
 - 如启用 subagent / multi-agent / 社区 agent，必须由 `tic-workflow-orchestrator` 先判断是否允许 fan-out；外部 agent 只能作为能力适配，必须遵守 TIC Agent Contract、文件 ownership、检查点和证据要求。禁止全量外部 agent 自由接管 standard / critical 任务。
 - 如每个 agent 独立开会话，必须遵守 `Skills/agent-session-protocol.md` 或项目 `ai-harness/agent-session-protocol.md`：目录名给人看，`session_id` 只做追踪，通信通过结构化 artifact，冲突或越权时收敛回主 Agent。
 - standard / critical 任务实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明或用户要求 walkthrough，应生成交付 Walkthrough。
-- 需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `Skills/release-handoff.md`；单变更使用 `mode=single`，多项目、多服务、SQL/脚本使用 `mode=train`。
+- 需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `Skills/release-handoff.md`；单变更使用 `mode=single`，多项目、多服务、SQL/脚本使用 `mode=train`。发版计划必须写清 release owner、release registry root、发布 tag、tag 目标 commit、远端 tag 状态、部署触发方式和 SDD/TDD/PRD 落盘状态。
 - standard / critical 任务完成后，如涉及用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程变化，应自动生成 PRD 更新草稿和待确认项。
 
 ## CLI 输出压缩工具（可选）
@@ -63,6 +63,8 @@ rtk 等 CLI 输出压缩工具只用于降低长输出对 AI 上下文的污染�
 - SDD 定义目标行为、范围、不做什么、验收标准和边界场景。
 - TDD 把 SDD 的验收标准转成失败测试或明确验证项，再进入实现。
 - 实现必须能追溯到 SDD 和测试。
+- 已有 `openspec/` 时，SDD 优先关联或写入 `openspec/changes/<change-id>/`；没有 OpenSpec 时使用 `docs/sdd/<change-id>.md` 或项目约定位置。
+- TDD 证据索引默认写入 `docs/test-evidence/<change-id>/README.md`，具体测试代码仍放在项目测试目录。
 - OpenSpec 可以作为 SDD 语义的存储和生命周期承载方式，但 consulting 和 micro 任务不强制使用 OpenSpec。
 - 不新增绕过 OpenSpec / Superpowers 的独立 SDD/TDD Skill 链。
 - 不把未确认的代码反推当成既定业务事实；老项目反推规则要使用可信度标签和候选规则机制。
@@ -82,6 +84,7 @@ rtk 等 CLI 输出压缩工具只用于降低长输出对 AI 上下文的污染�
 
 - 触发条件：开发完成、验收通过、发版前整理，或本次变更影响用户可见行为、UI、API、数据模型、状态流转、业务规则、运营流程。
 - 默认动作：执行 `Skills/post-dev-prd-sync.md`，基于 OpenSpec / SDD、git diff、测试、UI 验证、API 契约等证据生成 PRD 更新草稿。
+- PRD 草稿默认写入 `docs/PRD/drafts/<change-id>-prd-update.md`，正式 PRD 默认归 `docs/PRD/` 或项目声明位置；多项目变更只能有一个主归属，其他项目作为引用或子项。
 - 不触发场景：纯重构、格式化、注释、测试补充、内部实现优化且无行为变化。
 - 草稿不得自动转正。S2/S3 代码反推和推测内容必须进入候选规则或待确认项，人工确认后才能同步到正式 PRD / OpenSpec specs。
 

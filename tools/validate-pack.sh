@@ -251,6 +251,10 @@ if bash tools/bootstrap-project.sh --yes --force "$bootstrap_project" >/dev/null
    ! grep -Fq "$bootstrap_tmp" "$bootstrap_project/ai-harness/project-adapter.md" &&
    ! grep -q '项目路径：' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q '项目根：当前仓库根' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'artifact_ownership:' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'sdd_root:' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'prd_draft_root:' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'release_registry_root:' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q 'Agent Session Protocol' "$bootstrap_project/ai-harness/agent-session-protocol.md" &&
    grep -q '主线边界' "$bootstrap_project/.cursorrules" &&
    grep -q '主线边界' "$bootstrap_project/.windsurfrules" &&
@@ -269,7 +273,7 @@ else
   fail "Git advice scripts or manifest do not record read-only policy"
 fi
 
-if grep -q 'feature/<business-slug>' Skills/git-flow-operator.md && grep -q '1.0.004' Skills/git-flow-operator.md && grep -q '不得添加 `v` 前缀' Skills/git-flow-operator.md && grep -q '等待用户确认' Skills/git-flow-operator.md && grep -q 'feature/<business-slug>' Global-Rules/coding-rules.md && grep -q 'feature_branch_policy' tools/git-advice.sh && grep -q 'release_hotfix_version_policy' tools/git-advice.ps1 && grep -q 'suggested_tag' tools/git-advice.sh && grep -q 'business-slug-required' tools/git-advice.ps1; then
+if grep -q 'feature/<business-slug>' Skills/git-flow-operator.md && grep -q '1.0.004' Skills/git-flow-operator.md && grep -q '不得添加 `v` 前缀' Skills/git-flow-operator.md && grep -q '等待用户确认' Skills/git-flow-operator.md && grep -q 'release owner' Skills/git-flow-operator.md && grep -q 'release registry root' Skills/git-flow-operator.md && grep -q 'feature/<business-slug>' Global-Rules/coding-rules.md && grep -q 'feature_branch_policy' tools/git-advice.sh && grep -q 'release_hotfix_version_policy' tools/git-advice.ps1 && grep -q 'release_registry_roots' tools/git-advice.sh && grep -q 'release_registry_roots' tools/git-advice.ps1 && grep -q 'suggested_tag' tools/git-advice.sh && grep -q 'business-slug-required' tools/git-advice.ps1; then
   pass "Git Flow branch naming uses business feature branches and versioned release/hotfix tags"
 else
   fail "Git Flow branch naming must use business feature branches, versioned release/hotfix, no-v tags, and confirmation gates"
@@ -277,6 +281,7 @@ fi
 
 if grep -q 'Tag 后回灌门禁' Skills/git-flow-operator.md &&
    grep -q 'develop 回灌状态' Skills/git-flow-operator.md &&
+   grep -q '发版目录证据' Skills/git-flow-operator.md &&
    grep -q '回灌未完成' Skills/git-flow-operator.md &&
    grep -q '打 tag 后必须继续输出 `develop` 回灌状态' templates/AGENTS.md &&
    grep -q '打 tag 后必须继续输出 `develop` 回灌状态' templates/codex-global/AGENTS.md &&
@@ -287,10 +292,33 @@ else
   fail "Git Flow tag closeout must keep develop back-merge as a completion gate"
 fi
 
-if grep -q 'Join-Path \$repoRoot "docs/releases"' tools/git-advice.ps1; then
-  pass "PowerShell Git advice scans release records from repo root"
+if grep -q 'Get-ReleaseRegistryRoots' tools/git-advice.ps1 &&
+   grep -q 'release_registry_root' tools/git-advice.ps1 &&
+   grep -q 'release_registry_roots' tools/git-advice.sh; then
+  pass "Git advice scans default and project-declared release registry roots"
 else
-  fail "PowerShell Git advice must scan docs/releases from repo root"
+  fail "Git advice must scan default and project-declared release registry roots"
+fi
+
+if grep -q 'release_owner_type' Skills/release-handoff.md &&
+   grep -q 'release_registry_root' Skills/release-handoff.md &&
+   grep -q 'release_tag' Skills/release-handoff.md &&
+   grep -q 'tag_target_commit' Skills/release-handoff.md &&
+   grep -q 'SDD / TDD / PRD' Skills/release-handoff.md &&
+   grep -q '已 push 的发布 tag 默认不可移动' Skills/release-handoff.md; then
+  pass "Release handoff records owner, tag evidence, registry root, and landing status"
+else
+  fail "Release handoff must record owner, tag evidence, registry root, and landing status"
+fi
+
+if grep -q 'artifact_ownership' templates/ai-harness/project-adapter.md &&
+   grep -q 'tdd_evidence_root' templates/ai-harness/project-adapter.md &&
+   grep -q 'prd_draft_root' Skills/post-dev-prd-sync.md &&
+   grep -q 'Artifact / release roots' Skills/tic-workflow-orchestrator.md &&
+   grep -q 'project_adapter_declares_owner_and_roots' manifest.json; then
+  pass "SDD/TDD/PRD artifact ownership and landing roots are declared"
+else
+  fail "SDD/TDD/PRD artifact ownership and landing roots must be declared"
 fi
 
 if grep -q 'adaptive workflow' templates/AGENTS.md && grep -q 'workflow_orchestrator' manifest.json && grep -q 'single_adaptive_with_risk_floor' manifest.json && grep -q 'risk_floor' manifest.json && grep -q 'tic-workflow-orchestrator.md' README.md && grep -q 'tic-workflow-orchestrator.md' USAGE.md; then

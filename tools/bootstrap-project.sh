@@ -390,6 +390,32 @@ $(package_json_section)
 - Monorepo 线索：$([ -f "$PROJECT_ROOT/pnpm-workspace.yaml" ] && printf '检测到 `pnpm-workspace.yaml`；' || true)$([ -d "$PROJECT_ROOT/apps" ] && printf '检测到 `apps/`；' || true)$([ -d "$PROJECT_ROOT/packages" ] && printf '检测到 `packages/`；' || true)
 - 规则入口：bootstrap 会生成或更新项目根 \`AGENTS.md\`
 
+## 产物归属与落盘
+
+请按真实情况维护。父工作区、多子项目、独立项目或多仓联动时，AI 以这里的归属为准；未确认项写“待确认”。
+
+\`\`\`yaml
+artifact_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "$project_name"
+  parent_workspace: ""
+  child_projects: []
+  related_repositories: []
+artifact_roots:
+  sdd_root: "$([ -d "$PROJECT_ROOT/openspec" ] && printf 'openspec/changes' || printf 'docs/sdd')"
+  tdd_evidence_root: "docs/test-evidence"
+  prd_root: "docs/PRD"
+  prd_draft_root: "docs/PRD/drafts"
+  walkthrough_root: "docs/walkthroughs"
+release_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "$project_name"
+  release_registry_root: "docs/releases"
+  version_policy: independent # shared | independent | external
+  tag_policy: "pure-version-no-v-prefix"
+  deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
+\`\`\`
+
 ## 常用命令
 
 请以项目真实命令为准。若上方 package scripts 已列出命令，优先使用其中的 lint、typecheck、test、build。

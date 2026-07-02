@@ -40,7 +40,7 @@ Skills/release-handoff.md
 
 1. 读取并遵守 `Skills/release-handoff.md`。
 2. 使用 `mode=single`。
-3. 基于 delivery evidence 输出范围、部署、验证、监控、回滚、运营使用和待确认项。
+3. 基于 delivery evidence 输出 release owner、release registry root、release tag、范围、部署、验证、监控、回滚、运营使用和待确认项。
 4. 若变更属于全量发版、多服务、SQL/脚本批次或需要统一 release 目录，升级为 `release-handoff(mode=train)`。
 
 ## 兜底输出
@@ -51,6 +51,11 @@ Skills/release-handoff.md
 # 单变更发版交接卡
 
 - 变更范围：
+- Release Owner：
+- Release Registry Root：
+- Release Tag：
+- Tag 目标 commit：
+- SDD / TDD / PRD 落盘状态：
 - 部署步骤：
 - 验证证据：
 - 运营 / QA 说明：

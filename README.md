@@ -73,7 +73,7 @@
 - **`tools/validate-pack.sh`**：校验规则包文件、版本、Skill 结构和轻量化约束。
 - **`docs/automation.md`**：记录从 Codex_Project 吸收的有益机制，以及明确剔除的冗余部分。
 
-自动化默认原则是 **adaptive workflow + SDD + TDD**：consulting / micro 保持轻量；standard / critical 任务先明确行为规格，再从验收标准推导测试或验证。这里的 SDD/TDD 是工作流阶段语义，不是独立 Skill 链；有 OpenSpec 时 OpenSpec 是规格事实源，Superpowers 是执行方法层。强管控项目通过 `risk_floor=standard|critical` 锁定最低档位，不维护第二套 strict 流程。
+自动化默认原则是 **adaptive workflow + SDD + TDD**：consulting / micro 保持轻量；standard / critical 任务先明确行为规格，再从验收标准推导测试或验证。这里的 SDD/TDD 是工作流阶段语义，不是独立 Skill 链；有 OpenSpec 时 OpenSpec 是规格事实源，Superpowers 是执行方法层。SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根由 `ai-harness/project-adapter.md` 声明。强管控项目通过 `risk_floor=standard|critical` 锁定最低档位，不维护第二套 strict 流程。
 
 ## 🔄 核心工作流理念
 

@@ -219,9 +219,9 @@ ai-harness/agent-session-protocol.md
 
 它也不会自动把 `Skills/` 差量复制到项目本地 skills 或开发者全局 skills。业务项目默认通过 `.tic-rules.lock` 的项目相对路径或 `.tic-rules.local` 的本机路径读取 Skills，避免覆盖个人配置和产生版本漂移。
 
-原则上，standard / critical 任务仍然执行 **SDD + TDD**：先明确行为规格和验收标准，再写或更新测试，最后实现和验证。这里的 SDD/TDD 是工作流阶段语义，不是独立 Skill 链。项目已有 `openspec/` 时，OpenSpec 是规格事实源；Superpowers 是执行方法层，负责计划、TDD、调试、review 和子代理执行。
+原则上，standard / critical 任务仍然执行 **SDD + TDD**：先明确行为规格和验收标准，再写或更新测试，最后实现和验证。这里的 SDD/TDD 是工作流阶段语义，不是独立 Skill 链。项目已有 `openspec/` 时，OpenSpec 是规格事实源；Superpowers 是执行方法层，负责计划、TDD、调试、review 和子代理执行。SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根由 `ai-harness/project-adapter.md` 声明；未声明时，SDD 默认使用 `openspec/changes/` 或 `docs/sdd/`，TDD 证据索引默认使用 `docs/test-evidence/`，PRD 草稿默认使用 `docs/PRD/drafts/`。
 
-其中 `ai-harness/project-adapter.md` 会自动生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、OpenSpec 和 monorepo 线索。已有文件默认不覆盖；需要刷新时使用 `--force` 或 PowerShell 的 `-Force`。
+其中 `ai-harness/project-adapter.md` 会自动生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、OpenSpec、monorepo 线索，以及 SDD/TDD/PRD/发版登记根的默认归属。已有文件默认不覆盖；需要刷新时使用 `--force` 或 PowerShell 的 `-Force`。
 
 ### 3.4 Codex 全局 Loader（可选）
 
@@ -745,7 +745,7 @@ bash tools/git-advice.sh --type feature "lightweight automation"
 powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lightweight automation"
 ```
 
-Git Flow 分支命名采用混合规则：`feature/*` 使用业务名或 issue + 业务名，例如 `feature/offline-refund`、`feature/1234-offline-refund`；`release/*`、`hotfix/*` 和发布 tag 使用版本号式编号，格式为 `数字.数字.三位数字`，例如 `release/1.0.004`、`hotfix/1.0.005`、`1.0.005`。发布 tag 不加 `v` 前缀。AI 创建分支前必须给出候选分支、命名依据、起点 commit 和待执行命令，等待用户确认后才执行；创建 release/hotfix 前还必须扫描本地/远端分支、tag 和发版记录中的可见最大版本。release/hotfix 打 tag 后不得视为完成，必须继续输出 `develop` 回灌状态、命令和证据，直到回灌完成或用户明确延后/豁免。
+Git Flow 分支命名采用混合规则：`feature/*` 使用业务名或 issue + 业务名，例如 `feature/offline-refund`、`feature/1234-offline-refund`；`release/*`、`hotfix/*` 和发布 tag 使用版本号式编号，格式为 `数字.数字.三位数字`，例如 `release/1.0.004`、`hotfix/1.0.005`、`1.0.005`。发布 tag 不加 `v` 前缀。AI 创建分支前必须给出候选分支、命名依据、release owner、release registry root、起点 commit 和待执行命令，等待用户确认后才执行；创建 release/hotfix 前还必须扫描本地/远端分支、tag 和发版登记根中的可见最大版本。release/hotfix 打 tag 后不得视为完成，必须继续输出 `develop` 回灌状态、tag 落点、发版目录、命令和证据，直到回灌完成或用户明确延后/豁免。发版计划必须写清发布 tag、tag 目标 commit、远端 tag 状态、部署触发方式和 SDD/TDD/PRD 落盘状态。
 
 可选 CodeGraph helper 用于老项目、monorepo、跨模块改动或重构前的上下文和影响面分析。它不默认安装 CodeGraph，也不默认初始化 `.codegraph/`：
 

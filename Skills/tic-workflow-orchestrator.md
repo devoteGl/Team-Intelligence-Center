@@ -46,6 +46,7 @@ delegates_to:
 - **只路由，不复制**：不得复制子 Skill 的正文模板、检查表或写作规则。
 - **单一 adaptive 工作流**：不维护第二套 strict 流程；强管控通过 `risk_floor` 实现。
 - **OpenSpec 是规格事实源，Superpowers 是执行方法层**：本技能只决定何时需要规格、证据、确认和归档。
+- **产物归属先行**：standard / critical 任务必须识别 SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属节点与落盘根，不能按当前 shell 目录随意写入。
 - **TIC Agent Contract 是协作底座**：社区 agent、工具原生 subagent 和外部编排器只能作为能力适配，不得替代 TIC 角色、检查点和证据链。
 - **Agent Session Protocol 是运行态信箱**：独立 agent 会话只能通过可审计 artifact 协作，`session_id` 只做追踪，不做事实源。
 - **可解释跳过**：每个未触发的 Skill 必须说明跳过原因，避免“看起来漏了”。
@@ -99,6 +100,7 @@ Intake 先把用户原话归一化为：
 - 危险词：全自动、顺便、重构、删除、上线、迁移、清空、登录、支付、权限等。
 - 自治诉求：用户希望 AI 自主到什么程度。
 - 缺失信息：影响风险分级、范围、验收或不可逆动作授权的信息。
+- 产物归属：`artifact_owner_type`、`artifact_owner_id`、SDD/TDD/PRD/Release 的落盘根；无法确认时标为待确认。
 - 建议档位与确认方式：consulting / micro / standard / critical，以及是否需要 CP。
 
 用户类型判断只影响解释粒度和追问方式，不降低安全边界。流程熟练用户可少解释、快执行；流程不熟或表达模糊用户要把目标、范围和风险翻译清楚。危险词不得按字面降级，“全自动”只授权可逆低风险步骤，不授权删除、迁移、发版、push、merge、tag、生产配置或 PRD/OpenSpec 转正。
@@ -159,6 +161,7 @@ Intake -> Planning -> Discovery(按需) -> Contract(按需)
 要求：
 - 必须有可执行验收标准。
 - 建议 SDD + TDD；有 OpenSpec change 时引用 change id。
+- 必须记录 SDD 落盘位置和 TDD 证据位置；已有 OpenSpec 时优先写入或关联 `openspec/changes/<change-id>/`，否则使用 `docs/sdd/<change-id>.md` 或项目约定位置。
 - API、FE/BE、共享类型或跨端字段变化时必须触发 `contract-handoff`。
 - 用户可见行为变化时触发 `post-dev-prd-sync` 草稿。
 
@@ -174,6 +177,7 @@ Intake -> Discovery -> OpenSpec/SDD -> Contract-Handoff
 要求：
 - 必须记录人工确认点和回滚/补救思路。
 - 必须暴露未测项、剩余风险和证据缺口。
+- 必须记录 PRD 草稿、SDD、TDD 证据和发版交接包的归属节点；多项目任务只能有一个主归属，其他项目作为引用或子项。
 - 涉及发版、SQL、脚本、运营使用或上线观察时触发 `release-handoff`。
 
 ---
@@ -192,6 +196,8 @@ Intake -> Discovery -> OpenSpec/SDD -> Contract-Handoff
 - Reason: <分级依据>
 - Intent intake: <目标 / 危险词 / 自治诉求 / 缺失信息 / 确认方式>
 - User handling: concise / guided / confirm-first
+- Artifact owner: <workspace / project / subproject / external + owner id>
+- Artifact / release roots: <sdd_root / tdd_evidence_root / prd_root / prd_draft_root / release_registry_root>
 
 ### Phases
 | 顺序 | Phase | Skill / Method | Required artifact | Checkpoint |

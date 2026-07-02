@@ -395,6 +395,30 @@ Gemini CLI：gemini extensions install https://github.com/obra/superpowers
 | Superpowers | `.superpowers/` | 可选，本地执行状态，默认不提交 |
 <!-- TIC:PROJECT-GOVERNANCE:END -->
 
+## 产物归属与落盘
+
+```yaml
+artifact_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "待确认"
+  parent_workspace: ""
+  child_projects: []
+  related_repositories: []
+artifact_roots:
+  sdd_root: "openspec/changes"
+  tdd_evidence_root: "docs/test-evidence"
+  prd_root: "docs/PRD"
+  prd_draft_root: "docs/PRD/drafts"
+  walkthrough_root: "docs/walkthroughs"
+release_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "待确认"
+  release_registry_root: "docs/releases"
+  version_policy: independent # shared | independent | external
+  tag_policy: "pure-version-no-v-prefix"
+  deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
+```
+
 ## 老项目说明
 
 接入 TIC 不要求迁移技术栈。先记录真实现状，再逐步把稳定行为写入 OpenSpec。
@@ -412,6 +436,7 @@ context: |
   Governance: company AI rules live in ai-rules/Team-Intelligence-Center/
   Project adaptation: ai-harness/ stores project memory, decisions, and runbooks
   Documentation: docs/ stores PRDs, API contracts, vendor docs, and design notes
+  Artifact roots: ai-harness/project-adapter.md declares SDD, TDD evidence, PRD draft, walkthrough, and release registry ownership
   Agent execution: Superpowers may be used for brainstorming, planning, TDD, debugging, code review, and subagent-driven development.
   Change process: proposal -> specs -> design -> tasks -> implement -> verify -> archive
   Collaboration:

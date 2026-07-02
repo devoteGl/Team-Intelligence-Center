@@ -101,8 +101,23 @@ case "$TASK_TYPE" in
     ;;
 esac
 
+release_registry_roots() {
+  local adapter="$repo_root/ai-harness/project-adapter.md" custom=""
+  printf '%s\n' "docs/releases"
+  if [ -f "$adapter" ]; then
+    custom="$(
+      sed -nE "s/^[[:space:]]*release_registry_root:[[:space:]]*['\"]?([^'\"#]+)['\"]?.*$/\\1/p" "$adapter" |
+        head -n 1 |
+        sed -E 's/[[:space:]]+$//'
+    )"
+    if [ -n "$custom" ] && [ "$custom" != "docs/releases" ]; then
+      printf '%s\n' "$custom"
+    fi
+  fi
+}
+
 max_release_version() {
-  local max_key=-1 max_version="" version major minor patch key
+  local max_key=-1 max_version="" version major minor patch key release_root release_dir
   while IFS= read -r version; do
     [ -n "$version" ] || continue
     IFS='.' read -r major minor patch <<EOF
@@ -119,10 +134,13 @@ EOF
         sed -nE 's#^([^/]+/)?(release|hotfix)/([0-9]+\.[0-9]+\.[0-9]{3})$#\3#p'
       git tag -l 2>/dev/null |
         sed -nE 's#^v?([0-9]+\.[0-9]+\.[0-9]{3})$#\1#p'
-      if [ -d docs/releases ]; then
-        find docs/releases -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null |
-          sed -nE 's#^.*/([0-9]+\.[0-9]+\.[0-9]{3})$#\1#p'
-      fi
+      while IFS= read -r release_root; do
+        release_dir="$repo_root/$release_root"
+        if [ -d "$release_dir" ]; then
+          find "$release_dir" -mindepth 1 -maxdepth 1 -type d -print 2>/dev/null |
+            sed -nE 's#^.*/([0-9]+\.[0-9]+\.[0-9]{3})$#\1#p'
+        fi
+      done < <(release_registry_roots)
     } | sort -u
   )
   printf '%s' "$max_version"
@@ -176,6 +194,7 @@ visible_tag_style() {
 max_version="$(max_release_version)"
 next_version="$(next_release_version "$max_version")"
 tag_style="$(visible_tag_style)"
+release_roots="$(release_registry_roots | paste -sd ',' -)"
 
 long_lived="no"
 case "$branch" in
@@ -210,6 +229,7 @@ echo "long_lived_branch: $long_lived"
 echo "feature_branch_policy: business slug or issue-business slug"
 echo "release_hotfix_version_policy: version-style *.*.*** max + patch increment"
 echo "tag_policy: pure version *.*.*** without v prefix"
+echo "release_registry_roots: $release_roots"
 if [ -n "$max_version" ]; then
   echo "max_visible_release_version: $max_version"
 else

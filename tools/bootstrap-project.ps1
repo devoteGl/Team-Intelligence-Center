@@ -329,6 +329,7 @@ function New-ProjectAdapterContent {
     if (Test-Path -LiteralPath (Join-Path $ProjectRoot "apps") -PathType Container) { $monorepoParts += "检测到 ``apps/``" }
     if (Test-Path -LiteralPath (Join-Path $ProjectRoot "packages") -PathType Container) { $monorepoParts += "检测到 ``packages/``" }
     $monorepo = if ($monorepoParts.Count -gt 0) { $monorepoParts -join "；" } else { "未检测到常见 monorepo 结构" }
+    $sddRoot = if (Test-Path -LiteralPath (Join-Path $ProjectRoot "openspec") -PathType Container) { "openspec/changes" } else { "docs/sdd" }
 
     @"
 # 项目适配说明
@@ -358,6 +359,32 @@ $packageSection
 - OpenSpec：$openSpec
 - Monorepo 线索：$monorepo
 - 规则入口：bootstrap 会生成或更新项目根 ``AGENTS.md``
+
+## 产物归属与落盘
+
+请按真实情况维护。父工作区、多子项目、独立项目或多仓联动时，AI 以这里的归属为准；未确认项写“待确认”。
+
+````yaml
+artifact_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "$projectName"
+  parent_workspace: ""
+  child_projects: []
+  related_repositories: []
+artifact_roots:
+  sdd_root: "$sddRoot"
+  tdd_evidence_root: "docs/test-evidence"
+  prd_root: "docs/PRD"
+  prd_draft_root: "docs/PRD/drafts"
+  walkthrough_root: "docs/walkthroughs"
+release_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "$projectName"
+  release_registry_root: "docs/releases"
+  version_policy: independent # shared | independent | external
+  tag_policy: "pure-version-no-v-prefix"
+  deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
+````
 
 ## 常用命令
 
