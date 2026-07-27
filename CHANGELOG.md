@@ -2,7 +2,7 @@
 
 本文件记录 Team-Intelligence-Center 公开版本。版本详情见 `docs/releases/<version>/README.md`。
 
-## 0.2.0 - 待发布
+## 0.2.0 - 2026-07-27
 
 - 优化 Codex / GPT-5.6 下的自适应工作流和确认边界。
 - 增加稳定、当前分支和指定 ref 更新路径。
