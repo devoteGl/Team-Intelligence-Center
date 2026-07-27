@@ -2,6 +2,22 @@
 
 本文件记录 Team-Intelligence-Center 公开版本。版本详情见 `docs/releases/<version>/README.md`。
 
+## 0.2.2 - 2026-07-27
+
+### Fixed
+
+- 修复 macOS Bash 3.2 在 `set -u` 下展开空 `CODEX_HOME_ARG` 数组，
+  导致默认一键更新在刷新 Codex 全局 Loader 前退出的问题。
+- 默认 Codex home 与显式 `--codex-home <path>` 现在使用同一刷新函数，
+  不再依赖空数组参数拼接。
+
+### Added
+
+- 新增隔离的 Shell 更新回归，覆盖默认 preview、默认 apply 和显式
+  Codex home 参数透传，不写入真实 Codex 目录。
+
+[版本详情](docs/releases/0.2.2/README.md)
+
 ## 0.2.1 - 2026-07-27
 
 ### Fixed

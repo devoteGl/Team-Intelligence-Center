@@ -84,7 +84,7 @@ bash /path/to/Team-Intelligence-Center/tools/install.sh --refresh
 bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/update.sh --preview --project /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/update.sh --channel current --project /path/to/project
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.1 --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.2 --project /path/to/project
 ```
 
 Windows PowerShell：

@@ -3,7 +3,8 @@
 
 > *消除「PM 觉得说清楚了，开发觉得没说清楚」的永恒矛盾，将散落在代码与人脑中的业务真正沉淀为系统资产。*
 
-> Public preview: 当前版本为 `0.2.1`。本补丁版本保护项目自有的 `project-adapter.md`，并提供证据驱动的创建、补全、审计、迁移和修复能力。
+> Public preview: 当前版本为 `0.2.2`。本补丁版本修复 macOS Bash 3.2
+> 下默认一键更新的兼容问题，并保留 0.2.1 的 Project Adapter 保护能力。
 
 ## 📖 项目简介
 
@@ -16,7 +17,9 @@
 - **License**：Apache-2.0，见 [LICENSE](./LICENSE)。
 - **定位**：Chinese-first、tool-neutral 的 AI 工程协作规则包。
 - **适用工具**：Codex、Cursor、Qoder、OpenCode、OpenSpec、Superpowers，以及其他能读取项目规则的 AI 编码工具。
-- **版本记录**：见 [CHANGELOG.md](./CHANGELOG.md) 与 [docs/releases/](./docs/releases/)；`0.1.0`、`0.2.0` 已归档，当前版本为 `0.2.1`。
+- **版本记录**：见 [CHANGELOG.md](./CHANGELOG.md) 与
+  [docs/releases/](./docs/releases/)；`0.1.0`、`0.2.0`、`0.2.1`
+  已归档，当前版本为 `0.2.2`。
 
 ## 🏗️ 核心资产目录说明
 

@@ -1,7 +1,7 @@
 {
   "package": "Team_Intelligence_Center",
-  "version": "0.2.1",
-  "package_id": "Team_Intelligence_Center_0.2.1",
+  "version": "0.2.2",
+  "package_id": "Team_Intelligence_Center_0.2.2",
   "type": "lightweight_rules_automation",
   "release_status": "public_preview",
   "license": "Apache-2.0",
@@ -57,7 +57,7 @@
     "project_tool_rule_entries": true,
     "no_codex_only_constraint": true,
     "release_archive_root": "docs/releases",
-    "previous_version_archive": "docs/releases/0.2.0"
+    "previous_version_archive": "docs/releases/0.2.1"
   },
   "skill_lifecycle": {
     "canonical": [
