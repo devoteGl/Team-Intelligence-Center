@@ -1,6 +1,6 @@
 # 0.2.1 发布记录
 
-- 状态：发布版；本发布提交作为 `0.2.1` tag 目标，远端与回灌结果见发布后证据
+- 状态：已发布并完成回灌；stable 一键更新存在 Bash 3.2 已知问题，详见发布后证据
 - 发布日期：2026-07-27
 - 基线版本：`0.2.0`
 - 基线提交：`8f28cc8`
@@ -37,12 +37,18 @@
 - [x] 用户确认 commit
 - [x] 用户确认合并、tag、push 和回灌
 - [x] 发布前确认本地与远端不存在同名 `0.2.1` tag
-- [ ] tag 目标 commit 与远端状态由发布后原生 Git 证据确认
+- [x] tag 目标 commit 与远端状态由发布后原生 Git 证据确认
 
 ## 冒烟与回滚
 
 - 发布前冒烟：`bash tools/validate-pack.sh`、`bash -n tools/*.sh`、`jq empty manifest.json`、`git diff --check`。
-- 发布后冒烟：stable tag 可见，业务项目 `.tic-rules.lock` 更新为 `0.2.1`，已有 adapter 校验和不变。
+- 发布后冒烟：stable tag 可见，业务项目 `.tic-rules.lock` 更新为 `0.2.1`，
+  已有 adapter 校验和不变。
+- 已知问题：macOS Bash 3.2 下，未显式传入 `--codex-home` 时，
+  `tools/update.sh` 会在默认全局 Loader 刷新处因空数组展开退出。
+- 临时规避：更新命令显式传入 `--codex-home <path>`，或用
+  `--no-global` 只刷新项目规则；该问题应在新 hotfix 中修复，
+  不移动已发布的 `0.2.1` tag。
 - 回滚目标：tag `0.2.0`。
 - 回滚方式：业务项目执行 `tools/update.sh --ref 0.2.0 --project <project>`；已恢复的 adapter 不随规则版本回滚。
 
