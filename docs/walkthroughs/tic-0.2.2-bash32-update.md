@@ -53,5 +53,6 @@ CODEX_HOME_PATH
 独立 reviewer 最终审查 14 个文件，所有严重级别问题均为 0，结论为
 `APPROVE`。
 
-最终 tag、远端、develop 回灌、stable 冒烟、父子项目 lock 和 adapter
-校验和写入 `docs/releases/0.2.2/evidence.md`。
+tag、远端、develop 回灌、stable 冒烟、父子项目 lock 和 adapter 校验和
+均已写入 `docs/releases/0.2.2/evidence.md`。从 0.2.1 首次升级需要一次性
+显式传入 `--codex-home`；0.2.2 之后恢复默认一条命令。
