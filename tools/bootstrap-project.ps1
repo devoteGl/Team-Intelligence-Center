@@ -2,6 +2,7 @@ param(
     [switch]$DryRun,
     [switch]$Yes,
     [switch]$Force,
+    [switch]$RegenerateAdapter,
     [switch]$Help,
     [string]$RulesDir = "",
     [string]$ProjectRoot = (Get-Location).Path
@@ -12,12 +13,14 @@ $ErrorActionPreference = "Stop"
 function Write-Usage {
     @"
 Usage:
-  powershell -ExecutionPolicy Bypass -File tools/bootstrap-project.ps1 [-DryRun] [-Yes] [-Force] [-RulesDir PATH] [-ProjectRoot PATH]
+  powershell -ExecutionPolicy Bypass -File tools/bootstrap-project.ps1 [-DryRun] [-Yes] [-Force] [-RegenerateAdapter] [-RulesDir PATH] [-ProjectRoot PATH]
 
 Options:
   -DryRun        Show planned writes without changing files.
   -Yes          Skip interactive confirmation.
-  -Force        Overwrite existing docs/ai-rules-usage.md and ai-harness/*.md after backing them up.
+  -Force        Refresh generated entrypoint docs after backup; preserve an existing project adapter.
+  -RegenerateAdapter
+                Replace an existing project adapter with a newly detected profile after backup.
   -RulesDir     Path to Team-Intelligence-Center. Project-local paths are recorded as relative; external paths are written only to .tic-rules.local.
   -ProjectRoot  Target project root. Defaults to the current directory.
 "@
@@ -202,6 +205,21 @@ function Get-DetectedStackFiles {
     return ($found -join "、")
 }
 
+function Get-SubmodulePaths {
+    $gitmodules = Join-Path $ProjectRoot ".gitmodules"
+    if (-not (Test-Path -LiteralPath $gitmodules)) {
+        return @()
+    }
+
+    $paths = @()
+    foreach ($line in Get-Content -LiteralPath $gitmodules -Encoding UTF8) {
+        if ($line -match '^\s*path\s*=\s*(.+?)\s*$') {
+            $paths += $Matches[1]
+        }
+    }
+    return $paths
+}
+
 function Get-DetectedCommonDirs {
     $dirs = @("src", "app", "apps", "packages", "components", "pages", "router", "routes", "api", "server", "backend", "frontend", "web", "admin", "miniapp", "tests", "test", "docs", "config", "scripts")
     $found = @()
@@ -210,8 +228,54 @@ function Get-DetectedCommonDirs {
             $found += "``$dir/``"
         }
     }
+    foreach ($submodule in @(Get-SubmodulePaths)) {
+        if ((Test-Path -LiteralPath (Join-Path $ProjectRoot $submodule) -PathType Container) -and
+            ($found -notcontains "``$submodule/``")) {
+            $found += "``$submodule/``"
+        }
+    }
     if ($found.Count -eq 0) { return "未检测到常见模块目录" }
     return ($found -join "、")
+}
+
+function Get-WorkspaceOwnerType {
+    if ((Test-Path -LiteralPath (Join-Path $ProjectRoot ".gitmodules")) -or
+        (Test-Path -LiteralPath (Join-Path $ProjectRoot "pnpm-workspace.yaml")) -or
+        (Test-Path -LiteralPath (Join-Path $ProjectRoot "apps") -PathType Container) -or
+        (Test-Path -LiteralPath (Join-Path $ProjectRoot "packages") -PathType Container)) {
+        return "workspace"
+    }
+    return "project"
+}
+
+function Get-ChildProjectsYaml {
+    $paths = @(Get-SubmodulePaths)
+    if ($paths.Count -eq 0) {
+        return " []"
+    }
+
+    $lines = @()
+    foreach ($path in $paths) {
+        $escaped = $path.Replace("\", "\\").Replace('"', '\"')
+        $lines += "    - `"$escaped`""
+    }
+    return "`r`n" + ($lines -join "`r`n")
+}
+
+function Get-MonorepoSummary {
+    $parts = @()
+    $submodules = @(Get-SubmodulePaths)
+    if ($submodules.Count -gt 0) {
+        $formatted = @($submodules | ForEach-Object { "``$_/``" }) -join "、"
+        $parts += "检测到 ``.gitmodules``，子项目 $formatted"
+    }
+    if (Test-Path -LiteralPath (Join-Path $ProjectRoot "pnpm-workspace.yaml")) { $parts += "检测到 ``pnpm-workspace.yaml``" }
+    if (Test-Path -LiteralPath (Join-Path $ProjectRoot "apps") -PathType Container) { $parts += "检测到 ``apps/``" }
+    if (Test-Path -LiteralPath (Join-Path $ProjectRoot "packages") -PathType Container) { $parts += "检测到 ``packages/``" }
+    if ($parts.Count -eq 0) {
+        return "未检测到常见 monorepo 或多仓工作区结构"
+    }
+    return ($parts -join "；")
 }
 
 function Get-NodeVersionSummary {
@@ -323,18 +387,16 @@ function New-ProjectAdapterContent {
     $packageManager = Get-PackageManager
     $nodeVersions = Get-NodeVersionSummary
     $packageSection = Get-PackageJsonSection
+    $ownerType = Get-WorkspaceOwnerType
+    $childProjectsYaml = Get-ChildProjectsYaml
     $openSpec = if (Test-Path -LiteralPath (Join-Path $ProjectRoot "openspec") -PathType Container) { "已检测到 ``openspec/``" } else { "未检测到 ``openspec/``" }
-    $monorepoParts = @()
-    if (Test-Path -LiteralPath (Join-Path $ProjectRoot "pnpm-workspace.yaml")) { $monorepoParts += "检测到 ``pnpm-workspace.yaml``" }
-    if (Test-Path -LiteralPath (Join-Path $ProjectRoot "apps") -PathType Container) { $monorepoParts += "检测到 ``apps/``" }
-    if (Test-Path -LiteralPath (Join-Path $ProjectRoot "packages") -PathType Container) { $monorepoParts += "检测到 ``packages/``" }
-    $monorepo = if ($monorepoParts.Count -gt 0) { $monorepoParts -join "；" } else { "未检测到常见 monorepo 结构" }
+    $monorepo = Get-MonorepoSummary
     $sddRoot = if (Test-Path -LiteralPath (Join-Path $ProjectRoot "openspec") -PathType Container) { "openspec/changes" } else { "docs/sdd" }
 
     @"
 # 项目适配说明
 
-本文件由 Team-Intelligence-Center bootstrap 自动生成，用于让 AI 快速了解当前项目。请研发按真实情况补充业务背景、风险边界和缺失命令。
+本文件由 Team-Intelligence-Center bootstrap 在首次接入时生成。现有文件归项目维护，普通安装与升级不会覆盖；请使用 ``project-adapter-maintainer`` 补全、审计、迁移或修复。
 
 生成时间：$generatedAt
 项目标识：``$projectName``
@@ -357,7 +419,7 @@ $packageSection
 ## 项目关系
 
 - OpenSpec：$openSpec
-- Monorepo 线索：$monorepo
+- Monorepo / 多仓线索：$monorepo
 - 规则入口：bootstrap 会生成或更新项目根 ``AGENTS.md``
 
 ## 产物归属与落盘
@@ -366,10 +428,10 @@ $packageSection
 
 ````yaml
 artifact_ownership:
-  owner_type: project # workspace | project | subproject | external
+  owner_type: $ownerType # workspace | project | subproject | external
   owner_id: "$projectName"
   parent_workspace: ""
-  child_projects: []
+  child_projects:$childProjectsYaml
   related_repositories: []
 artifact_roots:
   sdd_root: "$sddRoot"
@@ -378,7 +440,7 @@ artifact_roots:
   prd_draft_root: "docs/PRD/drafts"
   walkthrough_root: "docs/walkthroughs"
 release_ownership:
-  owner_type: project # workspace | project | subproject | external
+  owner_type: $ownerType # workspace | project | subproject | external
   owner_id: "$projectName"
   release_registry_root: "docs/releases"
   version_policy: independent # shared | independent | external
@@ -437,8 +499,8 @@ release_ownership:
 function Install-ProjectAdapter {
     $destination = Join-Path $ProjectRoot "ai-harness/project-adapter.md"
     $relative = $destination.Substring($ProjectRoot.Length).TrimStart([char[]]@('\', '/'))
-    if ((Test-Path -LiteralPath $destination) -and -not $Force) {
-        Add-Plan "skip existing $relative"
+    if ((Test-Path -LiteralPath $destination) -and -not $RegenerateAdapter) {
+        Add-Plan "preserve existing $relative; use project-adapter-maintainer to audit or migrate it"
         return
     }
 

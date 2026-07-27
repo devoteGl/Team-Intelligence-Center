@@ -59,9 +59,16 @@ require_file templates/tool-rules/rules/team-intelligence-center.md
 require_file templates/codex-global/AGENTS.md
 require_file docs/automation.md
 require_file docs/sdd/tic-0.2.0-codex-gpt56.md
+require_file docs/sdd/tic-0.2.1-project-adapter-preservation.md
 require_file docs/releases/0.1.0/README.md
 require_file docs/releases/0.2.0/README.md
+require_file docs/releases/0.2.1/README.md
+require_file docs/releases/0.2.1/evidence.md
 require_file docs/test-evidence/tic-0.2.0/README.md
+require_file docs/test-evidence/tic-0.2.1/README.md
+require_file docs/walkthroughs/tic-0.2.1-project-adapter-preservation.md
+require_file Skills/project-adapter-maintainer.md
+require_file templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md
 require_file tools/bootstrap-project.ps1
 require_file tools/bootstrap-project.sh
 require_file tools/codegraph-helper.ps1
@@ -114,19 +121,19 @@ else
 fi
 rm -f "$template_stack_scan"
 
-if grep -q '当前版本为 `0.2.0`' README.md &&
-   grep -q '0.1.0.*已归档' README.md &&
+if grep -q '当前版本为 `0.2.1`' README.md &&
+   grep -q '0.1.0.*0.2.0.*已归档' README.md &&
    grep -q 'd8fe814ad633bd06d6ead7815ad8f7d6d3db5324' docs/releases/0.1.0/README.md; then
   pass "current and archived release records are declared"
 else
-  fail "README and release archive must identify 0.2.0 and the 0.1.0 archive commit"
+  fail "README and release archive must identify 0.2.1 and archived 0.1.0/0.2.0 releases"
 fi
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
-if [ "$skill_count" -ge 19 ]; then
-  pass "skill count >= 19 ($skill_count)"
+if [ "$skill_count" -ge 20 ]; then
+  pass "skill count >= 20 ($skill_count)"
 else
-  fail "expected at least 19 skill files, found $skill_count"
+  fail "expected at least 20 skill files, found $skill_count"
 fi
 
 if [ ! -e Skills/sdd-writer.md ] &&
@@ -273,6 +280,55 @@ else
 fi
 rm -rf "$bootstrap_tmp"
 
+adapter_tmp="$(mktemp -d)"
+adapter_project="$adapter_tmp/workspace"
+mkdir -p "$adapter_project/ai-harness" "$adapter_project/live-api" "$adapter_project/live-web"
+cat > "$adapter_project/.gitmodules" <<'EOF'
+[submodule "live-api"]
+	path = live-api
+	url = ../live-api.git
+[submodule "live-web"]
+	path = live-web
+	url = ../live-web.git
+EOF
+cat > "$adapter_project/ai-harness/project-adapter.md" <<'EOF'
+# Custom Project Adapter
+
+SENTINEL_PROJECT_FACT
+EOF
+adapter_before="$(cksum "$adapter_project/ai-harness/project-adapter.md")"
+preserve_plan="$adapter_tmp/preserve-plan.txt"
+if bash tools/bootstrap-project.sh --yes --force "$adapter_project" > "$preserve_plan" &&
+   [ "$adapter_before" = "$(cksum "$adapter_project/ai-harness/project-adapter.md")" ] &&
+   grep -q 'preserve existing ai-harness/project-adapter.md' "$preserve_plan"; then
+  pass "refresh preserves the existing project adapter byte-for-byte"
+else
+  fail "refresh and force must preserve the existing project adapter"
+fi
+
+if bash tools/bootstrap-project.sh --yes --force --regenerate-adapter "$adapter_project" >/dev/null &&
+   ! grep -q 'SENTINEL_PROJECT_FACT' "$adapter_project/ai-harness/project-adapter.md" &&
+   grep -R -q 'SENTINEL_PROJECT_FACT' "$adapter_project/.tic-backups" --include='project-adapter.md' &&
+   grep -q 'owner_type: workspace' "$adapter_project/ai-harness/project-adapter.md" &&
+   grep -q '    - "live-api"' "$adapter_project/ai-harness/project-adapter.md" &&
+   grep -q '    - "live-web"' "$adapter_project/ai-harness/project-adapter.md"; then
+  pass "explicit adapter regeneration backs up content and detects submodule workspace ownership"
+else
+  fail "explicit adapter regeneration must back up content and detect submodule workspaces"
+fi
+rm -rf "$adapter_tmp"
+
+if grep -q 'REGENERATE_ADAPTER' tools/bootstrap-project.sh &&
+   grep -q -- '--regenerate-adapter' tools/install.sh &&
+   grep -q 'RegenerateAdapter' tools/bootstrap-project.ps1 &&
+   grep -q -- '-RegenerateAdapter' tools/install.ps1 &&
+   grep -q 'project_adapter_lifecycle' manifest.json &&
+   grep -q '普通安装与升级不会覆盖' templates/docs/ai-rules-usage.md; then
+  pass "Shell, PowerShell, manifest, and project docs declare preservation-first adapter lifecycle"
+else
+  fail "adapter preservation lifecycle must be consistent across Shell, PowerShell, manifest, and docs"
+fi
+
 if grep -q 'git_workflow_advice_only' manifest.json &&
    grep -q 'git fetch, switch, add, commit, push, merge, tag' tools/git-advice.ps1 &&
    grep -q 'git fetch, switch, add, commit, push, merge, tag' tools/git-advice.sh; then
@@ -413,10 +469,16 @@ else
   fail "missing delivery walkthrough policy"
 fi
 
-if grep -q 'auto_project_profile' manifest.json && grep -q 'package.json' tools/bootstrap-project.sh && grep -q 'package.json' tools/bootstrap-project.ps1 && grep -q '项目画像' tools/bootstrap-project.sh && grep -q '项目画像' tools/bootstrap-project.ps1; then
-  pass "bootstrap generates project adapter profile"
+if grep -q 'auto_project_profile' manifest.json &&
+   grep -q 'project_adapter_lifecycle' manifest.json &&
+   grep -q 'package.json' tools/bootstrap-project.sh &&
+   grep -q 'package.json' tools/bootstrap-project.ps1 &&
+   grep -q '.gitmodules' tools/bootstrap-project.sh &&
+   grep -q '.gitmodules' tools/bootstrap-project.ps1 &&
+   grep -q 'project-adapter-maintainer' Skills/tic-workflow-orchestrator.md; then
+  pass "bootstrap scaffolds project adapter profiles and routes later maintenance safely"
 else
-  fail "bootstrap must generate project adapter profile"
+  fail "bootstrap must scaffold adapter profiles, detect workspaces, and route later maintenance safely"
 fi
 
 if grep -q 'skills_reference_only_by_default' manifest.json && grep -q 'skill_contract_schema' manifest.json && grep -q 'skill_lifecycle' manifest.json && grep -q 'Skills 默认从解析出的规则源读取' templates/docs/ai-rules-usage.md && grep -q '不自动差量复制到项目本地 skills 或开发者全局 skills' templates/docs/ai-rules-usage.md; then
@@ -443,7 +505,7 @@ if grep -q 'one_command_user_update' manifest.json &&
    grep -q 'latest_semver_tag' tools/update.sh &&
    grep -q 'TargetRef' tools/update.ps1 &&
    grep -q -- '--channel current' USAGE.md &&
-   grep -q -- '--ref 0.2.0' docs/automation.md &&
+   grep -q -- '--ref 0.2.1' docs/automation.md &&
    grep -q 'install-codex-global.sh' tools/update.sh &&
    grep -q 'install.sh' tools/update.sh; then
   pass "stable, current, and explicit-ref update paths are declared"
@@ -452,7 +514,7 @@ else
 fi
 
 codex_wrapper_count="$(find templates/codex-global/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"
-if [ "$codex_wrapper_count" -ge 12 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'tic-workflow-orchestrator' templates/codex-global/skills/tic-workflow-orchestrator/SKILL.md && grep -q 'tic-contract-handoff' templates/codex-global/skills/tic-contract-handoff/SKILL.md && grep -q 'tic-release-handoff' templates/codex-global/skills/tic-release-handoff/SKILL.md && grep -q 'tic-shared-domain-arbiter' templates/codex-global/skills/tic-shared-domain-arbiter/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
+if [ "$codex_wrapper_count" -ge 13 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'tic-workflow-orchestrator' templates/codex-global/skills/tic-workflow-orchestrator/SKILL.md && grep -q 'tic-contract-handoff' templates/codex-global/skills/tic-contract-handoff/SKILL.md && grep -q 'tic-release-handoff' templates/codex-global/skills/tic-release-handoff/SKILL.md && grep -q 'tic-shared-domain-arbiter' templates/codex-global/skills/tic-shared-domain-arbiter/SKILL.md && grep -q 'project-adapter-maintainer' templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
   pass "Codex global loader is wrapper-only and project-first"
 else
   fail "Codex global loader must stay wrapper-only and project-first"

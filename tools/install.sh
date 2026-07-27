@@ -7,19 +7,22 @@ PROJECT_ROOT="$PWD"
 PROJECT_PROVIDED=0
 PREVIEW=0
 FORCE=0
+REGENERATE_ADAPTER=0
 RULES_DIR=""
 
 usage() {
   cat <<'USAGE'
 Usage:
-  bash tools/install.sh [--preview] [--refresh] [--rules-dir PATH] [PROJECT_ROOT]
+  bash tools/install.sh [--preview] [--refresh] [--regenerate-adapter] [--rules-dir PATH] [PROJECT_ROOT]
 
 Defaults:
   Installs Team-Intelligence-Center lightweight rules into the current directory.
 
 Options:
   --preview       Show planned writes without changing files.
-  --refresh       Refresh generated docs after backing up existing files.
+  --refresh       Refresh generated entrypoint docs after backup; preserve the project adapter.
+  --regenerate-adapter
+                  Explicitly replace the project adapter with a newly detected profile after backup.
   --rules-dir PATH
                   Path to Team-Intelligence-Center. Project-local paths are committed as relative; external paths stay local.
   --help, -h      Show this help.
@@ -34,6 +37,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --refresh|--force)
       FORCE=1
+      shift
+      ;;
+    --regenerate-adapter)
+      REGENERATE_ADAPTER=1
       shift
       ;;
     --rules-dir)
@@ -72,6 +79,9 @@ if [ "$PREVIEW" -eq 1 ]; then
 fi
 if [ "$FORCE" -eq 1 ]; then
   args+=("--force")
+fi
+if [ "$REGENERATE_ADAPTER" -eq 1 ]; then
+  args+=("--regenerate-adapter")
 fi
 if [ -n "$RULES_DIR" ]; then
   args+=("--rules-dir" "$RULES_DIR")
