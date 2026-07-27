@@ -12,9 +12,9 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - 自动生成项目适配说明，包含技术栈、依赖、Node 版本、包管理器、项目关系和常见命令线索。
 - single adaptive workflow：按风险分级处理任务，并通过 `risk_floor` 锁定强管控项目的最低档位。
 - 机器可读 `tic_skill.v1` contract，用于校验 Skill phase、风险档、canonical / alias / subflow 生命周期。
-- standard / critical 任务默认执行 SDD + TDD；这是工作流阶段语义，不是独立 Skill 链。
+- standard / critical 任务默认执行规格驱动与验收驱动验证；自动测试和可观察验证都可以承接验收标准。
 - OpenSpec 作为规格事实源，用于已启用 OpenSpec 或需要长期行为追踪的变更；Superpowers 作为执行方法层。
-- UI 相关变更优先核对真实界面，可使用 Playwright、浏览器截图、Computer Use 或 Chrome。
+- UI 相关变更使用当前环境可用的设计与 UI/UX 专业能力，并优先核对真实界面；安装了 `design-taste-frontend` 与 `ui-ux-pro-max` 时优先使用。
 - standard / critical 实现完成后，生成面向异步 review 和验收的交付 Walkthrough artifact。
 - standard / critical 交付后，如产品行为发生变化，生成基于证据的 PRD 更新草稿。
 - 简化入口：提供一条命令安装包装器，底层仍复用幂等 bootstrap。
@@ -68,6 +68,7 @@ ai-harness/project-adapter.md
 - `pnpm-lock.yaml`、`yarn.lock`、`package-lock.json`、`bun.lock*` 推断包管理器。
 - `package.json` 中的 scripts、dependencies、devDependencies、peerDependencies 和 workspaces。
 - `openspec/`、`apps/`、`packages/` 等项目关系线索。
+- `artifact_ownership`、`artifact_roots` 和 `release_ownership` 默认块，用于声明 SDD、TDD 证据、PRD、Walkthrough 和发版登记根的归属与落盘位置。
 
 已有 `ai-harness/project-adapter.md` 默认不会覆盖；需要刷新画像时使用 `--force` / `-Force`。
 
@@ -80,8 +81,10 @@ cd /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/install.sh
 bash /path/to/Team-Intelligence-Center/tools/install.sh --preview
 bash /path/to/Team-Intelligence-Center/tools/install.sh --refresh
-bash /path/to/Team-Intelligence-Center/tools/update.sh
-bash /path/to/Team-Intelligence-Center/tools/update.sh --preview
+bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --preview --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --channel current --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.0 --project /path/to/project
 ```
 
 Windows PowerShell：
@@ -97,20 +100,24 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 
 底层高级入口仍保留：`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1` 支持 `--force` / `-Force`、`--rules-dir` / `-RulesDir` 等参数。日常研发优先使用 `install.*`。
 
-规则升级入口是 `tools/update.sh` / `tools/update.ps1`。它把用户操作压缩为一条命令：更新规则源、刷新 Codex 全局 Loader 和 `tic-*` wrapper、刷新当前业务项目 `AGENTS.md` / `.tic-rules.lock` / 使用说明 / 项目画像。需要谨慎检查时先加 `--preview` / `-Preview`。
+规则升级入口是 `tools/update.sh` / `tools/update.ps1`。默认 `stable` 通道选择最高 SemVer release tag；`current` 通道 fast-forward 当前分支；显式 `ref` 用于锁定 tag、分支或 commit。规则源验证成功后，再刷新 Codex 全局 Loader、`tic-*` wrapper 和业务项目入口。需要谨慎检查时先加 `--preview` / `-Preview`。
 
-## SDD + TDD 与 OpenSpec
+`0.1.0` 首次升级通常仍只需执行原来的一条更新命令：旧更新器 fast-forward 正常维护的发布或集成分支后，会取得 `0.2.0` 脚本并完成刷新。只有 detached HEAD、自定义旧分支或未取得 `0.2.0` 时，才需手动 fetch tags 并 checkout `0.2.0`。之后普通使用者跟随 stable tag，贡献者跟随 current，生产或需复现项目锁定 ref；submodule 由父项目 owner 统一更新并提交指针。
+
+## 规格、验证与 OpenSpec
 
 轻量自动化不会让每次对话都进入 OpenSpec。规则是：
 
 - consulting 和 micro 任务保持直接。
-- standard 和 critical 任务必须执行 SDD + TDD。
+- standard 和 critical 任务必须有规格和从验收标准推导的自动测试或可观察验证。
 - 项目可通过 `risk_floor=standard|critical` 禁止任务降级到过轻流程。
 - 业务项目已有 `openspec/` 时，把 SDD 语义写入或关联 OpenSpec change，OpenSpec 是规格事实源。
 - 没有 OpenSpec 时，使用 `docs/sdd/` 或项目认可的规格位置。
 - 测试或明确验证项应从 SDD 的验收标准推导出来，再进入实现。
+- SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根以 `ai-harness/project-adapter.md` 为准；未声明时使用轻量默认路径。
+- TDD 证据索引默认写入 `docs/test-evidence/<change-id>/README.md`，具体测试代码仍放在项目测试目录。
 
-因此，SDD/TDD 是阶段语义，不是独立 Skill 链；OpenSpec 是规格承载层，不是每个任务都必须启动的重流程。
+因此，规格与验证是交付语义，不是独立 Skill 链；OpenSpec 是规格承载层，不是每个任务都必须启动的重流程。
 
 ## Adaptive Workflow Orchestrator
 
@@ -165,6 +172,8 @@ session-snapshot-manager -> 总控/全局规则快照模板
 - standard / critical 任务完成后，若影响用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程，应执行 `Skills/post-dev-prd-sync.md`。
 - 证据来源包括 OpenSpec / SDD、git diff、commit、测试结果、UI 验证、API 契约和用户确认。
 - 输出为 PRD 更新草稿、证据清单、候选规则和待确认项。
+- PRD 草稿默认写入 `docs/PRD/drafts/<change-id>-prd-update.md`；正式 PRD 默认归 `docs/PRD/` 或项目声明位置。
+- 多项目变更只能有一个 PRD 主归属，其他项目作为引用或子项，避免同一业务事实在多个项目各自转正。
 - S2/S3 代码反推内容不得自动转正；人工确认后再同步到正式 PRD、OpenSpec specs 或项目约定位置。
 
 ## 交付 Walkthrough
@@ -180,9 +189,9 @@ Walkthrough 是完成态交付 artifact，用来让 PM、Reviewer、QA、运维�
 
 UI 相关任务的验证重点是真实界面，而不是只看代码。
 
-- UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归相关改动，应使用 `design-taste-frontend` 与 `ui-ux-pro-max` 参与方案和实现判断；若 `design-taste-frontend` 明确判定场景不适用，应记录原因并按项目设计系统继续。
+- UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归相关改动，应使用当前环境可用的设计与 UI/UX 专业能力；安装了 `design-taste-frontend` 与 `ui-ux-pro-max` 时优先使用。能力不可用或不适用时，按项目设计系统继续并说明替代依据。
 - 本地应用可运行时，优先使用 Playwright、浏览器截图、Computer Use 或 Chrome 打开页面并核对。
-- 涉及端到端验证功能、真实点击输入、登录、桌面 App、用户本机状态、浏览器插件或真实账号态时，优先使用 `@电脑`（`plugin://computer-use@openai-bundled` / Computer Use）；不可用时说明原因，再用 Playwright、Browser 或 Chrome 替代。
+- 涉及端到端验证功能、真实点击输入、登录、桌面 App、用户本机状态、浏览器插件或真实账号态时，优先使用当前环境可用的 Computer Use、浏览器自动化或截图验证。
 - 默认核对页面是否可打开、核心流程是否可操作、样式是否错位、桌面/移动端是否异常、控制台是否有关键错误。
 - micro 级纯文案或无行为样式微调，可做最小截图、局部检查或说明级验证。
 - 无法运行或自动核对界面时，最终报告必须说明原因、替代验证和剩余 UI 风险。
@@ -207,12 +216,12 @@ powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lig
 
 - 当前仓库根目录、分支、上游和变更文件数量。
 - 当前分支是否像长期分支。
-- 本地 / 远端 `release/<version>`、`hotfix/<version>`、tag 和 `docs/releases/` 中的可见最大版本号。
-- 建议的业务名 feature 分支、版本号式 release/hotfix 分支、无 `v` 前缀 tag 和提交标题。
+- 本地 / 远端 `release/<version>`、`hotfix/<version>`、tag 和发版登记根中的可见最大版本号；默认登记根是 `docs/releases/`。
+- 远端刷新状态、建议分支本地/远端占用状态、基线分支与 upstream 的同步状态。
+- 建议的业务名 feature 分支、符合项目版本策略的 release/hotfix 分支、保留既有前缀风格的 tag 和提交标题。
 - 本地运行态文件、密钥和本地配置风险。
 
-脚本不会执行 `git switch`、`git add`、`git commit`、`git push`、`git merge`、`git tag` 或删除分支。
-分支创建仍需由 `git-flow-operator` 输出确认卡，用户确认后才执行。
+脚本不会执行 `git fetch`、`git switch`、`git add`、`git commit`、`git push`、`git merge`、`git tag` 或删除分支。分支创建前仍必须先执行 `git fetch --all --prune --tags`，再由 `git-flow-operator` 输出确认卡，用户确认后才执行。
 
 ## 可选 CodeGraph 上下文增强
 

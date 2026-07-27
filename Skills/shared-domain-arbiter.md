@@ -33,6 +33,8 @@ legacy_sources:
 
 共享文件域是协作边界，不是任何一方的临时便利区。
 
+本技能是多 agent 并行、社区 agent 适配和工具原生 subagent 写入共享域前的授权闸门。未获仲裁授权的 agent 不得修改共享类型、路由、常量、全局配置、公共工具或契约文件。
+
 绝对禁止：
 - 未经说明直接修改共享文件。
 - 把 Git merge conflict 误当成本技能处理对象。
@@ -68,6 +70,8 @@ legacy_sources:
 - Conditions:
 - Owners to notify:
 - Required follow-up:
+- Authorized agents / roles:
+- Writable domain:
 - Snapshot / walkthrough record:
 ```
 

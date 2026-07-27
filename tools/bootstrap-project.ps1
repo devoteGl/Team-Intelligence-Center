@@ -17,7 +17,7 @@ Usage:
 Options:
   -DryRun        Show planned writes without changing files.
   -Yes          Skip interactive confirmation.
-  -Force        Overwrite existing docs/ai-rules-usage.md and ai-harness/project-adapter.md after backing them up.
+  -Force        Overwrite existing docs/ai-rules-usage.md and ai-harness/*.md after backing them up.
   -RulesDir     Path to Team-Intelligence-Center. Project-local paths are recorded as relative; external paths are written only to .tic-rules.local.
   -ProjectRoot  Target project root. Defaults to the current directory.
 "@
@@ -329,6 +329,7 @@ function New-ProjectAdapterContent {
     if (Test-Path -LiteralPath (Join-Path $ProjectRoot "apps") -PathType Container) { $monorepoParts += "检测到 ``apps/``" }
     if (Test-Path -LiteralPath (Join-Path $ProjectRoot "packages") -PathType Container) { $monorepoParts += "检测到 ``packages/``" }
     $monorepo = if ($monorepoParts.Count -gt 0) { $monorepoParts -join "；" } else { "未检测到常见 monorepo 结构" }
+    $sddRoot = if (Test-Path -LiteralPath (Join-Path $ProjectRoot "openspec") -PathType Container) { "openspec/changes" } else { "docs/sdd" }
 
     @"
 # 项目适配说明
@@ -358,6 +359,37 @@ $packageSection
 - OpenSpec：$openSpec
 - Monorepo 线索：$monorepo
 - 规则入口：bootstrap 会生成或更新项目根 ``AGENTS.md``
+
+## 产物归属与落盘
+
+请按真实情况维护。父工作区、多子项目、独立项目或多仓联动时，AI 以这里的归属为准；未确认项写“待确认”。
+
+````yaml
+artifact_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "$projectName"
+  parent_workspace: ""
+  child_projects: []
+  related_repositories: []
+artifact_roots:
+  sdd_root: "$sddRoot"
+  tdd_evidence_root: "docs/test-evidence"
+  prd_root: "docs/PRD"
+  prd_draft_root: "docs/PRD/drafts"
+  walkthrough_root: "docs/walkthroughs"
+release_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "$projectName"
+  release_registry_root: "docs/releases"
+  version_policy: independent # shared | independent | external
+  version_format: semver # semver | three-digit-patch | calendar | custom
+  branch_strategy: project-defined # trunk | gitflow | project-defined
+  feature_base: "待确认"
+  release_base: "待确认"
+  hotfix_base: "待确认"
+  tag_policy: "preserve-existing" # preserve-existing | no-v-prefix | v-prefix | custom
+  deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
+````
 
 ## 常用命令
 
@@ -485,16 +517,24 @@ updated_at=$updatedAt
 
 function Ensure-GitignoreLocalConfig {
     $target = Join-Path $ProjectRoot ".gitignore"
+    $needsHeader = $true
     $needsLocal = $true
     $needsBackups = $true
+    $needsAgentRuns = $true
 
     if (Test-Path -LiteralPath $target) {
         $lines = @(Get-Content -LiteralPath $target -Encoding UTF8)
+        $needsHeader = -not (
+            ($lines -contains "# Team-Intelligence-Center local files") -or
+            ($lines -contains ".tic-rules.local") -or
+            ($lines -contains ".tic-backups/")
+        )
         $needsLocal = -not ($lines -contains ".tic-rules.local")
         $needsBackups = -not ($lines -contains ".tic-backups/")
+        $needsAgentRuns = -not ($lines -contains ".tic/agent-runs/")
     }
 
-    if (-not $needsLocal -and -not $needsBackups) {
+    if (-not $needsLocal -and -not $needsBackups -and -not $needsAgentRuns) {
         Add-Plan "skip .gitignore TIC local entries"
         return
     }
@@ -513,9 +553,10 @@ function Ensure-GitignoreLocalConfig {
         }
 
         $additions = New-Object System.Collections.Generic.List[string]
-        [void]$additions.Add("# Team-Intelligence-Center local files")
+        if ($needsHeader) { [void]$additions.Add("# Team-Intelligence-Center local files") }
         if ($needsLocal) { [void]$additions.Add(".tic-rules.local") }
         if ($needsBackups) { [void]$additions.Add(".tic-backups/") }
+        if ($needsAgentRuns) { [void]$additions.Add(".tic/agent-runs/") }
 
         $content = if ([string]::IsNullOrWhiteSpace($existing)) {
             ($additions -join "`r`n") + "`r`n"
@@ -532,6 +573,7 @@ Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/cursorrules.m
 Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/windsurfrules.md") (Join-Path $ProjectRoot ".windsurfrules")
 Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/rules/team-intelligence-center.md") (Join-Path (Join-Path $ProjectRoot ".rules") "team-intelligence-center.md")
 Install-ProjectAdapter
+Install-TemplateFile (Join-Path $PackageRoot "templates/ai-harness/agent-session-protocol.md") (Join-Path (Join-Path $ProjectRoot "ai-harness") "agent-session-protocol.md")
 Write-LockFile
 Write-LocalConfig
 Ensure-GitignoreLocalConfig

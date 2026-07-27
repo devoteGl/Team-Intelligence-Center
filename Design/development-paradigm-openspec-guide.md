@@ -259,7 +259,45 @@ Superpowers 负责“Agent 如何把任务做扎实”，不负责替代 OpenSpe
 - 小修、小 bug 可以直接用 Superpowers 的 TDD / debugging，不强制创建 OpenSpec change。
 - 跨端、跨模块、接口契约变化仍必须先 `/opsx:propose`。
 
-### 9.2 推荐组合链路
+### 9.2 Guardrailed Multi-Agent / 受控并行
+
+多 Agent 是执行层 fan-out 能力，不是 TIC 的顶层工作流。TIC 不维护 agent 市场，TIC 维护 agent 上岗制度。
+
+启用 fan-out 前，`tic-workflow-orchestrator` 必须先完成 Intent Intake：识别用户目标、危险词、自治诉求、缺失信息、建议档位和确认方式。用户说“全自动”只表示希望 AI 少打扰，不表示授权外部 agent 执行删除、迁移、发版、Git Flow、生产配置或规格转正等高危动作。
+
+Agent Contract：
+- TIC canonical role：PM / CI / FE / BE / QA / DS / Release / Reviewer 是稳定协作合同，定义职责、检查点、文件 ownership 和交付证据。
+- 社区 agent：只作为专业能力 adapter，例如前端、后端、安全、测试、代码审查、专项领域顾问。
+- 工具原生 subagent：只执行被总控派发的叶子任务，不拥有风险分级、契约冻结、共享域仲裁、最终验收、发版或 Git Flow 权限。
+- 外部 orchestrator：可参考其角色库或局部执行能力，不得替代 `tic-workflow-orchestrator`。
+
+Fan-out 准入：
+- Discovery 可并行做多模块只读调研。
+- Execution 只有在任务可独立验证、文件域清晰、契约已冻结时才能 fan-out。
+- Verification 可并行跑测试、lint、构建、截图或专项 review，但主 Agent 必须收口证据。
+- `contract-handoff` 是 API、字段、错误码、共享类型、权限点、FE/BE 并行前置闸门。
+- `shared-domain-arbiter` 是 `router/`、`types/`、`constants/`、全局配置、公共工具或契约文件写入前置闸门。
+- standard / critical 任务应记录 fan-out 的 agent、任务范围、可写文件域、验证证据和未测风险。
+
+跨会话执行：
+- 每个 agent 单独开会话时，必须使用 `agent-session-protocol` 或项目等价 mailbox。
+- run 目录使用“时间 + 任务短标题”，agent 目录使用“序号 + 中文角色 + 本次职责”，方便用户查找。
+- `session_id` 只作为追踪字段写入 manifest/status，不作为上下文事实源。
+- 主 Agent 只读取结构化 outbox、status 和 evidence；agent 之间不得自由群聊。
+- 发现契约冲突、越权请求、范围漂移、重复阻塞或证据不足时，停止 fan-out 并收敛回单线主控。
+
+不建议全量安装社区 agent 库。推荐按项目白名单维护少量映射，例如：
+
+| TIC 角色 | 可适配的社区专家能力 | 使用边界 |
+| --- | --- | --- |
+| CI | codebase onboarding / investigator | 只读调研，输出证据和候选规则 |
+| FE | frontend developer | 只写授权前端域，不改共享契约 |
+| BE | backend architect / developer | 只写授权后端域，不私改接口契约 |
+| QA / Reviewer | code reviewer / testing evidence collector | 输出问题、证据和未测项，不代替最终验收 |
+| Security | appsec / security reviewer | 只做专项风险评审，阻断项交回 PM |
+| Multi-Agent Advisor | multi-agent systems architect | 评审拓扑和故障模式，不接管总控 |
+
+### 9.3 推荐组合链路
 
 ```text
 需求 / 问题
@@ -270,13 +308,15 @@ Superpowers 负责“Agent 如何把任务做扎实”，不负责替代 OpenSpe
   -> OpenSpec /opsx:sync 或 /opsx:archive
 ```
 
-### 9.3 不建议的做法
+### 9.4 不建议的做法
 
 - 先写 `docs/superpowers/specs/`，再让 OpenSpec 被动补录。
 - 把 Superpowers 的临时头脑风暴材料当成已确认需求。
 - 绕过 OpenSpec 直接修改跨端契约。
 - 把同一需求同时维护在 OpenSpec specs 和另一套 Superpowers spec 中。
 - 把 `tic-workflow-orchestrator` 写成复制所有子 Skill 模板的巨型 Skill。
+- 让社区 agent 库或工具原生 orchestrator 替代 TIC Agent Contract。
+- 全量安装外部 agent 后由模型自由挑选角色执行 standard / critical 任务。
 
 ## 10. 老项目接入模式
 

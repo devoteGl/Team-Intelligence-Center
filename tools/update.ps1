@@ -5,7 +5,11 @@ param(
     [switch]$NoProject,
     [switch]$Help,
     [string]$ProjectRoot = (Get-Location).Path,
-    [string]$CodexHome = ""
+    [string]$CodexHome = "",
+    [ValidateSet("stable", "current")]
+    [string]$Channel = "stable",
+    [string]$TargetRef = "",
+    [string]$Remote = "origin"
 )
 
 $ErrorActionPreference = "Stop"
@@ -13,17 +17,26 @@ $ErrorActionPreference = "Stop"
 function Write-Usage {
     @"
 Usage:
-  powershell -ExecutionPolicy Bypass -File tools\update.ps1 [-Preview] [-ProjectRoot PATH] [-CodexHome PATH] [-NoPull] [-NoGlobal] [-NoProject]
+  powershell -ExecutionPolicy Bypass -File tools\update.ps1 [-Preview] [-Channel stable|current] [-TargetRef REF] [-Remote NAME]
+    [-ProjectRoot PATH] [-CodexHome PATH] [-NoPull] [-NoGlobal] [-NoProject]
 
 Defaults:
   One-command update for Team-Intelligence-Center users.
-  Pulls the rules source, refreshes Codex global wrappers, and refreshes the current project entrypoint.
+  Selects the latest stable SemVer tag, validates the rules source, refreshes Codex global wrappers,
+  and refreshes the current project entrypoint.
 "@
 }
 
 if ($Help) {
     Write-Usage
     exit 0
+}
+
+if ($TargetRef.StartsWith("-")) {
+    throw "-TargetRef must not start with '-'."
+}
+if ($Remote.StartsWith("-")) {
+    throw "-Remote must not start with '-'."
 }
 
 $ScriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
@@ -51,15 +64,36 @@ function Invoke-OrPrint {
     }
 }
 
-function Get-RelativeRulesPath {
-    if ($NoProject) {
-        return ""
+function Get-LatestSemVerTag {
+    param([string]$RemoteName)
+    $selectedTag = ""
+    $selectedVersion = $null
+    $remoteLines = @(git -C $PackageRoot ls-remote --tags --refs $RemoteName 2>$null)
+    if ($LASTEXITCODE -ne 0) {
+        throw "Unable to read release tags from remote $RemoteName."
     }
-    $prefix = $ProjectRoot.TrimEnd([IO.Path]::DirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-    if ($PackageRoot.StartsWith($prefix, [System.StringComparison]::OrdinalIgnoreCase)) {
-        return $PackageRoot.Substring($prefix.Length)
+    foreach ($line in $remoteLines) {
+        if ($line -notmatch '^[^\s]+\s+refs/tags/(.+)$') {
+            continue
+        }
+        $tag = $Matches[1]
+        $normalized = $tag -replace '^v', ''
+        if ($normalized -notmatch '^[0-9]+\.[0-9]+\.[0-9]+$') {
+            continue
+        }
+        try {
+            $candidate = [version]$normalized
+        } catch {
+            continue
+        }
+        if ($null -eq $selectedVersion -or $candidate -gt $selectedVersion) {
+            $selectedVersion = $candidate
+            $selectedTag = $tag
+        } elseif ($candidate -eq $selectedVersion -and $selectedTag.StartsWith("v") -and -not $tag.StartsWith("v")) {
+            $selectedTag = $tag
+        }
     }
-    return ""
+    return $selectedTag
 }
 
 function Update-RulesSource {
@@ -79,35 +113,82 @@ function Update-RulesSource {
         return
     }
 
-    $branch = ""
-    try {
-        $branch = git -C $PackageRoot symbolic-ref --quiet --short HEAD 2>$null
-    } catch {
-        $branch = ""
-    }
-    if (-not [string]::IsNullOrWhiteSpace($branch)) {
-        Write-Host "Updating rules source on branch $branch..."
-        Invoke-OrPrint @("git", "-C", $PackageRoot, "pull", "--ff-only")
-        return
-    }
-
-    $relativeRulesPath = Get-RelativeRulesPath
-    $projectGit = $false
-    if (-not [string]::IsNullOrWhiteSpace($relativeRulesPath)) {
-        try {
-            $projectGit = ((git -C $ProjectRoot rev-parse --is-inside-work-tree 2>$null) -eq "true")
-        } catch {
-            $projectGit = $false
+    if (-not $Preview) {
+        $dirty = @(git -C $PackageRoot status --porcelain)
+        if (@($dirty | Where-Object { -not [string]::IsNullOrWhiteSpace($_) }).Count -gt 0) {
+            throw "Rules source has uncommitted changes. Commit, stash, or rerun with -NoPull to refresh wrappers from the current worktree."
         }
     }
-    if ($projectGit) {
-        Write-Host "Rules source appears to be a detached submodule; updating from project root..."
-        Invoke-OrPrint @("git", "-C", $ProjectRoot, "submodule", "update", "--remote", "--", $relativeRulesPath)
-        Write-Host "If the submodule pointer changed, review and commit it in the business project."
-        return
+
+    if (-not [string]::IsNullOrWhiteSpace($TargetRef)) {
+        Write-Host "Pinning rules source to ref $TargetRef from $Remote..."
+        Invoke-OrPrint @("git", "-C", $PackageRoot, "fetch", $Remote, "--prune", "--tags")
+        if ($Preview) {
+            Invoke-OrPrint @("git", "-C", $PackageRoot, "checkout", "--detach", $TargetRef)
+        } else {
+            $refExists = $false
+            try {
+                git -C $PackageRoot rev-parse --verify --quiet "$TargetRef^{commit}" 2>$null | Out-Null
+                $refExists = ($LASTEXITCODE -eq 0)
+            } catch {
+                $refExists = $false
+            }
+            if ($refExists) {
+                $remoteRef = "refs/remotes/$Remote/$TargetRef"
+                $remoteRefExists = $false
+                try {
+                    git -C $PackageRoot rev-parse --verify --quiet "$remoteRef^{commit}" 2>$null | Out-Null
+                    $remoteRefExists = ($LASTEXITCODE -eq 0)
+                } catch {
+                    $remoteRefExists = $false
+                }
+                if ($remoteRefExists) {
+                    git -C $PackageRoot checkout --detach $remoteRef
+                } else {
+                    git -C $PackageRoot checkout --detach $TargetRef
+                }
+            } else {
+                git -C $PackageRoot fetch $Remote $TargetRef
+                git -C $PackageRoot checkout --detach FETCH_HEAD
+            }
+        }
+    } elseif ($Channel -eq "current") {
+        $branch = ""
+        try {
+            $branch = git -C $PackageRoot symbolic-ref --quiet --short HEAD 2>$null
+        } catch {
+            $branch = ""
+        }
+        if ([string]::IsNullOrWhiteSpace($branch)) {
+            throw "Current channel requires a checked-out branch. Use -Channel stable or -TargetRef REF."
+        }
+        Write-Host "Updating rules source on current branch $branch..."
+        Invoke-OrPrint @("git", "-C", $PackageRoot, "pull", "--ff-only")
+    } else {
+        Write-Host "Updating rules source from latest stable SemVer tag on $Remote..."
+        Invoke-OrPrint @("git", "-C", $PackageRoot, "fetch", $Remote, "--prune", "--tags")
+        $latestTag = Get-LatestSemVerTag $Remote
+        if ([string]::IsNullOrWhiteSpace($latestTag)) {
+            if ($Preview) {
+                Write-Host "  - stable tag will be resolved after fetch"
+            } else {
+                throw "No SemVer release tag is available. Use -Channel current for a development branch or -TargetRef REF to pin explicitly."
+            }
+        } else {
+            Write-Host "Selected stable tag: $latestTag"
+            Invoke-OrPrint @("git", "-C", $PackageRoot, "checkout", "--detach", $latestTag)
+        }
     }
 
-    Write-Host "Rules source is detached and no project submodule context was found; skipping pull: $PackageRoot"
+    $superproject = ""
+    try {
+        $superproject = git -C $PackageRoot rev-parse --show-superproject-working-tree 2>$null
+    } catch {
+        $superproject = ""
+    }
+    if (-not [string]::IsNullOrWhiteSpace($superproject)) {
+        Write-Host "Rules source is a submodule. Review and commit the parent project submodule pointer after validation: $superproject"
+    }
 }
 
 Write-Host "Team-Intelligence-Center one-command update"
@@ -122,9 +203,21 @@ if ($Preview) {
 } else {
     Write-Host "mode: apply"
 }
+if (-not [string]::IsNullOrWhiteSpace($TargetRef)) {
+    Write-Host "update_ref: $TargetRef"
+} else {
+    Write-Host "update_channel: $Channel"
+}
 Write-Host ""
 
 Update-RulesSource
+
+$activeVersion = "unknown"
+$versionFile = Join-Path $PackageRoot "VERSION"
+if (Test-Path -LiteralPath $versionFile -PathType Leaf) {
+    $activeVersion = (Get-Content -LiteralPath $versionFile -Raw).Trim()
+}
+Write-Host "active_rules_version: $activeVersion"
 
 Write-Host ""
 Write-Host "Validating rules package..."

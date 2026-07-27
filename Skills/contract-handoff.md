@@ -36,6 +36,8 @@ legacy_sources:
 
 契约冻结和 FE/BE 交接必须是同一个连续动作：**先冻结，再交接，再并行实现**。
 
+`contract-handoff` 是跨端、FE/BE 或多 agent 并行实现的前置闸门。未冻结契约时，不得把相关实现任务派发给社区 agent、工具原生 subagent 或外部编排器。
+
 绝对禁止：
 - 未冻结契约就开始跨端并行开发。
 - 冻结契约后另写一份不一致的交接清单。
@@ -91,6 +93,10 @@ legacy_sources:
 ## 7. 待确认项
 | Item | Owner | Blocking? |
 | --- | --- | --- |
+
+## 8. 并行执行边界
+| Agent / Role | Task scope | Writable domain | Read-only contract | Required evidence |
+| --- | --- | --- | --- | --- |
 ```
 
 ---
