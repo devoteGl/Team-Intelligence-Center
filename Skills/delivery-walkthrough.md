@@ -88,11 +88,11 @@ Walkthrough 是“完成态交付走查”，不是开工前计划，也不是�
 
 ## 3. 输出位置
 
-优先遵守项目 `AGENTS.md`、`ai-harness/project-adapter.md`、OpenSpec change 或用户指定位置。
+优先遵守项目 `AGENTS.md`、`ai-harness/project-adapter.md`、OpenSpec change 或用户指定位置。Walkthrough 的归属应与本次 SDD / PRD / Release Handoff 的主归属一致；多项目任务只设一个主 Walkthrough，其他项目作为引用或子项。
 
 未声明时建议：
 - 单变更 Walkthrough：`docs/walkthroughs/<change-id>.md`
-- 发版批次内 Walkthrough：`docs/releases/<version>/walkthrough.md`
+- 发版批次内 Walkthrough：`<release-registry-root>/<version>/walkthrough.md`
 - 脚本 / 工具使用 Walkthrough：放在该工具目录或 `docs/operations/`
 - UI 证据资产：`docs/walkthroughs/assets/<change-id>/`
 

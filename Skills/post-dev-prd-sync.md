@@ -37,6 +37,7 @@ delegates_to: []
 - 证据优先：每条重要结论都要能追溯到 OpenSpec、SDD、git diff、测试、UI 验证、接口契约或用户确认。
 - 可信度标注：沿用 `ai-prd-editor.rules.md` 的 S1-S4 体系。
 - 草稿优先：未人工确认前，输出为 PRD 更新草稿或候选规则，不直接转正进 `main-prd.md`。
+- 归属优先：PRD、SDD 和 TDD 证据落盘到拥有该产品行为的项目/子项目/父工作区，不按当前 shell 目录随意落盘。
 - 小改轻量：纯重构、格式化、注释、内部实现优化且无行为变化时，不强制生成 PRD 草稿。
 
 ---
@@ -75,11 +76,23 @@ standard / critical 任务完成后，AI 应自动判断是否需要执行本技
 
 ---
 
-## 3. 输出位置
+## 3. 归属与落盘
 
 优先遵守项目 `AGENTS.md`、`ai-harness/project-adapter.md` 或 PRD 元信息中的约定。
 
+必须先确认：
+
+- `artifact_owner_type`：`workspace` / `project` / `subproject` / `external`。
+- `artifact_owner_id`：稳定项目标识或工作区标识。
+- `sdd_root`：SDD / OpenSpec change 的落盘根。
+- `tdd_evidence_root`：测试、构建、联调、UI 验证等证据索引的落盘根。
+- `prd_root`：正式 PRD 或长期产品文档根。
+- `prd_draft_root`：PRD 更新草稿根。
+- 多项目变更的主归属和引用关系；无法确认时写“待确认”，不得把草稿分散写到多个项目并各自声称为正式事实。
+
 未声明时建议：
+- SDD / OpenSpec：已有 `openspec/` 时使用 `openspec/changes/<change-id>/`；否则使用 `docs/sdd/<change-id>.md`
+- TDD 证据索引：`docs/test-evidence/<change-id>/README.md`，具体测试代码仍放在项目测试目录
 - PRD 草稿：`docs/PRD/drafts/<change-id>-prd-update.md`
 - 候选规则：`docs/PRD/pending-candidates.yaml` 或项目已有候选规则位置
 - Changelog 输入：交给 `Skills/changelog-writer.md`，不要在 PRD 草稿里写流水账
@@ -95,6 +108,8 @@ standard / critical 任务完成后，AI 应自动判断是否需要执行本技
 ## 0. 元信息
 - **状态**：Draft / Needs Confirmation / Ready for Review
 - **关联变更**：<OpenSpec change / issue / branch / commit>
+- **归属**：<artifact_owner_type / artifact_owner_id>
+- **落盘位置**：<prd_draft_root / sdd_root / tdd_evidence_root>
 - **生成日期**：YYYY-MM-DD
 - **证据范围**：<diff、测试、截图、契约、用户确认>
 
@@ -117,6 +132,13 @@ standard / critical 任务完成后，AI 应自动判断是否需要执行本技
 ## 5. 验收标准与验证结果
 | AC | 验收条件 | 验证方式 | 结果 |
 | --- | --- | --- | --- |
+
+## 5.1 SDD / TDD 落盘状态
+| 类型 | 路径 / 链接 | 状态 | 说明 |
+| --- | --- | --- | --- |
+| SDD / OpenSpec |  | 已落盘 / 待补 / 不适用 |  |
+| TDD / 验证证据 |  | 已落盘 / 待补 / 不适用 |  |
+| PRD 草稿 / 正式稿 |  | 已落盘 / 待确认 / 不适用 |  |
 
 ## 6. 候选规则与待确认项
 | 编号 | 内容 | 原因 | 可信度 | 建议处理 |

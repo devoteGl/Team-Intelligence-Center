@@ -40,7 +40,7 @@ Skills/release-handoff.md
 
 1. 读取并遵守 `Skills/release-handoff.md`。
 2. 使用 `mode=train`。
-3. 输出发版总控、服务卡、业务联动卡、数据库/脚本 manifest、总冒烟、监控、回滚和证据归档。
+3. 输出发版总控、release owner、release registry root、tag 映射、服务卡、业务联动卡、数据库/脚本 manifest、总冒烟、监控、回滚和证据归档。
 4. 分支创建、merge、tag、push 或回灌仍必须交给 `git-flow-operator`，不得由发版交接技能直接执行。
 
 ## 兜底输出
@@ -51,8 +51,13 @@ Skills/release-handoff.md
 # 发版批次交付包
 
 - Release ID：
+- Release Owner：
+- Release Registry Root：
+- Release Tag：
+- Tag 映射：
 - 发版范围：
 - 服务 / 项目清单：
+- SDD / TDD / PRD 落盘状态：
 - 数据库 / 脚本：
 - 发版顺序：
 - 总体验证：

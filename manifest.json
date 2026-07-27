@@ -1,7 +1,7 @@
 {
   "package": "Team_Intelligence_Center",
-  "version": "0.1.0",
-  "package_id": "Team_Intelligence_Center_0.1.0",
+  "version": "0.2.0",
+  "package_id": "Team_Intelligence_Center_0.2.0",
   "type": "lightweight_rules_automation",
   "release_status": "public_preview",
   "license": "Apache-2.0",
@@ -9,8 +9,8 @@
   "automation_policy": {
     "default_install_mode": "minimal",
     "tool_neutral": true,
-    "principle": "adaptive workflow + SDD + TDD",
-    "mainline_policy": "TIC routes risk, checkpoints, evidence, and closeout; OpenSpec remains the specification source of truth; Superpowers remains the execution method layer; SDD/TDD are workflow semantics, not a separate toolchain",
+    "principle": "adaptive workflow + specification-driven delivery + acceptance-driven verification",
+    "mainline_policy": "TIC routes risk, action-based checkpoints, evidence, and closeout; OpenSpec remains the specification source of truth; execution methods remain replaceable; tests or observable verification derive from acceptance criteria",
     "workflow_orchestrator": "Skills/tic-workflow-orchestrator.md",
     "workflow_model": "single_adaptive_with_risk_floor",
     "risk_floor": "none",
@@ -21,11 +21,22 @@
     "codegraph_optional": true,
     "delivery_walkthrough": "generate_evidence_based_walkthrough_artifact_after_standard_or_critical_implementation_when_review_qa_ui_or_usage_handoff_is_needed",
     "post_dev_prd_sync": "generate_evidence_based_prd_update_draft_after_standard_or_critical_delivery_when_product_behavior_changes",
-    "one_command_user_update": "refresh_rules_source_codex_global_wrappers_and_project_entrypoint_with_one_command",
+    "one_command_user_update": "select_stable_current_or_explicit_ref_then_refresh_rules_source_codex_global_wrappers_and_project_entrypoint",
+    "update_channels": [
+      "stable",
+      "current",
+      "explicit_ref"
+    ],
+    "stable_update_policy": "highest_semver_release_tag",
+    "default_version_format": "semver",
+    "default_tag_policy": "preserve-existing",
+    "checkpoint_policy": "pause_on_material_decision_external_side_effect_irreversible_action_release_or_scope_expansion",
     "skills_reference_only_by_default": true,
     "codex_global_loader": "optional_global_loader_and_tic_skill_wrappers_only",
     "ui_visual_verification": "use_playwright_browser_screenshots_computer_use_or_chrome_when_ui_risk_requires_real_interface_checks",
     "ui_design_skill_routing": "use_design_taste_frontend_and_ui_ux_pro_max_for_ui_changes_and_computer_use_for_end_to_end_real_interface_validation",
+    "agent_session_protocol": "use_native_host_threads_for_same-task_subagents; use_human_readable_agent_run_artifacts_for_cross-task_cross-tool_long-running_or_audited_sessions; session_id_is_trace_only_not_source_of_truth",
+    "artifact_ownership": "project_adapter_declares_owner_and_roots_for_sdd_tdd_evidence_prd_walkthrough_and_release_registry",
     "risk_routing": [
       "consulting",
       "micro",
@@ -36,11 +47,16 @@
     "no_vendor_assets": true,
     "no_git_hooks_by_default": true,
     "git_workflow_advice_only": true,
+    "git_branch_creation_remote_freshness_gate": "require git_fetch_all_prune_tags, base_branch_sync_check, and local_remote_same_name_branch_check before feature_release_hotfix_branch_creation",
+    "git_advice_reports_remote_freshness_gap": true,
+    "git_advice_resolves_project_declared_branch_bases": true,
     "no_forced_full_flow_for_readonly_or_micro_tasks": true,
-    "sdd_tdd_required_for_standard_and_critical": true,
+    "specification_and_verification_required_for_standard_and_critical": true,
     "sdd_tdd_as_workflow_semantics": true,
     "project_tool_rule_entries": true,
-    "no_codex_only_constraint": true
+    "no_codex_only_constraint": true,
+    "release_archive_root": "docs/releases",
+    "previous_version_archive": "docs/releases/0.1.0"
   },
   "skill_lifecycle": {
     "canonical": [
@@ -49,6 +65,7 @@
       "code-investigator",
       "contract-handoff",
       "shared-domain-arbiter",
+      "agent-session-protocol",
       "delivery-walkthrough",
       "release-handoff",
       "post-dev-prd-sync",
@@ -71,6 +88,10 @@
     "compatibility_policy": "aliases and subflows remain available for at least one major adoption cycle before physical removal"
   },
   "source_assets": {
+    "changelog": "CHANGELOG.md",
+    "release_archive_dir": "docs/releases",
+    "sdd_dir": "docs/sdd",
+    "test_evidence_dir": "docs/test-evidence",
     "global_rules": [
       "Global-Rules/coding-rules.md"
     ],
@@ -85,6 +106,7 @@
     "templates/AGENTS.md",
     "templates/docs/ai-rules-usage.md",
     "templates/ai-harness/project-adapter.md",
+    "templates/ai-harness/agent-session-protocol.md",
     "templates/tool-rules/cursorrules.md",
     "templates/tool-rules/windsurfrules.md",
     "templates/tool-rules/rules/team-intelligence-center.md",
@@ -112,7 +134,8 @@
     ".cursorrules",
     ".windsurfrules",
     ".rules/team-intelligence-center.md",
-    "ai-harness/project-adapter.md"
+    "ai-harness/project-adapter.md",
+    "ai-harness/agent-session-protocol.md"
   ],
   "generated_local_files": [
     ".tic-rules.local",
@@ -135,7 +158,8 @@
     "optional Codex global loader and tic-* skill wrappers",
     "risk based task routing",
     "single adaptive workflow with risk_floor",
-    "machine-readable TIC skill contracts"
+    "machine-readable TIC skill contracts",
+    "human-readable agent session artifacts for controlled multi-agent fan-out"
   ],
   "intentionally_excluded": [
     "Codex-only workflow binding",
@@ -151,6 +175,7 @@
     "project PRD history packaging",
     "forced SDD/Plan/Approval for readonly and micro tasks",
     "branch lifecycle automation",
-    "standalone SDD/TDD skill chain that bypasses OpenSpec or Superpowers"
+    "standalone SDD/TDD skill chain that bypasses OpenSpec or Superpowers",
+    "free-form cross-session agent group chat without orchestrator-owned artifacts"
   ]
 }

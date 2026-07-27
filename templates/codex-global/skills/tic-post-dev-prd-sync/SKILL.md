@@ -14,4 +14,4 @@ When invoked:
 4. Read and follow `<rules_dir>/Skills/post-dev-prd-sync.md`.
 5. Do not copy TIC Skills into project-local or global skills.
 
-If the target TIC Skill is missing, report that and continue with an evidence-based PRD update draft: collect specs, diff, commits, tests, UI verification, API contracts, candidate rules, and pending confirmations.
+If the target TIC Skill is missing, report that and continue with an evidence-based PRD update draft: collect artifact owner, SDD root, TDD evidence root, PRD draft root, specs, diff, commits, tests, UI verification, API contracts, candidate rules, and pending confirmations.

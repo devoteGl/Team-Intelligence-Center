@@ -18,7 +18,7 @@ Usage:
 Options:
   --dry-run        Show planned writes without changing files.
   --yes, -y        Skip interactive confirmation.
-  --force          Overwrite existing docs/ai-rules-usage.md and ai-harness/project-adapter.md after backing them up.
+  --force          Overwrite existing docs/ai-rules-usage.md and ai-harness/*.md after backing them up.
   --rules-dir PATH Path to Team-Intelligence-Center. Project-local paths are recorded as relative; external paths are written only to .tic-rules.local.
   --help, -h       Show this help.
 USAGE
@@ -390,6 +390,37 @@ $(package_json_section)
 - Monorepo 线索：$([ -f "$PROJECT_ROOT/pnpm-workspace.yaml" ] && printf '检测到 `pnpm-workspace.yaml`；' || true)$([ -d "$PROJECT_ROOT/apps" ] && printf '检测到 `apps/`；' || true)$([ -d "$PROJECT_ROOT/packages" ] && printf '检测到 `packages/`；' || true)
 - 规则入口：bootstrap 会生成或更新项目根 \`AGENTS.md\`
 
+## 产物归属与落盘
+
+请按真实情况维护。父工作区、多子项目、独立项目或多仓联动时，AI 以这里的归属为准；未确认项写“待确认”。
+
+\`\`\`yaml
+artifact_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "$project_name"
+  parent_workspace: ""
+  child_projects: []
+  related_repositories: []
+artifact_roots:
+  sdd_root: "$([ -d "$PROJECT_ROOT/openspec" ] && printf 'openspec/changes' || printf 'docs/sdd')"
+  tdd_evidence_root: "docs/test-evidence"
+  prd_root: "docs/PRD"
+  prd_draft_root: "docs/PRD/drafts"
+  walkthrough_root: "docs/walkthroughs"
+release_ownership:
+  owner_type: project # workspace | project | subproject | external
+  owner_id: "$project_name"
+  release_registry_root: "docs/releases"
+  version_policy: independent # shared | independent | external
+  version_format: semver # semver | three-digit-patch | calendar | custom
+  branch_strategy: project-defined # trunk | gitflow | project-defined
+  feature_base: "待确认"
+  release_base: "待确认"
+  hotfix_base: "待确认"
+  tag_policy: "preserve-existing" # preserve-existing | no-v-prefix | v-prefix | custom
+  deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
+\`\`\`
+
 ## 常用命令
 
 请以项目真实命令为准。若上方 package scripts 已列出命令，优先使用其中的 lint、typecheck、test、build。
@@ -505,19 +536,29 @@ EOF
 
 ensure_gitignore_local_config() {
   local target="$PROJECT_ROOT/.gitignore"
+  local needs_header=1
   local needs_local=1
   local needs_backups=1
+  local needs_agent_runs=1
 
   if [ -f "$target" ]; then
+    if grep -Fxq "# Team-Intelligence-Center local files" "$target" ||
+       grep -Fxq ".tic-rules.local" "$target" ||
+       grep -Fxq ".tic-backups/" "$target"; then
+      needs_header=0
+    fi
     if grep -Fxq ".tic-rules.local" "$target"; then
       needs_local=0
     fi
     if grep -Fxq ".tic-backups/" "$target"; then
       needs_backups=0
     fi
+    if grep -Fxq ".tic/agent-runs/" "$target"; then
+      needs_agent_runs=0
+    fi
   fi
 
-  if [ "$needs_local" -eq 0 ] && [ "$needs_backups" -eq 0 ]; then
+  if [ "$needs_local" -eq 0 ] && [ "$needs_backups" -eq 0 ] && [ "$needs_agent_runs" -eq 0 ]; then
     plan "skip .gitignore TIC local entries"
     return
   fi
@@ -537,12 +578,17 @@ ensure_gitignore_local_config() {
         cat "$target"
         printf '\n'
       fi
-      printf '# Team-Intelligence-Center local files\n'
+      if [ "$needs_header" -eq 1 ]; then
+        printf '# Team-Intelligence-Center local files\n'
+      fi
       if [ "$needs_local" -eq 1 ]; then
         printf '.tic-rules.local\n'
       fi
       if [ "$needs_backups" -eq 1 ]; then
         printf '.tic-backups/\n'
+      fi
+      if [ "$needs_agent_runs" -eq 1 ]; then
+        printf '.tic/agent-runs/\n'
       fi
     } > "$target.tmp"
     mv "$target.tmp" "$target"
@@ -555,6 +601,7 @@ install_template_file "$PACKAGE_ROOT/templates/tool-rules/cursorrules.md" "$PROJ
 install_template_file "$PACKAGE_ROOT/templates/tool-rules/windsurfrules.md" "$PROJECT_ROOT/.windsurfrules"
 install_template_file "$PACKAGE_ROOT/templates/tool-rules/rules/team-intelligence-center.md" "$PROJECT_ROOT/.rules/team-intelligence-center.md"
 install_project_adapter
+install_template_file "$PACKAGE_ROOT/templates/ai-harness/agent-session-protocol.md" "$PROJECT_ROOT/ai-harness/agent-session-protocol.md"
 write_lock
 write_local_config
 ensure_gitignore_local_config
