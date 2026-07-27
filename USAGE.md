@@ -193,7 +193,7 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 ```bash
 bash /path/to/Team-Intelligence-Center/tools/update.sh --preview --project /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/update.sh --channel current --project /path/to/project
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.1 --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.2 --project /path/to/project
 ```
 
 规则库存在未提交改动时，脚本拒绝 pull 或切换版本。若只想用当前工作树刷新入口，使用 `--no-pull`。规则库作为 submodule 时，更新后还需审阅并提交父项目的 submodule 指针。
@@ -213,8 +213,8 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/projec
 ```bash
 git -C /path/to/Team-Intelligence-Center status --short
 git -C /path/to/Team-Intelligence-Center fetch origin --prune --tags
-git -C /path/to/Team-Intelligence-Center checkout --detach 0.2.1
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.1 --project /path/to/project
+git -C /path/to/Team-Intelligence-Center checkout --detach 0.2.2
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.2 --project /path/to/project
 ```
 
 若团队使用的远端不叫 `origin`，将命令中的远端名替换为实际名称，并在后续更新中传 `--remote <name>`。如果规则库是 submodule，不让每位研发自行追踪浮动分支：由父项目 owner 更新并提交 submodule 指针，其他人执行父项目约定的 submodule 同步命令。
