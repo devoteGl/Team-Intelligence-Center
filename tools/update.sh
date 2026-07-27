@@ -12,7 +12,7 @@ SKIP_PROJECT=0
 UPDATE_CHANNEL="stable"
 REQUESTED_REF=""
 REMOTE_NAME="origin"
-CODEX_HOME_ARG=()
+CODEX_HOME_PATH=""
 
 usage() {
   cat <<'USAGE'
@@ -58,12 +58,11 @@ while [ "$#" -gt 0 ]; do
       shift 2
       ;;
     --codex-home)
-      codex_home="${2:-}"
-      if [ -z "$codex_home" ]; then
+      CODEX_HOME_PATH="${2:-}"
+      if [ -z "$CODEX_HOME_PATH" ]; then
         echo "--codex-home requires a path" >&2
         exit 1
       fi
-      CODEX_HOME_ARG=("--codex-home" "$codex_home")
       shift 2
       ;;
     --channel)
@@ -146,6 +145,18 @@ run_or_print() {
     printf '\n'
   else
     "$@"
+  fi
+}
+
+refresh_codex_global() {
+  local install_mode="$1"
+  if [ -n "$CODEX_HOME_PATH" ]; then
+    run_or_print bash "$SCRIPT_DIR/install-codex-global.sh" \
+      "$install_mode" --rules-dir "$PACKAGE_ROOT" \
+      --codex-home "$CODEX_HOME_PATH"
+  else
+    run_or_print bash "$SCRIPT_DIR/install-codex-global.sh" \
+      "$install_mode" --rules-dir "$PACKAGE_ROOT"
   fi
 }
 
@@ -279,9 +290,9 @@ run_or_print bash "$SCRIPT_DIR/validate-pack.sh"
 if [ "$SKIP_GLOBAL" -eq 0 ]; then
   printf '\nRefreshing Codex global loader...\n'
   if [ "$PREVIEW" -eq 1 ]; then
-    run_or_print bash "$SCRIPT_DIR/install-codex-global.sh" --dry-run --rules-dir "$PACKAGE_ROOT" "${CODEX_HOME_ARG[@]}"
+    refresh_codex_global --dry-run
   else
-    run_or_print bash "$SCRIPT_DIR/install-codex-global.sh" --yes --rules-dir "$PACKAGE_ROOT" "${CODEX_HOME_ARG[@]}"
+    refresh_codex_global --yes
   fi
 else
   printf '\nCodex global loader refresh skipped by --no-global.\n'

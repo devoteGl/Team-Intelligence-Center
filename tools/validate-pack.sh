@@ -60,13 +60,19 @@ require_file templates/codex-global/AGENTS.md
 require_file docs/automation.md
 require_file docs/sdd/tic-0.2.0-codex-gpt56.md
 require_file docs/sdd/tic-0.2.1-project-adapter-preservation.md
+require_file docs/sdd/tic-0.2.2-bash32-update.md
 require_file docs/releases/0.1.0/README.md
 require_file docs/releases/0.2.0/README.md
 require_file docs/releases/0.2.1/README.md
 require_file docs/releases/0.2.1/evidence.md
+require_file docs/releases/0.2.2/README.md
+require_file docs/releases/0.2.2/evidence.md
+require_file docs/releases/0.2.2/changes/bash32-update/README.md
 require_file docs/test-evidence/tic-0.2.0/README.md
 require_file docs/test-evidence/tic-0.2.1/README.md
+require_file docs/test-evidence/tic-0.2.2/README.md
 require_file docs/walkthroughs/tic-0.2.1-project-adapter-preservation.md
+require_file docs/walkthroughs/tic-0.2.2-bash32-update.md
 require_file Skills/project-adapter-maintainer.md
 require_file templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md
 require_file tools/bootstrap-project.ps1
@@ -121,12 +127,13 @@ else
 fi
 rm -f "$template_stack_scan"
 
-if grep -q '当前版本为 `0.2.1`' README.md &&
-   grep -q '0.1.0.*0.2.0.*已归档' README.md &&
+if grep -q '当前版本为 `0.2.2`' README.md &&
+   grep -q '0.1.0.*0.2.0.*0.2.1' README.md &&
+   grep -q '已归档，当前版本为 `0.2.2`' README.md &&
    grep -q 'd8fe814ad633bd06d6ead7815ad8f7d6d3db5324' docs/releases/0.1.0/README.md; then
   pass "current and archived release records are declared"
 else
-  fail "README and release archive must identify 0.2.1 and archived 0.1.0/0.2.0 releases"
+  fail "README and release archive must identify 0.2.2 and archived 0.1.0/0.2.0/0.2.1 releases"
 fi
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
@@ -318,6 +325,38 @@ else
 fi
 rm -rf "$adapter_tmp"
 
+update_tmp="$(mktemp -d)"
+mkdir -p "$update_tmp/tools"
+cp tools/update.sh "$update_tmp/tools/update.sh"
+cp VERSION "$update_tmp/VERSION"
+cat > "$update_tmp/tools/validate-pack.sh" <<'EOF'
+#!/usr/bin/env bash
+exit 0
+EOF
+cat > "$update_tmp/tools/install-codex-global.sh" <<'EOF'
+#!/usr/bin/env bash
+printf '%s\n' "$@" > "${TIC_TEST_GLOBAL_ARGS:?}"
+EOF
+update_default_args="$update_tmp/default-global-args.txt"
+update_default_expected="$update_tmp/default-global-args.expected"
+update_explicit_args="$update_tmp/explicit-global-args.txt"
+update_explicit_expected="$update_tmp/explicit-global-args.expected"
+printf '%s\n' --yes --rules-dir "$update_tmp" > "$update_default_expected"
+printf '%s\n' --yes --rules-dir "$update_tmp" --codex-home "$update_tmp/codex" > "$update_explicit_expected"
+if bash "$update_tmp/tools/update.sh" --preview --no-pull --no-project >/dev/null &&
+   TIC_TEST_GLOBAL_ARGS="$update_default_args" \
+     bash "$update_tmp/tools/update.sh" --no-pull --no-project >/dev/null &&
+   cmp -s "$update_default_expected" "$update_default_args" &&
+   TIC_TEST_GLOBAL_ARGS="$update_explicit_args" \
+     bash "$update_tmp/tools/update.sh" --no-pull --no-project \
+       --codex-home "$update_tmp/codex" >/dev/null &&
+   cmp -s "$update_explicit_expected" "$update_explicit_args"; then
+  pass "Shell update refreshes the default global loader on Bash 3.2 and forwards explicit Codex home"
+else
+  fail "Shell update must support empty and explicit Codex home paths on Bash 3.2"
+fi
+rm -rf "$update_tmp"
+
 if grep -q 'REGENERATE_ADAPTER' tools/bootstrap-project.sh &&
    grep -q -- '--regenerate-adapter' tools/install.sh &&
    grep -q 'RegenerateAdapter' tools/bootstrap-project.ps1 &&
@@ -505,7 +544,7 @@ if grep -q 'one_command_user_update' manifest.json &&
    grep -q 'latest_semver_tag' tools/update.sh &&
    grep -q 'TargetRef' tools/update.ps1 &&
    grep -q -- '--channel current' USAGE.md &&
-   grep -q -- '--ref 0.2.1' docs/automation.md &&
+   grep -q -- '--ref 0.2.2' docs/automation.md &&
    grep -q 'install-codex-global.sh' tools/update.sh &&
    grep -q 'install.sh' tools/update.sh; then
   pass "stable, current, and explicit-ref update paths are declared"
