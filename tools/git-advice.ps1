@@ -113,8 +113,28 @@ function Get-ReleaseRegistryRoots {
     return @($roots)
 }
 
+function Get-ProjectPolicyValue {
+    param([string]$Key)
+    $adapter = Join-Path $repoRoot "ai-harness/project-adapter.md"
+    if (-not (Test-Path -LiteralPath $adapter -PathType Leaf)) {
+        return ""
+    }
+    foreach ($line in Get-Content -LiteralPath $adapter) {
+        if ($line -match ("^\s*" + [regex]::Escape($Key) + ":\s*[""']?([^""'#]+)[""']?.*$")) {
+            $value = $Matches[1].Trim()
+            if ($value -notin @("", "待确认", "TODO", "todo", "unknown")) {
+                return $value
+            }
+            break
+        }
+    }
+    return ""
+}
+
 function Get-MaxReleaseVersion {
-    $maxKey = -1
+    $maxMajor = -1
+    $maxMinor = -1
+    $maxPatch = -1
     $maxVersion = ""
     $refs = @()
     try {
@@ -123,10 +143,16 @@ function Get-MaxReleaseVersion {
         $refs = @()
     }
     foreach ($ref in $refs) {
-        if ($ref -match '^refs/(?:heads|remotes/[^/]+)/(?:release|hotfix)/([0-9]+)\.([0-9]+)\.([0-9]{3})$') {
-            $key = ([int]$Matches[1] * 1000000) + ([int]$Matches[2] * 1000) + [int]$Matches[3]
-            if ($key -gt $maxKey) {
-                $maxKey = $key
+        if ($ref -match '^refs/(?:heads|remotes/[^/]+)/(?:release|hotfix)/([0-9]+)\.([0-9]+)\.([0-9]+)$') {
+            $major = [long]$Matches[1]
+            $minor = [long]$Matches[2]
+            $patch = [long]$Matches[3]
+            if ($major -gt $maxMajor -or
+                ($major -eq $maxMajor -and $minor -gt $maxMinor) -or
+                ($major -eq $maxMajor -and $minor -eq $maxMinor -and $patch -gt $maxPatch)) {
+                $maxMajor = $major
+                $maxMinor = $minor
+                $maxPatch = $patch
                 $maxVersion = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
             }
         }
@@ -139,10 +165,16 @@ function Get-MaxReleaseVersion {
         $tags = @()
     }
     foreach ($tag in $tags) {
-        if ($tag -match '^v?([0-9]+)\.([0-9]+)\.([0-9]{3})$') {
-            $key = ([int]$Matches[1] * 1000000) + ([int]$Matches[2] * 1000) + [int]$Matches[3]
-            if ($key -gt $maxKey) {
-                $maxKey = $key
+        if ($tag -match '^v?([0-9]+)\.([0-9]+)\.([0-9]+)$') {
+            $major = [long]$Matches[1]
+            $minor = [long]$Matches[2]
+            $patch = [long]$Matches[3]
+            if ($major -gt $maxMajor -or
+                ($major -eq $maxMajor -and $minor -gt $maxMinor) -or
+                ($major -eq $maxMajor -and $minor -eq $maxMinor -and $patch -gt $maxPatch)) {
+                $maxMajor = $major
+                $maxMinor = $minor
+                $maxPatch = $patch
                 $maxVersion = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
             }
         }
@@ -152,10 +184,16 @@ function Get-MaxReleaseVersion {
         $releaseDir = Join-Path $repoRoot $releaseRoot
         if (Test-Path -LiteralPath $releaseDir -PathType Container) {
             foreach ($dir in Get-ChildItem -LiteralPath $releaseDir -Directory) {
-                if ($dir.Name -match '^([0-9]+)\.([0-9]+)\.([0-9]{3})$') {
-                    $key = ([int]$Matches[1] * 1000000) + ([int]$Matches[2] * 1000) + [int]$Matches[3]
-                    if ($key -gt $maxKey) {
-                        $maxKey = $key
+                if ($dir.Name -match '^([0-9]+)\.([0-9]+)\.([0-9]+)$') {
+                    $major = [long]$Matches[1]
+                    $minor = [long]$Matches[2]
+                    $patch = [long]$Matches[3]
+                    if ($major -gt $maxMajor -or
+                        ($major -eq $maxMajor -and $minor -gt $maxMinor) -or
+                        ($major -eq $maxMajor -and $minor -eq $maxMinor -and $patch -gt $maxPatch)) {
+                        $maxMajor = $major
+                        $maxMinor = $minor
+                        $maxPatch = $patch
                         $maxVersion = "$($Matches[1]).$($Matches[2]).$($Matches[3])"
                     }
                 }
@@ -169,19 +207,16 @@ function Get-MaxReleaseVersion {
 function Get-NextReleaseVersion {
     param([string]$Current)
     if ([string]::IsNullOrWhiteSpace($Current)) {
-        return "1.0.001"
+        return "1.0.0"
     }
-    if ($Current -notmatch '^([0-9]+)\.([0-9]+)\.([0-9]{3})$') {
-        return "1.0.001"
+    if ($Current -notmatch '^([0-9]+)\.([0-9]+)\.([0-9]+)$') {
+        return "1.0.0"
     }
     $major = [int]$Matches[1]
     $minor = [int]$Matches[2]
     $patch = [int]$Matches[3]
-    if ($patch -ge 999) {
-        return "needs-user-decision"
-    }
     $patch += 1
-    return ("{0}.{1}.{2:D3}" -f $major, $minor, $patch)
+    return ("{0}.{1}.{2}" -f $major, $minor, $patch)
 }
 
 function Get-VisibleTagStyle {
@@ -194,9 +229,9 @@ function Get-VisibleTagStyle {
         $tags = @()
     }
     foreach ($tag in $tags) {
-        if ($tag -match '^v[0-9]+\.[0-9]+\.[0-9]{3}$') {
+        if ($tag -match '^v[0-9]+\.[0-9]+\.[0-9]+$') {
             $hasV = $true
-        } elseif ($tag -match '^[0-9]+\.[0-9]+\.[0-9]{3}$') {
+        } elseif ($tag -match '^[0-9]+\.[0-9]+\.[0-9]+$') {
             $hasPlain = $true
         }
     }
@@ -317,10 +352,6 @@ $tagStyle = Get-VisibleTagStyle
 $releaseRegistryRoots = Get-ReleaseRegistryRoots
 $remoteFetchStatus = "not_run_by_git_advice"
 $remoteFetchRequired = "git fetch --all --prune --tags"
-$versionRolloverStatus = "ok"
-if ($nextVersion -eq "needs-user-decision") {
-    $versionRolloverStatus = "needs-user-decision"
-}
 
 $longLived = "no"
 if ($branch -in @("main", "master", "develop", "dev") -or $branch -like "release/*" -or $branch -like "hotfix/*") {
@@ -335,8 +366,10 @@ if ($scope -eq "business-slug-required") {
 if ($branchPrefix -in @("release", "hotfix")) {
     $suggestedBranch = "$branchPrefix/$nextVersion"
     $suggestedTag = $nextVersion
-    if ($tagStyle -in @("mixed", "legacy-v-prefix")) {
-        $suggestedTag = "needs-user-decision:$tagStyle"
+    if ($tagStyle -eq "legacy-v-prefix") {
+        $suggestedTag = "v$nextVersion"
+    } elseif ($tagStyle -eq "mixed") {
+        $suggestedTag = "needs-user-decision:mixed"
     }
 } else {
     $suggestedBranch = "$branchPrefix/$slug"
@@ -344,9 +377,19 @@ if ($branchPrefix -in @("release", "hotfix")) {
 }
 $suggestedCommit = "$commitType($scope): describe change in Chinese"
 
+$basePolicyKey = "feature_base"
 $expectedBase = "develop"
-if ($branchPrefix -eq "hotfix") {
+if ($branchPrefix -eq "release") {
+    $basePolicyKey = "release_base"
+} elseif ($branchPrefix -eq "hotfix") {
+    $basePolicyKey = "hotfix_base"
     $expectedBase = "master"
+}
+$basePolicySource = "fallback:gitflow-candidate"
+$configuredBase = Get-ProjectPolicyValue $basePolicyKey
+if (-not [string]::IsNullOrWhiteSpace($configuredBase)) {
+    $expectedBase = $configuredBase
+    $basePolicySource = "ai-harness/project-adapter.md:$basePolicyKey"
 }
 $baseUpstream = ""
 try {
@@ -377,6 +420,7 @@ Write-Host "long_lived_branch: $longLived"
 Write-Host "remote_fetch_status: $remoteFetchStatus"
 Write-Host "remote_fetch_required: $remoteFetchRequired"
 Write-Host "expected_base_branch: $expectedBase"
+Write-Host "base_policy_source: $basePolicySource"
 if ([string]::IsNullOrWhiteSpace($baseUpstream)) {
     Write-Host "base_upstream: none"
 } else {
@@ -384,9 +428,8 @@ if ([string]::IsNullOrWhiteSpace($baseUpstream)) {
 }
 Write-Host "base_branch_sync_status: $baseBranchSyncStatus"
 Write-Host "feature_branch_policy: business slug or issue-business slug"
-Write-Host "release_hotfix_version_policy: version-style *.*.*** max + patch increment"
-Write-Host "version_rollover_status: $versionRolloverStatus"
-Write-Host "tag_policy: pure version *.*.*** without v prefix"
+Write-Host "release_hotfix_version_policy: semver by default; project policy wins"
+Write-Host "tag_policy: preserve existing project style"
 Write-Host "release_registry_roots: $($releaseRegistryRoots -join ',')"
 if ([string]::IsNullOrWhiteSpace($maxVersion)) {
     Write-Host "max_visible_release_version: none"
@@ -407,6 +450,9 @@ if ($branchPrefix -eq "feature") {
 Write-Host ""
 Write-Host "Read-only recommendations:"
 Write-Host "- Run git fetch --all --prune --tags before creating any feature/release/hotfix branch or trusting version/tag advice."
+if ($basePolicySource -eq "fallback:gitflow-candidate") {
+    Write-Host "- No explicit project base was found; treat $expectedBase as a Git Flow candidate and confirm it before branch creation."
+}
 if ($longLived -eq "yes") {
     Write-Host "- Prepare a branch creation confirmation card before code changes."
 }
@@ -428,10 +474,7 @@ if ($branchPrefix -eq "feature" -and $slugStatus -eq "needs_business_slug") {
 if ($tagStyle -eq "mixed") {
     Write-Host "- Existing tags mix v-prefix and no-v styles; pause and ask the user to decide the tag policy."
 } elseif ($tagStyle -eq "legacy-v-prefix") {
-    Write-Host "- Existing tags use v-prefix style; confirm migration before creating a no-v tag."
-}
-if ($versionRolloverStatus -eq "needs-user-decision") {
-    Write-Host "- Release patch version reached 999; pause and ask the user to decide the next version line."
+    Write-Host "- Existing tags use v-prefix style; the suggested tag preserves that style."
 }
 if ($changedCount -gt 0) {
     Write-Host "- Review existing working tree changes before editing or staging."

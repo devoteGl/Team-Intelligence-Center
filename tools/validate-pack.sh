@@ -36,6 +36,7 @@ require_file VERSION
 require_file manifest.json
 require_file README.md
 require_file USAGE.md
+require_file CHANGELOG.md
 require_file LICENSE
 require_file CONTRIBUTING.md
 require_file SECURITY.md
@@ -57,6 +58,10 @@ require_file templates/tool-rules/windsurfrules.md
 require_file templates/tool-rules/rules/team-intelligence-center.md
 require_file templates/codex-global/AGENTS.md
 require_file docs/automation.md
+require_file docs/sdd/tic-0.2.0-codex-gpt56.md
+require_file docs/releases/0.1.0/README.md
+require_file docs/releases/0.2.0/README.md
+require_file docs/test-evidence/tic-0.2.0/README.md
 require_file tools/bootstrap-project.ps1
 require_file tools/bootstrap-project.sh
 require_file tools/codegraph-helper.ps1
@@ -109,10 +114,12 @@ else
 fi
 rm -f "$template_stack_scan"
 
-if grep -q '首次公开发布建议使用 `0.1.0` tag' README.md && ! grep -q 'v0.1.0' README.md; then
-  pass "public release tag guidance uses no-v project convention"
+if grep -q '当前版本为 `0.2.0`' README.md &&
+   grep -q '0.1.0.*已归档' README.md &&
+   grep -q 'd8fe814ad633bd06d6ead7815ad8f7d6d3db5324' docs/releases/0.1.0/README.md; then
+  pass "current and archived release records are declared"
 else
-  fail "README release tag guidance must use 0.1.0 without v prefix"
+  fail "README and release archive must identify 0.2.0 and the 0.1.0 archive commit"
 fi
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
@@ -161,15 +168,14 @@ else
   fail "workflow orchestrator must stay clarity-bounded, route-only, and risk_floor aware"
 fi
 
-if grep -q 'CP-1~CP-6' README.md &&
-   grep -q '检查点（CP-1~6）' USAGE.md &&
-   grep -q '| ✅ CP-6 | QA 不通过需回退时 |' Global-Rules/coding-rules.md &&
-   grep -q '| CP-6 | QA 不通过回退时 |' USAGE.md &&
-   grep -q 'CP-5: 交付验收' Global-Rules/coding-rules.md &&
-   ! grep -R -nE 'CP-1~5|CP-1~CP-5' README.md USAGE.md Global-Rules Skills templates docs manifest.json CONTRIBUTING.md SECURITY.md .github >/dev/null 2>&1; then
-  pass "checkpoint numbering is CP-1 through CP-6 across docs"
+if grep -q 'CP-1 范围决策' Global-Rules/coding-rules.md &&
+   grep -q 'CP-4 高危动作' Global-Rules/coding-rules.md &&
+   grep -q 'CP-5 发布动作' Global-Rules/coding-rules.md &&
+   grep -q 'checkpoint_policy' manifest.json &&
+   grep -q '检查点不再按阶段机械暂停' README.md; then
+  pass "checkpoints are action-triggered rather than stage-triggered"
 else
-  fail "checkpoint numbering must consistently use CP-1 through CP-6"
+  fail "checkpoint policy must pause on material decisions and high-risk actions, not every phase"
 fi
 
 if grep -q 'Intake → Planning → Discovery(按需)' Global-Rules/coding-rules.md &&
@@ -181,13 +187,13 @@ else
   fail "standard workflow phase order must match tic-workflow-orchestrator"
 fi
 
-if grep -q 'standard / critical 任务、跨会话任务、存在冻结契约或待决策项时' Global-Rules/coding-rules.md &&
-   grep -q 'standard / critical 任务、跨会话任务、存在冻结契约或待决策项时' Skills/session-snapshot-manager.md &&
-   grep -q 'consulting / micro 任务可保持轻量' Skills/session-snapshot-manager.md &&
+if grep -q '切换 Codex 任务或工具、跨人接力、长时异步执行' Global-Rules/coding-rules.md &&
+   grep -q '跨独立任务、跨工具、长时异步' Skills/agent-session-protocol.md &&
+   grep -q '同一 Codex 任务内的原生 subagent' templates/ai-harness/agent-session-protocol.md &&
    ! grep -R -nE '每次 AI 响应结束.*强制|每次响应结束.*强制|每次响应结束时自动执行' Global-Rules Skills README.md USAGE.md templates docs >/dev/null 2>&1; then
-  pass "session snapshot trigger policy is conditional and consistent"
+  pass "cross-task snapshot and agent artifact policy is conditional"
 else
-  fail "session snapshot policy must be conditional, not every-response mandatory"
+  fail "snapshot and agent artifacts must be conditional, not same-thread mandatory"
 fi
 
 alias_ok=1
@@ -275,10 +281,18 @@ else
   fail "Git advice scripts or manifest do not record read-only policy"
 fi
 
-if grep -q 'feature/<business-slug>' Skills/git-flow-operator.md && grep -q '1.0.004' Skills/git-flow-operator.md && grep -q '不得添加 `v` 前缀' Skills/git-flow-operator.md && grep -q '等待用户确认' Skills/git-flow-operator.md && grep -q 'release owner' Skills/git-flow-operator.md && grep -q 'release registry root' Skills/git-flow-operator.md && grep -q 'feature/<business-slug>' Global-Rules/coding-rules.md && grep -q 'feature_branch_policy' tools/git-advice.sh && grep -q 'release_hotfix_version_policy' tools/git-advice.ps1 && grep -q 'release_registry_roots' tools/git-advice.sh && grep -q 'release_registry_roots' tools/git-advice.ps1 && grep -q 'suggested_tag' tools/git-advice.sh && grep -q 'business-slug-required' tools/git-advice.ps1; then
-  pass "Git Flow branch naming uses business feature branches and versioned release/hotfix tags"
+if grep -q 'feature/<business-slug>' Skills/git-flow-operator.md &&
+   grep -q '默认.*SemVer' Skills/git-flow-operator.md &&
+   grep -q 'preserve-existing' Skills/git-flow-operator.md &&
+   grep -q '等待用户确认' Skills/git-flow-operator.md &&
+   grep -q 'version_format: semver' templates/ai-harness/project-adapter.md &&
+   grep -q 'branch_strategy: project-defined' tools/bootstrap-project.sh &&
+   grep -q 'feature_branch_policy' tools/git-advice.sh &&
+   grep -q 'release_hotfix_version_policy' tools/git-advice.ps1 &&
+   grep -q 'suggested_tag' tools/git-advice.sh; then
+  pass "Git strategy resolves project policy with SemVer defaults"
 else
-  fail "Git Flow branch naming must use business feature branches, versioned release/hotfix, no-v tags, and confirmation gates"
+  fail "Git strategy must use project branch/version/tag policy with SemVer defaults and confirmation gates"
 fi
 
 if grep -q 'git fetch --all --prune --tags' Skills/git-flow-operator.md &&
@@ -294,6 +308,9 @@ if grep -q 'git fetch --all --prune --tags' Skills/git-flow-operator.md &&
    grep -q 'remote_fetch_status' tools/git-advice.ps1 &&
    grep -q 'base_branch_sync_status' tools/git-advice.sh &&
    grep -q 'base_branch_sync_status' tools/git-advice.ps1 &&
+   grep -q 'base_policy_source' tools/git-advice.sh &&
+   grep -q 'base_policy_source' tools/git-advice.ps1 &&
+   grep -q 'git_advice_resolves_project_declared_branch_bases' manifest.json &&
    grep -q 'suggested_branch_exists_remote' tools/git-advice.sh &&
    grep -q 'suggested_branch_exists_remote' tools/git-advice.ps1 &&
    grep -q 'suggested_branch_diverged' tools/git-advice.sh &&
@@ -306,16 +323,16 @@ else
 fi
 
 if grep -q 'Tag 后回灌门禁' Skills/git-flow-operator.md &&
-   grep -q 'develop 回灌状态' Skills/git-flow-operator.md &&
+   grep -q '项目集成分支回灌状态' Skills/git-flow-operator.md &&
    grep -q '发版目录证据' Skills/git-flow-operator.md &&
    grep -q '回灌未完成' Skills/git-flow-operator.md &&
-   grep -q '打 tag 后必须继续输出 `develop` 回灌状态' templates/AGENTS.md &&
-   grep -q '打 tag 后必须继续输出 `develop` 回灌状态' templates/codex-global/AGENTS.md &&
-   grep -q 'post-tag `develop` back-merge status' templates/codex-global/skills/tic-git-flow-operator/SKILL.md &&
+   grep -q '回灌或收尾状态' templates/AGENTS.md &&
+   grep -q '回灌或收尾状态' templates/codex-global/AGENTS.md &&
+   grep -q 'project-required back-merge or closeout evidence' templates/codex-global/skills/tic-git-flow-operator/SKILL.md &&
    grep -q 'release/hotfix 创建 tag 后不得把 Git Flow 任务标记为完成' Global-Rules/coding-rules.md; then
-  pass "Git Flow tag closeout requires develop back-merge evidence"
+  pass "Git tag closeout requires project-defined back-merge or closeout evidence"
 else
-  fail "Git Flow tag closeout must keep develop back-merge as a completion gate"
+  fail "Git tag closeout must keep project-defined back-merge or closeout as a completion gate"
 fi
 
 if grep -q 'Get-ReleaseRegistryRoots' tools/git-advice.ps1 &&
@@ -353,18 +370,17 @@ else
   fail "missing adaptive workflow orchestrator or risk_floor declaration"
 fi
 
-if grep -q 'SDD + TDD' templates/AGENTS.md &&
+if grep -q '规格驱动与验收驱动流程' templates/AGENTS.md &&
    grep -q 'openspec_integration' manifest.json &&
-   grep -q 'sdd_tdd_required_for_standard_and_critical' manifest.json &&
+   grep -q 'specification_and_verification_required_for_standard_and_critical' manifest.json &&
    grep -q 'sdd_tdd_as_workflow_semantics' manifest.json &&
    grep -q 'OpenSpec 是规格事实源；Superpowers 是执行方法层' templates/AGENTS.md &&
    grep -q 'OpenSpec 是规格事实源，Superpowers 是执行方法层' Skills/tic-workflow-orchestrator.md &&
-   grep -q '不是独立 Skill 链' README.md &&
    grep -q '不是独立 Skill 链' USAGE.md &&
    grep -q '不是独立 Skill 链' docs/automation.md; then
-  pass "SDD/TDD semantics preserve OpenSpec and Superpowers mainline"
+  pass "specification and verification semantics preserve the OpenSpec mainline"
 else
-  fail "SDD/TDD must remain workflow semantics with OpenSpec as source and Superpowers as method layer"
+  fail "specification and verification must remain workflow semantics with OpenSpec as source"
 fi
 
 if grep -q 'project_tool_rule_entries' manifest.json &&
@@ -421,10 +437,18 @@ else
   fail "missing skill lifecycle aliases or subflows"
 fi
 
-if grep -q 'one_command_user_update' manifest.json && grep -q 'pull --ff-only' tools/update.sh && grep -q 'install-codex-global.sh' tools/update.sh && grep -q 'install.sh' tools/update.sh && grep -q 'tools/update.sh' USAGE.md && grep -q '一条命令' docs/automation.md; then
-  pass "one-command user update path is declared"
+if grep -q 'one_command_user_update' manifest.json &&
+   grep -q 'stable_update_policy' manifest.json &&
+   grep -q 'UPDATE_CHANNEL="stable"' tools/update.sh &&
+   grep -q 'latest_semver_tag' tools/update.sh &&
+   grep -q 'TargetRef' tools/update.ps1 &&
+   grep -q -- '--channel current' USAGE.md &&
+   grep -q -- '--ref 0.2.0' docs/automation.md &&
+   grep -q 'install-codex-global.sh' tools/update.sh &&
+   grep -q 'install.sh' tools/update.sh; then
+  pass "stable, current, and explicit-ref update paths are declared"
 else
-  fail "one-command user update path must update rules source, global wrappers, and project entrypoints"
+  fail "update path must support stable, current, and explicit-ref sources before refreshing wrappers and projects"
 fi
 
 codex_wrapper_count="$(find templates/codex-global/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"
@@ -446,10 +470,16 @@ else
   fail "CodeGraph helper must remain optional, non-core, and avoid implicit npx installation"
 fi
 
-if grep -q 'ui_visual_verification' manifest.json && grep -q 'ui_design_skill_routing' manifest.json && grep -q 'UI 验证规则' templates/AGENTS.md && grep -q 'design-taste-frontend' templates/AGENTS.md && grep -q 'ui-ux-pro-max' templates/AGENTS.md && grep -q '@电脑' templates/AGENTS.md && grep -q 'plugin://computer-use@openai-bundled' templates/AGENTS.md && grep -q 'design-taste-frontend' templates/codex-global/AGENTS.md && grep -q 'ui-ux-pro-max' templates/docs/ai-rules-usage.md && grep -q 'UI 变更验证' docs/automation.md && grep -q '@电脑' docs/automation.md; then
+if grep -q 'ui_visual_verification' manifest.json &&
+   grep -q 'ui_design_skill_routing' manifest.json &&
+   grep -q 'UI 验证规则' templates/AGENTS.md &&
+   grep -q '当前环境可用的设计与 UI/UX 专业能力' templates/AGENTS.md &&
+   grep -q 'design-taste-frontend' templates/AGENTS.md &&
+   grep -q '同一 Codex 任务内的原生 subagent' templates/AGENTS.md &&
+   grep -q 'UI 变更验证' docs/automation.md; then
   pass "UI changes require real interface verification when risk warrants"
 else
-  fail "missing UI design skill routing or real interface verification policy"
+  fail "missing capability-based UI design routing or real interface verification policy"
 fi
 
 if grep -q '轻量规则' templates/AGENTS.md && grep -q 'AI 规则使用说明' templates/docs/ai-rules-usage.md && grep -q '项目适配说明' templates/ai-harness/project-adapter.md && grep -q '轻量自动化设计' docs/automation.md; then

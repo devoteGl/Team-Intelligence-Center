@@ -412,7 +412,12 @@ release_ownership:
   owner_id: "$project_name"
   release_registry_root: "docs/releases"
   version_policy: independent # shared | independent | external
-  tag_policy: "pure-version-no-v-prefix"
+  version_format: semver # semver | three-digit-patch | calendar | custom
+  branch_strategy: project-defined # trunk | gitflow | project-defined
+  feature_base: "待确认"
+  release_base: "待确认"
+  hotfix_base: "待确认"
+  tag_policy: "preserve-existing" # preserve-existing | no-v-prefix | v-prefix | custom
   deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
 \`\`\`
 

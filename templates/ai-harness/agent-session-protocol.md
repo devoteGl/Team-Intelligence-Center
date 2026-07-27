@@ -1,10 +1,12 @@
 # Agent Session Protocol
 
-本文件定义项目内多 agent 独立会话的运行态约定。它是项目适配层，不替代 `tic-workflow-orchestrator`、`contract-handoff` 或 `shared-domain-arbiter`。
+本文件定义项目内跨任务、跨工具、长时异步或需要审计的多 agent 运行态约定。它是项目适配层，不替代 `tic-workflow-orchestrator`、`contract-handoff` 或 `shared-domain-arbiter`。
+
+同一 Codex 任务内的原生 subagent 默认使用宿主线程、权限继承和主 Agent 汇总，不需要创建本协议文件。
 
 ## 何时启用
 
-默认只在 standard / critical 任务中启用，并且必须满足：
+只在 standard / critical 且协作跨越当前宿主可可靠保存的原生线程边界时启用，并且必须满足：
 
 - 子任务可独立验证。
 - 已写清角色、任务范围、可读域、可写域、禁止动作和证据要求。
@@ -12,7 +14,7 @@
 - 共享域写入前已完成共享域仲裁。
 - 主 Agent 负责最终收口，不把子 agent 输出直接当完成态。
 
-consulting / micro 任务保持轻量，除非用户明确要求跨会话接力或只读异步评审。
+consulting / micro 任务保持轻量，除非用户明确要求跨任务接力或只读异步评审。
 
 ## 目录约定
 

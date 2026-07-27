@@ -175,23 +175,59 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -Preview -ProjectRoot C:\path\to\project
 ```
 
-日常升级时，研发只需要一条命令。脚本会拉取规则库、刷新 Codex 全局 `tic-*` wrapper，并刷新当前业务项目入口：
+日常升级时，研发只需要一条命令。默认 `stable` 通道会选择远端最高 SemVer release tag，验证后刷新 Codex 全局 `tic-*` wrapper 和业务项目入口：
 
 ```bash
-bash /path/to/Team-Intelligence-Center/tools/update.sh
+bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project
 ```
 
 Windows PowerShell：
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\update.ps1
+powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\update.ps1 -ProjectRoot C:\path\to\project
 ```
 
-预览不写入：
+预览不写入，贡献者更新当前分支，或锁定明确版本：
 
 ```bash
-bash /path/to/Team-Intelligence-Center/tools/update.sh --preview
+bash /path/to/Team-Intelligence-Center/tools/update.sh --preview --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --channel current --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.0 --project /path/to/project
 ```
+
+规则库存在未提交改动时，脚本拒绝 pull 或切换版本。若只想用当前工作树刷新入口，使用 `--no-pull`。规则库作为 submodule 时，更新后还需审阅并提交父项目的 submodule 指针。
+
+### 从 0.1.0 首次升级
+
+正常情况下仍然只需要原来的一条命令：
+
+```bash
+bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project
+```
+
+前提是规则库工作树干净，并且当前位于团队正常维护的发布或集成分支。`0.1.0` 的旧脚本会先 fast-forward 当前分支，取得 `0.2.0` 的新脚本和规则后完成刷新；从下一次开始，新脚本默认跟随 stable tag。
+
+只有旧规则库停在 detached HEAD、不再维护的自定义分支，或普通更新没有取得 `0.2.0` 时，才使用下面的兜底恢复：
+
+```bash
+git -C /path/to/Team-Intelligence-Center status --short
+git -C /path/to/Team-Intelligence-Center fetch origin --prune --tags
+git -C /path/to/Team-Intelligence-Center checkout --detach 0.2.0
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.0 --project /path/to/project
+```
+
+若团队使用的远端不叫 `origin`，将命令中的远端名替换为实际名称，并在后续更新中传 `--remote <name>`。如果规则库是 submodule，不让每位研发自行追踪浮动分支：由父项目 owner 更新并提交 submodule 指针，其他人执行父项目约定的 submodule 同步命令。
+
+### 团队更新策略
+
+| 使用者 | 推荐方式 | 说明 |
+| --- | --- | --- |
+| 普通使用者 | 默认 `stable` | 始终选择最高 SemVer release tag。 |
+| 规则贡献者 | `--channel current` | 只 fast-forward 当前开发分支。 |
+| 需要复现或受控发布的项目 | `--ref <tag-or-commit>` | 固定版本，避免团队成员隐式漂移。 |
+| submodule 项目 | 父项目统一更新指针 | 由父项目 commit 决定规则版本。 |
+
+更新后用规则库 `VERSION` 和业务项目 `.tic-rules.lock` 的 `rules_version` 核对版本。TIC 不做后台静默更新；发布 tag、团队通知和项目刷新是三个可审计步骤。
 
 默认只生成或合并：
 
@@ -219,7 +255,7 @@ ai-harness/agent-session-protocol.md
 
 它也不会自动把 `Skills/` 差量复制到项目本地 skills 或开发者全局 skills。业务项目默认通过 `.tic-rules.lock` 的项目相对路径或 `.tic-rules.local` 的本机路径读取 Skills，避免覆盖个人配置和产生版本漂移。
 
-原则上，standard / critical 任务仍然执行 **SDD + TDD**：先明确行为规格和验收标准，再写或更新测试，最后实现和验证。这里的 SDD/TDD 是工作流阶段语义，不是独立 Skill 链。项目已有 `openspec/` 时，OpenSpec 是规格事实源；Superpowers 是执行方法层，负责计划、TDD、调试、review 和子代理执行。SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根由 `ai-harness/project-adapter.md` 声明；未声明时，SDD 默认使用 `openspec/changes/` 或 `docs/sdd/`，TDD 证据索引默认使用 `docs/test-evidence/`，PRD 草稿默认使用 `docs/PRD/drafts/`。
+原则上，standard / critical 任务执行规格驱动与验收驱动流程：先明确行为规格和验收标准，再写自动测试或明确可观察验证，最后实现和复核。项目已有 `openspec/` 时，OpenSpec 是规格事实源；执行方法层负责计划、TDD、调试、review 和子代理执行。规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根由 `ai-harness/project-adapter.md` 声明。
 
 其中 `ai-harness/project-adapter.md` 会自动生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、OpenSpec、monorepo 线索，以及 SDD/TDD/PRD/发版登记根的默认归属。已有文件默认不覆盖；需要刷新时使用 `--force` 或 PowerShell 的 `-Force`。
 
@@ -334,7 +370,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 | Skill | 服务角色 | 触发场景 | 优先级 |
 |-------|---------|---------|--------|
 | `tic-workflow-orchestrator` | PM/Tech Lead | 需要按 TIC 研发范式路由任务、判断风险、选择 phase 和 Skill | P0 |
-| `code-investigator` | CI | PM 分配调研任务后 | P0 |
+| `code-investigator` | CI | 现状、影响面或业务规则需要证据调查时 | P0 |
 | `contract-handoff` | PM/FE/BE | API、共享类型、字段、错误码、权限点、FE/BE 并行前 | P0 |
 | `changelog-writer` | DS | QA 验收通过后归档 | P0 |
 | `task-decomposer` | PM | 新任务开始时拆解 | P2 |
@@ -383,7 +419,7 @@ Intake 至少识别：
 - 缺失信息：范围、验收、数据安全、不可逆授权等。
 - 确认方式：直接执行、先给计划、等待 CP、或要求人工确认。
 
-用户类型判断只影响沟通方式，不降低门禁。懂流程的用户可以少解释、快执行；不懂流程或表达模糊的用户，AI 要把风险和下一步翻译清楚。“全自动”“你看着办”“不用问我”只授权可逆低风险步骤；删除、迁移、发版、push、merge、tag、生产配置或 PRD/OpenSpec 转正仍必须暂停确认。
+用户类型判断只影响沟通方式，不降低门禁。懂流程的用户可以少解释、快执行；不懂流程或表达模糊的用户，AI 要把风险和下一步翻译清楚。“全自动”“你看着办”“不用问我”授权范围内可逆本地步骤和非破坏性验证；外部写入、不可逆迁移、生产变更、数据删除、发布或 PRD/OpenSpec 转正仍必须暂停确认。
 
 ### 6.4 Skill 在工作流中的位置
 
@@ -403,7 +439,7 @@ Intake 至少识别：
        │
 [FE/BE] 并行实现
   └─ Skill: shared-domain-arbiter（共享域修改时）
-      └─ 可选：agent-session-protocol（独立会话 / mailbox / 证据收口）
+      └─ 可选：agent-session-protocol（跨任务/工具、长时或审计场景）
        │
 [QA] 测试验收
   └─ Checklist: prd-review-checklist
@@ -480,8 +516,8 @@ critical:
 旧: release-ops-handoff / release-train-handoff
 新: release-handoff(mode=single|train)
 
-旧: session-snapshot-manager 每次响应强制
-新: standard/critical、跨会话、存在冻结契约或待决策项时输出
+旧: session-snapshot-manager 按阶段或档位强制
+新: 跨任务/工具接力、长时异步或上下文无法可靠恢复时输出
 ```
 
 ### 7.4 检查点速查表
@@ -745,7 +781,7 @@ bash tools/git-advice.sh --type feature "lightweight automation"
 powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lightweight automation"
 ```
 
-Git Flow 分支命名采用混合规则：`feature/*` 使用业务名或 issue + 业务名，例如 `feature/offline-refund`、`feature/1234-offline-refund`；`release/*`、`hotfix/*` 和发布 tag 使用版本号式编号，格式为 `数字.数字.三位数字`，例如 `release/1.0.004`、`hotfix/1.0.005`、`1.0.005`。发布 tag 不加 `v` 前缀。AI 创建任何分支前必须先 `git fetch --all --prune --tags`，同时检查本地/远端同名分支和基线新鲜度；创建前必须给出候选分支、命名依据、release owner、release registry root、远端刷新状态、基线同步状态、起点 commit 和待执行命令，等待用户确认后才执行。`tools/git-advice.*` 是只读建议脚本，不主动 fetch；创建 release/hotfix 前还必须扫描刷新后的本地/远端分支、tag 和发版登记根中的可见最大版本。release/hotfix 打 tag 后不得视为完成，必须继续输出 `develop` 回灌状态、tag 落点、发版目录、命令和证据，直到回灌完成或用户明确延后/豁免。发版计划必须写清发布 tag、tag 目标 commit、远端 tag 状态、部署触发方式和 SDD/TDD/PRD 落盘状态。
+Git 策略以项目 `AGENTS.md` 与 `ai-harness/project-adapter.md` 为准，支持 trunk-based、Git Flow 或自定义策略。默认版本格式是 SemVer，tag 前缀保留项目既有风格；`three-digit-patch` 等旧策略可显式配置。AI 创建任何分支前必须先 `git fetch --all --prune --tags`，同时检查本地/远端同名分支和项目基线新鲜度；创建前必须给出候选分支、命名依据、release owner、release registry root、远端刷新状态、基线同步状态、起点 commit 和待执行命令，等待用户确认后才执行。release/hotfix 打 tag 后不得视为完成，必须继续输出项目要求的回灌或收尾状态、tag 落点、发版目录、命令和证据。
 
 可选 CodeGraph helper 用于老项目、monorepo、跨模块改动或重构前的上下文和影响面分析。它不默认安装 CodeGraph，也不默认初始化 `.codegraph/`：
 

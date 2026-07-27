@@ -57,7 +57,7 @@ Release Handoff 把“研发完成”转化为“可发布、会使用、能回�
 - 只有一个交付对象且无 SQL/脚本：默认 `single`。
 - 超过一个服务/端/脚本/SQL/定时任务/第三方回调：默认 `train`。
 - 用户明确要求“发版批次 / release train / 总控包”：使用 `train`。
-- `<version>` 必须与 Git Flow release/hotfix tag 完全一致，格式为 `数字.数字.三位数字`，例如 `1.0.004`。
+- `<version>` 必须与 Git Flow release/hotfix tag 完全一致，并符合项目 `version_format`；默认使用 SemVer，例如 `1.2.4`。
 - `release_registry_root` 默认是 `docs/releases`；项目可在 `ai-harness/project-adapter.md` 中声明其他登记根。
 - 不得在 `release_registry_root` 下新建日期、业务名、需求名或其他非版本号一级目录。
 - 版本号是发版容器在该登记根内的唯一主键；业务名、需求名或变更主题是容器内容，应放入 `changes/<business-slug>/`。
@@ -101,15 +101,15 @@ Release Handoff 把“研发完成”转化为“可发布、会使用、能回�
 - `release_tag`：本次发布使用的 tag，必须等于 `<version>`。
 - `tag_type`：`release` / `hotfix`。
 - `tag_repo`：tag 所属仓库或项目。
-- `tag_source_branch`：例如 `release/1.0.004` 或 `hotfix/1.0.005`。
-- `tag_target_commit`：tag 指向的 `master` 发布提交。
+- `tag_source_branch`：例如 `release/1.2.4` 或 `hotfix/1.2.5`。
+- `tag_target_commit`：tag 指向的项目发布提交。
 - `remote_tag_status`：未创建 / 本地已创建 / 已 push / 远端已存在。
 - `tag_verification_command`：例如 `git rev-parse <tag>^{commit}`。
 - `deployment_trigger`：是否由 tag push 触发部署，以及对应流水线、环境和制品。
 
 多项目发版必须提供 tag 映射表：
 
-| 项目 | 仓库 | release/hotfix 分支 | tag | master 发布 commit | 远端状态 | 部署制品 |
+| 项目 | 仓库 | release/hotfix 分支 | tag | 发布 commit | 远端状态 | 部署制品 |
 | --- | --- | --- | --- | --- | --- | --- |
 
 已 push 的发布 tag 默认不可移动。若 tag 打错、落点错误或需要删除/重建远端 tag，必须暂停，记录原因、影响面、拟执行命令和人工确认；不得由 Release Handoff 直接执行。
@@ -179,8 +179,8 @@ Release Handoff 把“研发完成”转化为“可发布、会使用、能回�
 ```yaml
 ---
 business: wechat-shop-auto-whitelist
-version: 1.0.004
-release_tag: 1.0.004
+version: 1.2.4
+release_tag: 1.2.4
 release_owner_type: workspace
 release_owner_id: retail-platform
 release_registry_root: docs/releases

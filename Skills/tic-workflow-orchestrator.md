@@ -48,15 +48,15 @@ delegates_to:
 - **OpenSpec 是规格事实源，Superpowers 是执行方法层**：本技能只决定何时需要规格、证据、确认和归档。
 - **产物归属先行**：standard / critical 任务必须识别 SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属节点与落盘根，不能按当前 shell 目录随意写入。
 - **TIC Agent Contract 是协作底座**：社区 agent、工具原生 subagent 和外部编排器只能作为能力适配，不得替代 TIC 角色、检查点和证据链。
-- **Agent Session Protocol 是运行态信箱**：独立 agent 会话只能通过可审计 artifact 协作，`session_id` 只做追踪，不做事实源。
-- **可解释跳过**：每个未触发的 Skill 必须说明跳过原因，避免“看起来漏了”。
+- **Agent Session Protocol 按协作边界触发**：同一 Codex 任务内的原生 subagent 可使用宿主线程；跨任务、跨工具、长时异步或审计场景通过 artifact 协作，`session_id` 只做追踪，不做事实源。
+- **可解释跳过**：输出 standard / critical 计划卡时，对原本可能触发但被跳过的关键 Skill 说明原因；consulting / micro 不列冗长的全量跳过清单。
 
 绝对禁止：
 - 把 `task-decomposer`、`code-investigator`、`delivery-walkthrough` 等子 Skill 的模板正文内联到本技能。
 - 为 micro / consulting 任务强制完整 PRD、OpenSpec、Walkthrough 或 release handoff。
 - 让 Superpowers 临时产物成为稳定规格事实源。
 - 让社区 agent 库、工具原生 orchestrator 或“一句话自治”入口绕过 `tic-workflow-orchestrator`。
-- 绕过用户确认执行分支创建、tag、push、合并、删除、迁移或生产配置修改。
+- 绕过用户确认执行分支创建、tag、push、合并、高风险删除、不可逆迁移或生产配置修改。
 
 ---
 
@@ -90,8 +90,10 @@ effective_tier = max(classified_tier, risk_floor)
 
 出现以下任一信号时，升级到 `critical`：
 - 权限、资金、隐私、生产数据、数据库迁移、回滚困难。
-- 删除旧逻辑、大规模重构、跨服务发版、第三方回调、生产配置。
+- 删除用户数据、公共行为或难恢复历史，大规模重构、跨服务发版、第三方回调、生产配置。
 - 用户明确要求“大版本”“发版”“上线交接”“严格管控”。
+
+分级不使用乘法复杂度分。普通接口、类型或登录页面的局部改动不因关键词自动成为 critical；应结合破坏性、影响面、可恢复性、外部副作用和验证成本判断。
 
 ### 1.3 Intent Intake 与受控 Fan-out
 
@@ -103,13 +105,15 @@ Intake 先把用户原话归一化为：
 - 产物归属：`artifact_owner_type`、`artifact_owner_id`、SDD/TDD/PRD/Release 的落盘根；无法确认时标为待确认。
 - 建议档位与确认方式：consulting / micro / standard / critical，以及是否需要 CP。
 
-用户类型判断只影响解释粒度和追问方式，不降低安全边界。流程熟练用户可少解释、快执行；流程不熟或表达模糊用户要把目标、范围和风险翻译清楚。危险词不得按字面降级，“全自动”只授权可逆低风险步骤，不授权删除、迁移、发版、push、merge、tag、生产配置或 PRD/OpenSpec 转正。
+用户类型判断只影响解释粒度和追问方式，不降低安全边界。流程熟练用户可少解释、快执行；流程不熟或表达模糊用户要把目标、范围和风险翻译清楚。“全自动”授权范围内可逆本地步骤和非破坏性验证，不授权外部写入、不可逆迁移、生产变更、数据删除、发布或 PRD/OpenSpec 转正。
 
 多 Agent 是执行层 fan-out 策略，不是独立工作流。总控只判断是否允许 fan-out，并输出理由、任务边界、文件 ownership 和收口责任。
-Fan-out 准入：子任务可独立验证；API/字段/错误码/FE-BE 并行已完成 `contract-handoff`；共享域写入已完成 `shared-domain-arbiter`；子 agent 不跨 CP-1~CP-6，不执行 Git Flow、发版、迁移、删除或生产动作。
+Fan-out 准入：子任务可独立验证；API/字段/错误码/FE-BE 并行已完成 `contract-handoff`；共享域写入已完成 `shared-domain-arbiter`；子 agent 不执行 Git Flow、发版、迁移、生产动作或未授权的破坏性操作。
 默认策略：consulting / micro 不启用写入型 fan-out；standard 可受控 fan-out；critical 启用前必须确认边界和风险。
 
-如每个 agent 需要单独会话，必须启用 `agent-session-protocol`：run 目录使用“时间 + 任务短标题”，agent 目录使用“序号 + 中文角色 + 本次职责”；`run_id`、`agent_id`、`session_id` 写入 manifest/status。总控只读取结构化 outbox 和 evidence，禁止 agent 之间自由群聊。出现契约冲突、越权请求、范围漂移或重复阻塞时，立即停止 fan-out 并收敛回主 Agent。
+同一 Codex 任务内的原生 subagent 默认使用宿主线程、权限继承和主 Agent 汇总，不强制创建 `.tic/agent-runs/`。
+
+如 agent 跨独立任务、跨工具、跨设备或长时间异步运行，或者团队要求长期审计，必须启用 `agent-session-protocol`：run 目录使用“时间 + 任务短标题”，agent 目录使用“序号 + 中文角色 + 本次职责”；`run_id`、`agent_id`、`session_id` 写入 manifest/status。总控只读取结构化 outbox 和 evidence。出现契约冲突、越权请求、范围漂移或重复阻塞时，立即停止 fan-out 并收敛回主 Agent。
 
 ---
 
@@ -184,7 +188,7 @@ Intake -> Discovery -> OpenSpec/SDD -> Contract-Handoff
 
 ## 4. 输出格式
 
-总控必须先输出工作流计划卡：
+standard / critical 任务，或者用户要求计划、任务存在关键歧义时，输出工作流计划卡。consulting / micro 可在一句话内说明分级和处理方式，不强制展开完整表格。
 
 ```markdown
 ## TIC Workflow Plan
@@ -202,7 +206,7 @@ Intake -> Discovery -> OpenSpec/SDD -> Contract-Handoff
 ### Phases
 | 顺序 | Phase | Skill / Method | Required artifact | Checkpoint |
 | --- | --- | --- | --- | --- |
-| 1 | Intake | tic-workflow-orchestrator | plan card | CP-1 |
+| 1 | Intake | tic-workflow-orchestrator | plan card | 按风险触发 |
 
 ### Skipped
 | Skill | Reason |
@@ -213,7 +217,7 @@ Intake -> Discovery -> OpenSpec/SDD -> Contract-Handoff
 - OpenSpec change: required / optional / not required
 - Superpowers: planning / TDD / debugging / review / subagent / not required
 - Fan-out mode: disabled / read-only review / controlled execution
-- Agent session artifact: not required / .tic/agent-runs/<run-dir>
+- Agent session artifact: native-thread / not required / .tic/agent-runs/<run-dir>
 ```
 
 ---
