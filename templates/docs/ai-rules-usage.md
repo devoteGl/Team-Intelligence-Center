@@ -10,7 +10,7 @@
 - `.cursorrules`：Cursor 项目规则入口，指向 `AGENTS.md`。
 - `.windsurfrules`：Windsurf 项目规则入口，指向 `AGENTS.md`。
 - `.rules/team-intelligence-center.md`：支持 `.rules/` 目录的 AI 工具入口，指向 `AGENTS.md`。
-- `ai-harness/project-adapter.md`：项目命令、模块和风险边界适配说明。
+- `ai-harness/project-adapter.md`：项目维护的命令、模块、归属、发布策略和风险边界事实；普通安装与升级不会覆盖。
 
 ## 如何与 AI 协作
 
@@ -26,6 +26,8 @@
 默认入口是 single adaptive workflow：`tic-workflow-orchestrator` 先判断 consulting / micro / standard / critical，再应用项目 `risk_floor`。如果项目配置 `risk_floor=standard|critical`，AI 不得自行降级到该档位以下。
 
 规格与验证是工作流语义，不是独立 Skill 链。项目已有 OpenSpec 时，OpenSpec 是规格事实源；执行方法层负责计划、TDD、调试、review 和子代理执行。规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根以 `ai-harness/project-adapter.md` 为准。
+
+需要创建、补全、审计、迁移或修复 `project-adapter.md` 时，使用 `project-adapter-maintainer`。已有非占位内容、自定义章节和本地决策默认保留；自动探测只提供候选事实，不得在升级时静默覆盖。
 
 涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `contract-handoff`。涉及共享文件域修改时，优先使用 `shared-domain-arbiter`。需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `release-handoff(mode=single|train)`；发版计划必须写清 release owner、release registry root、发布 tag、tag 目标 commit、远端 tag 状态、部署触发方式和 SDD/TDD/PRD 落盘状态。
 

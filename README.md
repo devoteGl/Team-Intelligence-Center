@@ -3,7 +3,7 @@
 
 > *消除「PM 觉得说清楚了，开发觉得没说清楚」的永恒矛盾，将散落在代码与人脑中的业务真正沉淀为系统资产。*
 
-> Public preview: 当前版本为 `0.2.0`。本版本面向 Codex / GPT-5.6 精简普通任务门禁，并增加稳定版、开发分支和显式 ref 更新通道。
+> Public preview: 当前版本为 `0.2.1`。本补丁版本保护项目自有的 `project-adapter.md`，并提供证据驱动的创建、补全、审计、迁移和修复能力。
 
 ## 📖 项目简介
 
@@ -16,7 +16,7 @@
 - **License**：Apache-2.0，见 [LICENSE](./LICENSE)。
 - **定位**：Chinese-first、tool-neutral 的 AI 工程协作规则包。
 - **适用工具**：Codex、Cursor、Qoder、OpenCode、OpenSpec、Superpowers，以及其他能读取项目规则的 AI 编码工具。
-- **版本记录**：见 [CHANGELOG.md](./CHANGELOG.md) 与 [docs/releases/](./docs/releases/)；`0.1.0` 已归档，当前版本为 `0.2.0`。
+- **版本记录**：见 [CHANGELOG.md](./CHANGELOG.md) 与 [docs/releases/](./docs/releases/)；`0.1.0`、`0.2.0` 已归档，当前版本为 `0.2.1`。
 
 ## 🏗️ 核心资产目录说明
 
@@ -42,6 +42,7 @@
 | `shared-domain-arbiter.md` | PM/Tech Lead | 共享文件域仲裁（router/types/constants/global config 等） |
 | `agent-session-protocol.md` | PM/Tech Lead | 多 agent 独立会话的运行态信箱协议（可读目录、manifest、outbox、status、收敛规则） |
 | `project-governance-bootstrap.md` | PM/DS | 项目首次接入组织范式时，生成 AGENTS、AI 规则说明、ai-harness、OpenSpec 基础治理文件，并声明 Superpowers 协作边界 |
+| `project-adapter-maintainer.md` | PM/CI/DS/Tech Lead | 保护性创建、补全、审计、迁移或修复项目 adapter，保留项目事实、自定义章节和本地决策 |
 | `delivery-walkthrough.md` | PM/Tech Lead/QA/DS | 完成实现后的交付走查 artifact（变更摘要、证据、截图/录屏、Review 指引、风险和后续动作） |
 | `release-handoff.md` | PM/Release Manager/DS | 发版交接统一入口，`mode=single` 单变更，`mode=train` 多项目/SQL/脚本发版总控 |
 | `git-flow-operator.md` | PM/Release Manager | Git Flow 分支创建、release/hotfix 合并、tag、push 与回灌门禁 |
@@ -64,7 +65,7 @@
 提供最小可用的规则接入与自检工具，吸收自动化思想但不复制重流程包：
 - **`manifest.json` / `VERSION`**：声明规则包版本、资产清单、安装产物与刻意排除项。
 - **`templates/`**：项目侧最小入口模板，包括 `AGENTS.md`、`docs/ai-rules-usage.md`、`ai-harness/project-adapter.md`、`ai-harness/agent-session-protocol.md`、`.cursorrules`、`.windsurfrules` 和 `.rules/team-intelligence-center.md`；它们是规则接入产物，不是业务技术栈脚手架。
-- **`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1`**：幂等接入业务项目，默认只合并最小规则入口、轻量 lock，并自动生成项目画像；不安装 Git hooks、不复制历史 PRD、不绑定 Codex-only。
+- **`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1`**：幂等接入业务项目，首次接入时生成项目画像；现有 `project-adapter.md` 在普通安装、刷新和升级中保持不变，只有显式重生成参数才会在备份后替换。
 - **`tools/install.sh` / `tools/install.ps1`**：日常一条命令接入入口，默认安装到当前目录，底层复用 bootstrap。
 - **`tools/update.sh` / `tools/update.ps1`**：日常一条命令升级入口，默认选择最新稳定 SemVer tag，也支持当前分支和显式 ref，然后刷新 Codex 全局包装器和项目入口。
 - **`tools/install-codex-global.sh` / `tools/install-codex-global.ps1`**：可选安装 Codex 全局 Loader 和 `tic-*` skill 包装器；只负责发现项目 TIC，不复制完整 Skills。
@@ -97,8 +98,8 @@
 - **AI 提示词挂载**：优先在项目级 `AGENTS.md` 或项目规则入口引用本仓库，不默认覆盖开发者全局 System Prompt 或全局 skills。由于其使用纯文本约束，所有 LLM 均可读取并转入 Team Agent 模拟态投入工作。
 - **Submodule 规范基石**：将其作为 `git submodule` 集成在大型复杂工程库的独立存放点作为约束性资产规范，配合代码审批流长期守护项目全生命周期的产品需求与技术一致边界。
 - **轻量自动化接入**：执行 `bash /path/to/Team-Intelligence-Center/tools/install.sh`，默认把最小入口写入当前业务项目。
-- **日常规则升级**：在业务项目中执行 `bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project`，默认升级到最新稳定 tag 并刷新入口；贡献者可使用 `--channel current`。
-- **0.1.0 首次升级**：正常仍执行原来的一条更新命令；只有 detached HEAD、自定义旧分支或未取得 `0.2.0` 时，才使用 [USAGE.md 的兜底步骤](./USAGE.md#从-010-首次升级)。
+- **日常规则升级**：在业务项目中执行 `bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project`，默认升级到最新稳定 tag 并刷新入口，同时保留现有 `project-adapter.md`；贡献者可使用 `--channel current`。
+- **0.1.0 首次升级**：正常仍执行原来的一条更新命令；只有 detached HEAD、自定义旧分支或未取得当前稳定版本时，才使用 [USAGE.md 的兜底步骤](./USAGE.md#从-010-首次升级)。
 - **Windows 原生接入**：PowerShell 环境执行 `powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1`。
 - **Codex 全局 Loader**：可选执行 `bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh --dry-run` 预览，只安装全局发现入口和 `tic-*` 包装器。
 - **OpenSpec 规格层**：参考 [组织研发范式 + OpenSpec / Superpowers 落地指南](./Design/development-paradigm-openspec-guide.md)，在业务项目中执行 `openspec init --tools codex,cursor,qoder,opencode --force`，让不同 AI 工具共用同一套 `/opsx:*` 规格驱动链路和规格事实源。

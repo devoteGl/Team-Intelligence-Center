@@ -25,6 +25,7 @@
 
 - 不自动复制 TIC `Skills/` 到项目本地 skills 或全局 skills。
 - 不覆盖研发个人全局规则；本 Loader 只提供发现项目 TIC 的方法。
+- `ai-harness/project-adapter.md` 是项目维护的事实与治理配置。普通安装和升级必须保留现有非占位内容、自定义章节和本地决策；需要创建、补全、审计、迁移或修复时读取 `Skills/project-adapter-maintainer.md`。
 - 不默认执行 Git 分支、提交、推送、合并或 tag。涉及 Git Flow 操作时，应读取项目 TIC 的 `Skills/git-flow-operator.md` 和项目适配策略，先执行或要求执行 `git fetch --all --prune --tags`，再给出候选分支、版本/tag 证据、release owner、release registry root、基线同步状态、同名分支检查和待执行命令，等待用户确认；release/hotfix 打 tag 后必须继续输出项目要求的回灌或收尾状态、tag 落点、发版目录、命令和证据，不得把 tag 视为完成态。
 - rtk 等 CLI 输出压缩工具只作为项目级可选效率工具；未检测到项目显式启用时不强制使用。Git Flow、发版、迁移、破坏性和生产命令必须保留原生命令或 raw 输出；团队启用前必须确认 telemetry 已关闭。
 - 默认使用 single adaptive workflow：`tic-workflow-orchestrator` 判断 consulting / micro / standard / critical，并应用项目 `risk_floor`。`strict` 仅作为 `risk_floor=critical` 的兼容说法。
@@ -46,6 +47,7 @@
 ```text
 <rules_dir>/Skills/post-dev-prd-sync.md
 <rules_dir>/Skills/code-investigator.md
+<rules_dir>/Skills/project-adapter-maintainer.md
 <rules_dir>/Skills/tic-workflow-orchestrator.md
 ```
 

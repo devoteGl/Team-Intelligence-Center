@@ -17,6 +17,7 @@ requires: []
 delegates_to:
   - task-decomposer
   - code-investigator
+  - project-adapter-maintainer
   - contract-handoff
   - shared-domain-arbiter
   - agent-session-protocol
@@ -47,6 +48,7 @@ delegates_to:
 - **单一 adaptive 工作流**：不维护第二套 strict 流程；强管控通过 `risk_floor` 实现。
 - **OpenSpec 是规格事实源，Superpowers 是执行方法层**：本技能只决定何时需要规格、证据、确认和归档。
 - **产物归属先行**：standard / critical 任务必须识别 SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属节点与落盘根，不能按当前 shell 目录随意写入。
+- **项目事实保护**：`project-adapter.md` 缺失、陈旧、schema 变化或疑似被覆盖时，路由到 `project-adapter-maintainer`；不得用 bootstrap 模板整文件覆盖完成迁移。
 - **TIC Agent Contract 是协作底座**：社区 agent、工具原生 subagent 和外部编排器只能作为能力适配，不得替代 TIC 角色、检查点和证据链。
 - **Agent Session Protocol 按协作边界触发**：同一 Codex 任务内的原生 subagent 可使用宿主线程；跨任务、跨工具、长时异步或审计场景通过 artifact 协作，`session_id` 只做追踪，不做事实源。
 - **可解释跳过**：输出 standard / critical 计划卡时，对原本可能触发但被跳过的关键 Skill 说明原因；consulting / micro 不列冗长的全量跳过清单。
@@ -122,7 +124,7 @@ Fan-out 准入：子任务可独立验证；API/字段/错误码/FE-BE 并行已
 | Phase | 目标 | 默认 Skill | Fan-out |
 | --- | --- | --- | --- |
 | Intake | 识别任务、风险、规则源、risk floor | `tic-workflow-orchestrator` | 否 |
-| Discovery | 调研现状、影响面、候选规则、风险 | `code-investigator` | 条件可，只读优先 |
+| Discovery | 调研现状、影响面、候选规则、风险；维护项目 adapter | `code-investigator`、`project-adapter-maintainer`（按需） | 条件可，只读优先 |
 | Planning | 拆任务、规格、验收、契约 | `task-decomposer`、OpenSpec/SDD、`contract-handoff` | 否，方案可多视角评审 |
 | Execution | 实现、并行开发、共享域仲裁 | 具体工程技能、Superpowers、`shared-domain-arbiter` | 条件可，需契约和文件域边界 |
 | Verification | 测试、构建、lint、联调、UI/接口证据 | 项目命令、Superpowers TDD/debug/review | 条件可，主 Agent 收口 |

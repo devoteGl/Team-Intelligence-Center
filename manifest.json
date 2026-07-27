@@ -1,7 +1,7 @@
 {
   "package": "Team_Intelligence_Center",
-  "version": "0.2.0",
-  "package_id": "Team_Intelligence_Center_0.2.0",
+  "version": "0.2.1",
+  "package_id": "Team_Intelligence_Center_0.2.1",
   "type": "lightweight_rules_automation",
   "release_status": "public_preview",
   "license": "Apache-2.0",
@@ -21,7 +21,8 @@
     "codegraph_optional": true,
     "delivery_walkthrough": "generate_evidence_based_walkthrough_artifact_after_standard_or_critical_implementation_when_review_qa_ui_or_usage_handoff_is_needed",
     "post_dev_prd_sync": "generate_evidence_based_prd_update_draft_after_standard_or_critical_delivery_when_product_behavior_changes",
-    "one_command_user_update": "select_stable_current_or_explicit_ref_then_refresh_rules_source_codex_global_wrappers_and_project_entrypoint",
+    "one_command_user_update": "select_stable_current_or_explicit_ref_then_refresh_rules_source_codex_global_wrappers_and_project_entrypoint_while_preserving_existing_project_adapter",
+    "project_adapter_lifecycle": "preserve_existing_project_facts_by_default; create_enrich_audit_migrate_repair_via_project_adapter_maintainer",
     "update_channels": [
       "stable",
       "current",
@@ -56,7 +57,7 @@
     "project_tool_rule_entries": true,
     "no_codex_only_constraint": true,
     "release_archive_root": "docs/releases",
-    "previous_version_archive": "docs/releases/0.1.0"
+    "previous_version_archive": "docs/releases/0.2.0"
   },
   "skill_lifecycle": {
     "canonical": [
@@ -71,7 +72,8 @@
       "post-dev-prd-sync",
       "changelog-writer",
       "git-flow-operator",
-      "project-governance-bootstrap"
+      "project-governance-bootstrap",
+      "project-adapter-maintainer"
     ],
     "aliases": {
       "api-contract-freezer": "contract-handoff",
@@ -148,7 +150,7 @@
     "dry-run first installation",
     "minimal lock file for diagnostics",
     "local-only rules source resolver to avoid committed machine paths",
-    "auto-generated project adapter",
+    "evidence-based project adapter scaffold with preservation-first lifecycle",
     "optional CodeGraph helper for context and impact analysis",
     "UI visual verification rule for real interface checks",
     "artifact-style delivery walkthrough with summary, evidence, review guidance, media references, risks, and follow-up actions",

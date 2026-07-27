@@ -9,7 +9,7 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - 用 marker 边界合并 `AGENTS.md`。
 - `--dry-run` 安装预览。
 - 用轻量 lock 文件辅助诊断。
-- 自动生成项目适配说明，包含技术栈、依赖、Node 版本、包管理器、项目关系和常见命令线索。
+- 首次接入时生成项目适配说明，包含技术栈、依赖、Node 版本、包管理器、项目关系和常见命令线索；后续升级保护项目维护的事实。
 - single adaptive workflow：按风险分级处理任务，并通过 `risk_floor` 锁定强管控项目的最低档位。
 - 机器可读 `tic_skill.v1` contract，用于校验 Skill phase、风险档、canonical / alias / subflow 生命周期。
 - standard / critical 任务默认执行规格驱动与验收驱动验证；自动测试和可观察验证都可以承接验收标准。
@@ -67,10 +67,10 @@ ai-harness/project-adapter.md
 - `.nvmrc`、`.node-version`、`package.json engines.node` 中声明的 Node 版本。
 - `pnpm-lock.yaml`、`yarn.lock`、`package-lock.json`、`bun.lock*` 推断包管理器。
 - `package.json` 中的 scripts、dependencies、devDependencies、peerDependencies 和 workspaces。
-- `openspec/`、`apps/`、`packages/` 等项目关系线索。
+- `.gitmodules`、`openspec/`、`apps/`、`packages/` 等项目关系线索和子项目路径。
 - `artifact_ownership`、`artifact_roots` 和 `release_ownership` 默认块，用于声明 SDD、TDD 证据、PRD、Walkthrough 和发版登记根的归属与落盘位置。
 
-已有 `ai-harness/project-adapter.md` 默认不会覆盖；需要刷新画像时使用 `--force` / `-Force`。
+已有 `ai-harness/project-adapter.md` 在普通安装、`--refresh` / `-Refresh`、`--force` / `-Force` 和日常升级中都不会覆盖。项目画像的补全、审计、迁移和修复由 `Skills/project-adapter-maintainer.md` 处理。只有用户明确放弃现有内容时，才使用 `--regenerate-adapter` / `-RegenerateAdapter`；脚本会先备份再替换。
 
 ## 推荐使用流程
 
@@ -84,7 +84,7 @@ bash /path/to/Team-Intelligence-Center/tools/install.sh --refresh
 bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/update.sh --preview --project /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/update.sh --channel current --project /path/to/project
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.0 --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.1 --project /path/to/project
 ```
 
 Windows PowerShell：
@@ -98,11 +98,11 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 
 默认安装保持轻量。任务确实需要更多结构时，再手动使用更深入的 TIC 技能。
 
-底层高级入口仍保留：`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1` 支持 `--force` / `-Force`、`--rules-dir` / `-RulesDir` 等参数。日常研发优先使用 `install.*`。
+底层高级入口仍保留：`tools/bootstrap-project.sh` / `tools/bootstrap-project.ps1` 支持 `--force` / `-Force`、`--regenerate-adapter` / `-RegenerateAdapter`、`--rules-dir` / `-RulesDir` 等参数。日常研发优先使用 `install.*`。
 
 规则升级入口是 `tools/update.sh` / `tools/update.ps1`。默认 `stable` 通道选择最高 SemVer release tag；`current` 通道 fast-forward 当前分支；显式 `ref` 用于锁定 tag、分支或 commit。规则源验证成功后，再刷新 Codex 全局 Loader、`tic-*` wrapper 和业务项目入口。需要谨慎检查时先加 `--preview` / `-Preview`。
 
-`0.1.0` 首次升级通常仍只需执行原来的一条更新命令：旧更新器 fast-forward 正常维护的发布或集成分支后，会取得 `0.2.0` 脚本并完成刷新。只有 detached HEAD、自定义旧分支或未取得 `0.2.0` 时，才需手动 fetch tags 并 checkout `0.2.0`。之后普通使用者跟随 stable tag，贡献者跟随 current，生产或需复现项目锁定 ref；submodule 由父项目 owner 统一更新并提交指针。
+`0.1.0` 首次升级通常仍只需执行原来的一条更新命令：旧更新器 fast-forward 正常维护的发布或集成分支后，会取得新版脚本并完成刷新。只有 detached HEAD、自定义旧分支或未取得当前稳定版本时，才需手动 fetch tags 并 checkout 明确 tag。之后普通使用者跟随 stable tag，贡献者跟随 current，生产或需复现项目锁定 ref；submodule 由父项目 owner 统一更新并提交指针。
 
 ## 规格、验证与 OpenSpec
 
