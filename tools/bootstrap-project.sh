@@ -7,18 +7,21 @@ PROJECT_ROOT="$PWD"
 DRY_RUN=0
 YES=0
 FORCE=0
+REGENERATE_ADAPTER=0
 RULES_DIR=""
 STAMP="$(date +%Y%m%d%H%M%S)"
 
 usage() {
   cat <<'USAGE'
 Usage:
-  bash tools/bootstrap-project.sh [--dry-run] [--yes] [--force] [--rules-dir PATH] [PROJECT_ROOT]
+  bash tools/bootstrap-project.sh [--dry-run] [--yes] [--force] [--regenerate-adapter] [--rules-dir PATH] [PROJECT_ROOT]
 
 Options:
   --dry-run        Show planned writes without changing files.
   --yes, -y        Skip interactive confirmation.
-  --force          Overwrite existing docs/ai-rules-usage.md and ai-harness/*.md after backing them up.
+  --force          Refresh generated entrypoint docs after backup; preserve an existing project adapter.
+  --regenerate-adapter
+                   Replace an existing project adapter with a newly detected profile after backup.
   --rules-dir PATH Path to Team-Intelligence-Center. Project-local paths are recorded as relative; external paths are written only to .tic-rules.local.
   --help, -h       Show this help.
 USAGE
@@ -36,6 +39,10 @@ while [ "$#" -gt 0 ]; do
       ;;
     --force)
       FORCE=1
+      shift
+      ;;
+    --regenerate-adapter)
+      REGENERATE_ADAPTER=1
       shift
       ;;
     --rules-dir)
@@ -244,21 +251,113 @@ detect_stack_files() {
   fi
 }
 
+detect_submodule_paths() {
+  if [ ! -f "$PROJECT_ROOT/.gitmodules" ]; then
+    return
+  fi
+
+  awk '
+    /^[[:space:]]*path[[:space:]]*=/ {
+      sub(/^[^=]*=[[:space:]]*/, "")
+      sub(/[[:space:]]*$/, "")
+      if (length($0) > 0) print
+    }
+  ' "$PROJECT_ROOT/.gitmodules"
+}
+
 detect_common_dirs() {
   local dirs=(src app apps packages components pages router routes api server backend frontend web admin miniapp tests test docs config scripts)
   local found=()
-  local dir
+  local dir submodule display
   for dir in "${dirs[@]}"; do
     if [ -d "$PROJECT_ROOT/$dir" ]; then
       found+=("\`$dir/\`")
     fi
   done
+  while IFS= read -r submodule; do
+    [ -n "$submodule" ] || continue
+    [ -d "$PROJECT_ROOT/$submodule" ] || continue
+    display="\`$submodule/\`"
+    case " ${found[*]} " in
+      *" $display "*)
+        ;;
+      *)
+        found+=("$display")
+        ;;
+    esac
+  done < <(detect_submodule_paths)
   if [ "${#found[@]}" -eq 0 ]; then
     printf '未检测到常见模块目录'
   else
     local IFS='、'
     printf '%s' "${found[*]}"
   fi
+}
+
+detect_workspace_owner_type() {
+  if [ -f "$PROJECT_ROOT/.gitmodules" ] ||
+     [ -f "$PROJECT_ROOT/pnpm-workspace.yaml" ] ||
+     [ -d "$PROJECT_ROOT/apps" ] ||
+     [ -d "$PROJECT_ROOT/packages" ]; then
+    printf 'workspace'
+  else
+    printf 'project'
+  fi
+}
+
+detect_monorepo_summary() {
+  local parts=()
+  local submodules=()
+  local submodule
+
+  while IFS= read -r submodule; do
+    [ -n "$submodule" ] && submodules+=("\`$submodule/\`")
+  done < <(detect_submodule_paths)
+  if [ "${#submodules[@]}" -gt 0 ]; then
+    local IFS='、'
+    parts+=("检测到 \`.gitmodules\`，子项目 ${submodules[*]}")
+  fi
+  if [ -f "$PROJECT_ROOT/pnpm-workspace.yaml" ]; then
+    parts+=("检测到 \`pnpm-workspace.yaml\`")
+  fi
+  if [ -d "$PROJECT_ROOT/apps" ]; then
+    parts+=("检测到 \`apps/\`")
+  fi
+  if [ -d "$PROJECT_ROOT/packages" ]; then
+    parts+=("检测到 \`packages/\`")
+  fi
+
+  if [ "${#parts[@]}" -eq 0 ]; then
+    printf '未检测到常见 monorepo 或多仓工作区结构'
+  else
+    local IFS='；'
+    printf '%s' "${parts[*]}"
+  fi
+}
+
+yaml_double_quote() {
+  local value="$1"
+  value="${value//\\/\\\\}"
+  value="${value//\"/\\\"}"
+  printf '%s' "$value"
+}
+
+detect_child_projects_yaml() {
+  local paths=()
+  local submodule
+  while IFS= read -r submodule; do
+    [ -n "$submodule" ] && paths+=("$submodule")
+  done < <(detect_submodule_paths)
+
+  if [ "${#paths[@]}" -eq 0 ]; then
+    printf ' []'
+    return
+  fi
+
+  printf '\n'
+  for submodule in "${paths[@]}"; do
+    printf '    - "%s"\n' "$(yaml_double_quote "$submodule")"
+  done
 }
 
 node_version_summary() {
@@ -354,17 +453,21 @@ NODE
 
 generate_project_adapter_content() {
   local package_manager stack_files common_dirs node_versions generated_at project_name
+  local owner_type child_projects_yaml monorepo_summary
   package_manager="$(detect_package_manager)"
   stack_files="$(detect_stack_files)"
   common_dirs="$(detect_common_dirs)"
   node_versions="$(node_version_summary)"
+  owner_type="$(detect_workspace_owner_type)"
+  child_projects_yaml="$(detect_child_projects_yaml)"
+  monorepo_summary="$(detect_monorepo_summary)"
   generated_at="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
   project_name="$(basename "$PROJECT_ROOT")"
 
   cat <<EOF
 # 项目适配说明
 
-本文件由 Team-Intelligence-Center bootstrap 自动生成，用于让 AI 快速了解当前项目。请研发按真实情况补充业务背景、风险边界和缺失命令。
+本文件由 Team-Intelligence-Center bootstrap 在首次接入时生成。现有文件归项目维护，普通安装与升级不会覆盖；请使用 \`project-adapter-maintainer\` 补全、审计、迁移或修复。
 
 生成时间：$generated_at
 项目标识：\`$project_name\`
@@ -387,7 +490,7 @@ $(package_json_section)
 ## 项目关系
 
 - OpenSpec：$([ -d "$PROJECT_ROOT/openspec" ] && printf '已检测到 `openspec/`' || printf '未检测到 `openspec/`')
-- Monorepo 线索：$([ -f "$PROJECT_ROOT/pnpm-workspace.yaml" ] && printf '检测到 `pnpm-workspace.yaml`；' || true)$([ -d "$PROJECT_ROOT/apps" ] && printf '检测到 `apps/`；' || true)$([ -d "$PROJECT_ROOT/packages" ] && printf '检测到 `packages/`；' || true)
+- Monorepo / 多仓线索：$monorepo_summary
 - 规则入口：bootstrap 会生成或更新项目根 \`AGENTS.md\`
 
 ## 产物归属与落盘
@@ -396,10 +499,10 @@ $(package_json_section)
 
 \`\`\`yaml
 artifact_ownership:
-  owner_type: project # workspace | project | subproject | external
+  owner_type: $owner_type # workspace | project | subproject | external
   owner_id: "$project_name"
   parent_workspace: ""
-  child_projects: []
+  child_projects:$child_projects_yaml
   related_repositories: []
 artifact_roots:
   sdd_root: "$([ -d "$PROJECT_ROOT/openspec" ] && printf 'openspec/changes' || printf 'docs/sdd')"
@@ -408,7 +511,7 @@ artifact_roots:
   prd_draft_root: "docs/PRD/drafts"
   walkthrough_root: "docs/walkthroughs"
 release_ownership:
-  owner_type: project # workspace | project | subproject | external
+  owner_type: $owner_type # workspace | project | subproject | external
   owner_id: "$project_name"
   release_registry_root: "docs/releases"
   version_policy: independent # shared | independent | external
@@ -468,8 +571,8 @@ install_project_adapter() {
   local dst="$PROJECT_ROOT/ai-harness/project-adapter.md"
   local rel="${dst#$PROJECT_ROOT/}"
 
-  if [ -e "$dst" ] && [ "$FORCE" -eq 0 ]; then
-    plan "skip existing $rel"
+  if [ -e "$dst" ] && [ "$REGENERATE_ADAPTER" -eq 0 ]; then
+    plan "preserve existing $rel; use project-adapter-maintainer to audit or migrate it"
     return
   fi
 

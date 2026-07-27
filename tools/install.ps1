@@ -1,6 +1,7 @@
 param(
     [switch]$Preview,
     [switch]$Refresh,
+    [switch]$RegenerateAdapter,
     [switch]$Help,
     [string]$RulesDir = "",
     [string]$ProjectRoot = (Get-Location).Path
@@ -11,14 +12,16 @@ $ErrorActionPreference = "Stop"
 function Write-Usage {
     @"
 Usage:
-  powershell -ExecutionPolicy Bypass -File tools\install.ps1 [-Preview] [-Refresh] [-RulesDir PATH] [-ProjectRoot PATH]
+  powershell -ExecutionPolicy Bypass -File tools\install.ps1 [-Preview] [-Refresh] [-RegenerateAdapter] [-RulesDir PATH] [-ProjectRoot PATH]
 
 Defaults:
   Installs Team-Intelligence-Center lightweight rules into the current directory.
 
 Options:
   -Preview      Show planned writes without changing files.
-  -Refresh      Refresh generated docs after backing up existing files.
+  -Refresh      Refresh generated entrypoint docs after backup; preserve the project adapter.
+  -RegenerateAdapter
+                Explicitly replace the project adapter with a newly detected profile after backup.
   -RulesDir     Path to Team-Intelligence-Center. Project-local paths are committed as relative; external paths stay local.
   -ProjectRoot  Target project root. Defaults to the current directory.
 "@
@@ -52,6 +55,9 @@ if ($Preview) {
 }
 if ($Refresh) {
     $bootstrapArgs += "-Force"
+}
+if ($RegenerateAdapter) {
+    $bootstrapArgs += "-RegenerateAdapter"
 }
 if (-not [string]::IsNullOrWhiteSpace($RulesDir)) {
     $bootstrapArgs += @("-RulesDir", $RulesDir)

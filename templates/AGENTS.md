@@ -28,6 +28,7 @@ AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源�
 - 完成前必须验证。最终说明要写清楚跑了哪些命令、哪些通过、哪些未测、还有什么风险。
 - 不编造业务事实。反推到的行为要标注可信度，候选规则确认前不得写成正式需求。
 - 不覆盖人的工作。保留项目已有规则和用户未提交改动。
+- `ai-harness/project-adapter.md` 是项目维护的事实与治理配置，不是每次升级都可重写的 AI 摘要。普通安装和升级必须保留现有非占位内容、自定义章节与本地决策；创建、补全、审计、迁移或修复时使用 `Skills/project-adapter-maintainer.md`。
 - 涉及创建分支、release/hotfix、merge、tag、push 或回灌时，必须执行 `Skills/git-flow-operator.md`。默认版本使用 SemVer；分支基线、tag 前缀和版本格式以 `ai-harness/project-adapter.md` 的项目策略为准。创建任何分支前必须 `git fetch --all --prune --tags`，同时检查本地/远端同名分支和基线新鲜度。创建前必须输出候选分支、release owner、release registry root、远端刷新状态、基线同步状态、同名分支检查和待执行命令，等待用户确认；release/hotfix 打 tag 后必须继续输出回灌或收尾状态、tag 落点、发版目录、命令和证据，不得把 tag 视为完成态。
 - 涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `Skills/contract-handoff.md`；旧 `api-contract-freezer.md` 与 `fe-be-handoff.md` 仅作为兼容入口。
 - 涉及共享文件域修改时，优先使用 `Skills/shared-domain-arbiter.md`；旧 `conflict-arbiter.md` 仅作为兼容入口。
@@ -103,6 +104,7 @@ rtk 等 CLI 输出压缩工具只用于降低长输出对 AI 上下文的污染�
 - 开发后 PRD 同步：`Skills/post-dev-prd-sync.md`
 - 交付走查：`Skills/delivery-walkthrough.md`
 - 工作流总控：`Skills/tic-workflow-orchestrator.md`
+- 项目适配器维护：`Skills/project-adapter-maintainer.md`
 - OpenSpec / Superpowers 接合：`Design/development-paradigm-openspec-guide.md`
 - 代码调研：`Skills/code-investigator.md`
 - 任务拆解：`Skills/task-decomposer.md`

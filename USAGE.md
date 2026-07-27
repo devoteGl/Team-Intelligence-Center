@@ -60,6 +60,7 @@ Team-Intelligence-Center/
 │   ├── shared-domain-arbiter.md        #    [PM/Tech Lead] 共享文件域仲裁
 │   ├── agent-session-protocol.md       #    [PM/Tech Lead] 多 agent 会话信箱协议
 │   ├── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
+│   ├── project-adapter-maintainer.md    #    [PM/CI/DS/Tech Lead] 项目适配器维护
 │   ├── delivery-walkthrough.md         #    [PM/Tech Lead/QA/DS] 交付走查
 │   ├── release-handoff.md              #    [PM/Release/DS] 单变更/发版批次交接
 │   ├── git-flow-operator.md            #    [PM/Release] Git Flow 分支、合并、tag、回灌
@@ -192,7 +193,7 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 ```bash
 bash /path/to/Team-Intelligence-Center/tools/update.sh --preview --project /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/update.sh --channel current --project /path/to/project
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.0 --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.1 --project /path/to/project
 ```
 
 规则库存在未提交改动时，脚本拒绝 pull 或切换版本。若只想用当前工作树刷新入口，使用 `--no-pull`。规则库作为 submodule 时，更新后还需审阅并提交父项目的 submodule 指针。
@@ -205,15 +206,15 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.0 --project /pa
 bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project
 ```
 
-前提是规则库工作树干净，并且当前位于团队正常维护的发布或集成分支。`0.1.0` 的旧脚本会先 fast-forward 当前分支，取得 `0.2.0` 的新脚本和规则后完成刷新；从下一次开始，新脚本默认跟随 stable tag。
+前提是规则库工作树干净，并且当前位于团队正常维护的发布或集成分支。`0.1.0` 的旧脚本会先 fast-forward 当前分支，取得新版脚本和规则后完成刷新；从下一次开始，新脚本默认跟随 stable tag。
 
-只有旧规则库停在 detached HEAD、不再维护的自定义分支，或普通更新没有取得 `0.2.0` 时，才使用下面的兜底恢复：
+只有旧规则库停在 detached HEAD、不再维护的自定义分支，或普通更新没有取得当前稳定版本时，才使用下面的兜底恢复：
 
 ```bash
 git -C /path/to/Team-Intelligence-Center status --short
 git -C /path/to/Team-Intelligence-Center fetch origin --prune --tags
-git -C /path/to/Team-Intelligence-Center checkout --detach 0.2.0
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.0 --project /path/to/project
+git -C /path/to/Team-Intelligence-Center checkout --detach 0.2.1
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.1 --project /path/to/project
 ```
 
 若团队使用的远端不叫 `origin`，将命令中的远端名替换为实际名称，并在后续更新中传 `--remote <name>`。如果规则库是 submodule，不让每位研发自行追踪浮动分支：由父项目 owner 更新并提交 submodule 指针，其他人执行父项目约定的 submodule 同步命令。
@@ -257,7 +258,7 @@ ai-harness/agent-session-protocol.md
 
 原则上，standard / critical 任务执行规格驱动与验收驱动流程：先明确行为规格和验收标准，再写自动测试或明确可观察验证，最后实现和复核。项目已有 `openspec/` 时，OpenSpec 是规格事实源；执行方法层负责计划、TDD、调试、review 和子代理执行。规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根由 `ai-harness/project-adapter.md` 声明。
 
-其中 `ai-harness/project-adapter.md` 会自动生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、OpenSpec、monorepo 线索，以及 SDD/TDD/PRD/发版登记根的默认归属。已有文件默认不覆盖；需要刷新时使用 `--force` 或 PowerShell 的 `-Force`。
+其中 `ai-harness/project-adapter.md` 只在首次接入时生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、`.gitmodules` 子项目、OpenSpec、monorepo 线索，以及 SDD/TDD/PRD/发版登记根的默认归属。已有文件在普通安装、`--refresh`、`--force` 和日常升级时都保持不变；补全、审计、迁移或修复请使用 `project-adapter-maintainer`。只有明确放弃现有内容时才使用 `--regenerate-adapter` 或 PowerShell 的 `-RegenerateAdapter`，脚本会先备份。
 
 ### 3.4 Codex 全局 Loader（可选）
 
@@ -377,6 +378,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 | `shared-domain-arbiter` | PM/Tech Lead | 需要修改 router/types/constants/全局配置等共享域 | P2 |
 | `agent-session-protocol` | PM/Tech Lead | standard / critical 任务需要多 agent 独立会话、mailbox、证据和收敛记录 | P1 |
 | `project-governance-bootstrap` | PM/DS | 项目首次接入组织范式 | P0 |
+| `project-adapter-maintainer` | PM/CI/DS/Tech Lead | 创建、补全、审计、迁移或修复 `project-adapter.md` | P0 |
 | `delivery-walkthrough` | PM/Tech Lead/QA/DS | 实现完成后生成交付走查、Review 指引和验证证据 | P0 |
 | `release-handoff` | PM/Release/DS | 单变更或发版批次的运维、运营、QA、回滚、上线观察交接 | P0 |
 | `git-flow-operator` | PM/Release | 新需求开分支、release/hotfix 合并、tag、回灌 | P0 |
@@ -710,7 +712,7 @@ AI 工具中使用 `/opsx:*`：
 - `bootstrap-project.sh` 支持 `--dry-run`、幂等写入和 marker-bounded `AGENTS.md` 合并。
 - `.tic-rules.lock` 只记录规则版本和项目相对规则源，不写个人本机绝对路径。
 - `.tic-rules.local` 记录当前开发者机器上的规则库绝对路径，并自动加入 `.gitignore`。
-- `ai-harness/project-adapter.md` 自动生成项目画像，减少研发手填项目介绍、依赖和 Node 版本。
+- `ai-harness/project-adapter.md` 首次接入时生成项目画像；之后由项目维护，升级默认保留，避免项目事实和本地决策丢失。
 - 任务按 `consulting / micro / standard / critical` 分级，简单事保持简单，高风险才升级流程。
 - standard / critical 任务坚持 SDD + TDD；这是工作流阶段语义，不是独立 Skill 链。已有 OpenSpec 时，OpenSpec 是规格事实源；Superpowers 是执行方法层。
 
@@ -730,10 +732,11 @@ AI 工具中使用 `/opsx:*`：
 | 参数 | 作用 |
 | --- | --- |
 | `--preview` | 只预览，不写文件 |
-| `--refresh` | 刷新生成文档，覆盖前备份 |
+| `--refresh` | 刷新生成的规则入口文档并备份；保留现有项目 adapter |
+| `--regenerate-adapter` | 明确放弃并重生成项目 adapter；替换前备份 |
 | `--rules-dir PATH` | 指定 TIC 规则库路径；项目内路径写入相对 `rules_path`，项目外路径只写入 `.tic-rules.local` |
 
-Windows PowerShell 使用同义参数：`-Preview`、`-Refresh`、`-RulesDir`、`-ProjectRoot`。
+Windows PowerShell 使用同义参数：`-Preview`、`-Refresh`、`-RegenerateAdapter`、`-RulesDir`、`-ProjectRoot`。
 
 日常升级优先使用 `tools/update.sh`，让用户只执行一条命令：
 
@@ -754,10 +757,11 @@ Windows PowerShell 使用同义参数：`-Preview`、`-ProjectRoot`、`-CodexHom
 | --- | --- |
 | `--dry-run` | 只预览，不写文件 |
 | `--yes` / `-y` | 跳过交互确认 |
-| `--force` | 覆盖已有 `docs/ai-rules-usage.md` 和 `ai-harness/project-adapter.md`，覆盖前备份 |
+| `--force` | 刷新已有生成入口并备份；保留现有项目 adapter |
+| `--regenerate-adapter` | 明确重生成现有项目 adapter，替换前备份 |
 | `--rules-dir PATH` | 指定 TIC 规则库路径；项目内路径写入相对 `rules_path`，项目外路径只写入 `.tic-rules.local` |
 
-Windows PowerShell 高级入口使用同名参数：`-DryRun`、`-Yes`、`-Force`、`-RulesDir`、`-ProjectRoot`。
+Windows PowerShell 高级入口使用同名参数：`-DryRun`、`-Yes`、`-Force`、`-RegenerateAdapter`、`-RulesDir`、`-ProjectRoot`。
 
 Codex 全局 Loader 入口：
 

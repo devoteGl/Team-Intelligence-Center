@@ -15,7 +15,8 @@ outputs:
   - project_adapter
   - openspec_workspace
 requires: []
-delegates_to: []
+delegates_to:
+  - project-adapter-maintainer
 ---
 
 # Project Governance Bootstrap（项目治理接入技能）
@@ -151,6 +152,7 @@ docs/design/README.md
 - 文件已存在：追加或更新 `<!-- TIC:PROJECT-GOVERNANCE:START -->` 到 `<!-- TIC:PROJECT-GOVERNANCE:END -->` 区块。
 - 如果已有同类人工内容但没有 marker：先保留原文，再新增“组织 AI 研发范式”章节。
 - 所有 `TODO` 必须明确标出，不伪造事实。
+- `ai-harness/project-adapter.md` 已存在时不得套用下方模板整文件覆盖；应调用 `project-adapter-maintainer` 的 `audit`、`enrich`、`migrate` 或 `repair` 模式做保护性合并。
 
 ### Step 5：初始化 OpenSpec 工具入口
 
@@ -373,6 +375,8 @@ Gemini CLI：gemini extensions install https://github.com/obra/superpowers
 ---
 
 ## 5. `ai-harness/project-adapter.md` 标准模板
+
+本模板只用于缺失文件的首次创建。现有 adapter 归项目维护，升级和治理补齐必须使用 `project-adapter-maintainer` 保留已有非占位事实、自定义章节和本地决策。
 
 ```markdown
 # Project Adapter

@@ -1,6 +1,6 @@
 # 项目适配说明模板
 
-bootstrap 默认会基于目标项目自动生成 `ai-harness/project-adapter.md`。本模板仅作为兜底参考，用于脚本无法探测或团队手工维护时补充。
+bootstrap 只在首次接入时基于目标项目生成 `ai-harness/project-adapter.md`。现有文件归项目维护，普通安装、刷新和升级不得覆盖；创建、补全、审计、迁移或修复应使用 `project-adapter-maintainer`，并保留非占位内容、自定义章节与本地决策。本模板仅作为缺失文件时的兜底参考。
 
 ## 项目画像
 
