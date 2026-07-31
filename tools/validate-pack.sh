@@ -61,6 +61,7 @@ require_file docs/automation.md
 require_file docs/sdd/tic-0.2.0-codex-gpt56.md
 require_file docs/sdd/tic-0.2.1-project-adapter-preservation.md
 require_file docs/sdd/tic-0.2.2-bash32-update.md
+require_file docs/sdd/tic-0.3.0-e2e-verification-standardization.md
 require_file docs/releases/0.1.0/README.md
 require_file docs/releases/0.2.0/README.md
 require_file docs/releases/0.2.1/README.md
@@ -68,13 +69,20 @@ require_file docs/releases/0.2.1/evidence.md
 require_file docs/releases/0.2.2/README.md
 require_file docs/releases/0.2.2/evidence.md
 require_file docs/releases/0.2.2/changes/bash32-update/README.md
+require_file docs/releases/0.3.0/README.md
+require_file docs/releases/0.3.0/evidence.md
+require_file docs/releases/0.3.0/changes/e2e-verification-standardization/README.md
 require_file docs/test-evidence/tic-0.2.0/README.md
 require_file docs/test-evidence/tic-0.2.1/README.md
 require_file docs/test-evidence/tic-0.2.2/README.md
+require_file docs/test-evidence/tic-0.3.0/README.md
 require_file docs/walkthroughs/tic-0.2.1-project-adapter-preservation.md
 require_file docs/walkthroughs/tic-0.2.2-bash32-update.md
+require_file docs/walkthroughs/tic-0.3.0-e2e-verification-standardization.md
 require_file Skills/project-adapter-maintainer.md
 require_file templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md
+require_file Skills/e2e-verification.md
+require_file templates/codex-global/skills/tic-e2e-verification/SKILL.md
 require_file tools/bootstrap-project.ps1
 require_file tools/bootstrap-project.sh
 require_file tools/codegraph-helper.ps1
@@ -127,13 +135,14 @@ else
 fi
 rm -f "$template_stack_scan"
 
-if grep -q '当前版本为 `0.2.2`' README.md &&
+if grep -q '当前版本为 `0.3.0`' README.md &&
    grep -q '0.1.0.*0.2.0.*0.2.1' README.md &&
-   grep -q '已归档，当前版本为 `0.2.2`' README.md &&
+   grep -q '`0.2.2` 已归档，当前版本为 `0.3.0`' README.md &&
+   grep -q '"previous_version_archive"[[:space:]]*:[[:space:]]*"docs/releases/0.2.2"' manifest.json &&
    grep -q 'd8fe814ad633bd06d6ead7815ad8f7d6d3db5324' docs/releases/0.1.0/README.md; then
   pass "current and archived release records are declared"
 else
-  fail "README and release archive must identify 0.2.2 and archived 0.1.0/0.2.0/0.2.1 releases"
+  fail "README and release archive must identify 0.3.0 and archived 0.1.0/0.2.0/0.2.1/0.2.2 releases"
 fi
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
@@ -275,15 +284,28 @@ if bash tools/bootstrap-project.sh --yes --force "$bootstrap_project" >/dev/null
    grep -q 'sdd_root:' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q 'prd_draft_root:' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q 'release_registry_root:' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q '^verification:$' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q '^  e2e:$' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'test_command:' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'auth_state_path:' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'auth_state_policy: local-only' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'data_strategy: "待确认"' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'cleanup_command:' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q 'Agent Session Protocol' "$bootstrap_project/ai-harness/agent-session-protocol.md" &&
    grep -q '主线边界' "$bootstrap_project/.cursorrules" &&
    grep -q '主线边界' "$bootstrap_project/.windsurfrules" &&
    grep -q '主线边界' "$bootstrap_project/.rules/team-intelligence-center.md" &&
    grep -q '^risk_floor=critical$' "$bootstrap_project/.tic-rules.lock" &&
-   grep -q '^custom_policy=keep-me$' "$bootstrap_project/.tic-rules.lock"; then
-  pass "bootstrap output is commit-safe and preserves lock custom fields"
+   grep -q '^custom_policy=keep-me$' "$bootstrap_project/.tic-rules.lock" &&
+   cp "$bootstrap_project/AGENTS.md" "$bootstrap_tmp/AGENTS.first" &&
+   printf '\n' >> "$bootstrap_project/AGENTS.md" &&
+   bash tools/bootstrap-project.sh --yes --force "$bootstrap_project" >/dev/null &&
+   cmp -s "$bootstrap_tmp/AGENTS.first" "$bootstrap_project/AGENTS.md" &&
+   bash tools/bootstrap-project.sh --yes --force "$bootstrap_project" >/dev/null &&
+   cmp -s "$bootstrap_tmp/AGENTS.first" "$bootstrap_project/AGENTS.md"; then
+  pass "bootstrap output is commit-safe, idempotent, and preserves lock custom fields"
 else
-  fail "bootstrap must not write absolute project paths and must preserve lock custom fields"
+  fail "bootstrap must be idempotent, avoid absolute project paths, and preserve lock custom fields"
 fi
 rm -rf "$bootstrap_tmp"
 
@@ -317,6 +339,8 @@ if bash tools/bootstrap-project.sh --yes --force --regenerate-adapter "$adapter_
    ! grep -q 'SENTINEL_PROJECT_FACT' "$adapter_project/ai-harness/project-adapter.md" &&
    grep -R -q 'SENTINEL_PROJECT_FACT' "$adapter_project/.tic-backups" --include='project-adapter.md' &&
    grep -q 'owner_type: workspace' "$adapter_project/ai-harness/project-adapter.md" &&
+   grep -q '^verification:$' "$adapter_project/ai-harness/project-adapter.md" &&
+   grep -q 'policy: risk-based' "$adapter_project/ai-harness/project-adapter.md" &&
    grep -q '    - "live-api"' "$adapter_project/ai-harness/project-adapter.md" &&
    grep -q '    - "live-web"' "$adapter_project/ai-harness/project-adapter.md"; then
   pass "explicit adapter regeneration backs up content and detects submodule workspace ownership"
@@ -544,7 +568,8 @@ if grep -q 'one_command_user_update' manifest.json &&
    grep -q 'latest_semver_tag' tools/update.sh &&
    grep -q 'TargetRef' tools/update.ps1 &&
    grep -q -- '--channel current' USAGE.md &&
-   grep -q -- '--ref 0.2.2' docs/automation.md &&
+   grep -q -- '--ref 0.3.0' USAGE.md &&
+   grep -q -- '--ref 0.3.0' docs/automation.md &&
    grep -q 'install-codex-global.sh' tools/update.sh &&
    grep -q 'install.sh' tools/update.sh; then
   pass "stable, current, and explicit-ref update paths are declared"
@@ -553,10 +578,30 @@ else
 fi
 
 codex_wrapper_count="$(find templates/codex-global/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"
-if [ "$codex_wrapper_count" -ge 13 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'tic-workflow-orchestrator' templates/codex-global/skills/tic-workflow-orchestrator/SKILL.md && grep -q 'tic-contract-handoff' templates/codex-global/skills/tic-contract-handoff/SKILL.md && grep -q 'tic-release-handoff' templates/codex-global/skills/tic-release-handoff/SKILL.md && grep -q 'tic-shared-domain-arbiter' templates/codex-global/skills/tic-shared-domain-arbiter/SKILL.md && grep -q 'project-adapter-maintainer' templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
+if [ "$codex_wrapper_count" -ge 14 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'tic-workflow-orchestrator' templates/codex-global/skills/tic-workflow-orchestrator/SKILL.md && grep -q 'tic-contract-handoff' templates/codex-global/skills/tic-contract-handoff/SKILL.md && grep -q 'tic-release-handoff' templates/codex-global/skills/tic-release-handoff/SKILL.md && grep -q 'tic-shared-domain-arbiter' templates/codex-global/skills/tic-shared-domain-arbiter/SKILL.md && grep -q 'project-adapter-maintainer' templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md && grep -q '<rules_dir>/Skills/e2e-verification.md' templates/codex-global/skills/tic-e2e-verification/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
   pass "Codex global loader is wrapper-only and project-first"
 else
   fail "Codex global loader must stay wrapper-only and project-first"
+fi
+
+if grep -q 'e2e_verification' manifest.json &&
+   grep -q 'e2e-verification' manifest.json &&
+   grep -q 'e2e-verification' Skills/tic-workflow-orchestrator.md &&
+   grep -q 'E2E Verification Gate' Global-Rules/coding-rules.md &&
+   grep -q '^verification:$' templates/ai-harness/project-adapter.md &&
+   grep -q '^  e2e:$' templates/ai-harness/project-adapter.md &&
+   grep -q 'auth_state_path:' templates/ai-harness/project-adapter.md &&
+   grep -q 'auth_state_policy: local-only' templates/ai-harness/project-adapter.md &&
+   grep -q 'cleanup_command:' tools/bootstrap-project.sh &&
+   grep -q 'cleanup_command:' tools/bootstrap-project.ps1 &&
+   grep -q '项目原生优先' Skills/e2e-verification.md &&
+   grep -q 'partial.*blocked.*waived' Skills/e2e-verification.md &&
+   grep -q 'policy=disabled.*不等于通过' Global-Rules/coding-rules.md &&
+   grep -q 'E2E gate' Skills/release-handoff.md &&
+   grep -q '不要求所有 UI micro 任务跑完整端到端流程' docs/automation.md; then
+  pass "risk-based E2E verification gate is tool-neutral, adapter-driven, and evidence-aware"
+else
+  fail "E2E verification policy, routing, adapter schema, wrapper, or safety evidence contract is incomplete"
 fi
 
 if grep -q 'codegraph_optional' manifest.json &&

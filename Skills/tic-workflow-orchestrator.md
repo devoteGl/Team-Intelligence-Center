@@ -21,6 +21,7 @@ delegates_to:
   - contract-handoff
   - shared-domain-arbiter
   - agent-session-protocol
+  - e2e-verification
   - delivery-walkthrough
   - release-handoff
   - post-dev-prd-sync
@@ -49,6 +50,7 @@ delegates_to:
 - **OpenSpec 是规格事实源，Superpowers 是执行方法层**：本技能只决定何时需要规格、证据、确认和归档。
 - **产物归属先行**：standard / critical 任务必须识别 SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属节点与落盘根，不能按当前 shell 目录随意写入。
 - **项目事实保护**：`project-adapter.md` 缺失、陈旧、schema 变化或疑似被覆盖时，路由到 `project-adapter-maintainer`；不得用 bootstrap 模板整文件覆盖完成迁移。
+- **E2E 按风险触发**：standard / critical 任务先判断端到端验证必要性；改变用户旅程、跨层交互或关键链路时路由到 `e2e-verification`，不为所有 micro 任务强制完整 E2E。
 - **TIC Agent Contract 是协作底座**：社区 agent、工具原生 subagent 和外部编排器只能作为能力适配，不得替代 TIC 角色、检查点和证据链。
 - **Agent Session Protocol 按协作边界触发**：同一 Codex 任务内的原生 subagent 可使用宿主线程；跨任务、跨工具、长时异步或审计场景通过 artifact 协作，`session_id` 只做追踪，不做事实源。
 - **可解释跳过**：输出 standard / critical 计划卡时，对原本可能触发但被跳过的关键 Skill 说明原因；consulting / micro 不列冗长的全量跳过清单。
@@ -127,7 +129,7 @@ Fan-out 准入：子任务可独立验证；API/字段/错误码/FE-BE 并行已
 | Discovery | 调研现状、影响面、候选规则、风险；维护项目 adapter | `code-investigator`、`project-adapter-maintainer`（按需） | 条件可，只读优先 |
 | Planning | 拆任务、规格、验收、契约 | `task-decomposer`、OpenSpec/SDD、`contract-handoff` | 否，方案可多视角评审 |
 | Execution | 实现、并行开发、共享域仲裁 | 具体工程技能、Superpowers、`shared-domain-arbiter` | 条件可，需契约和文件域边界 |
-| Verification | 测试、构建、lint、联调、UI/接口证据 | 项目命令、Superpowers TDD/debug/review | 条件可，主 Agent 收口 |
+| Verification | 测试、构建、lint、联调、E2E、UI/接口证据 | 项目命令、Superpowers TDD/debug/review、`e2e-verification`（按风险） | 条件可，主 Agent 收口 |
 | Closeout | 交付走查、PRD 草稿、Changelog | `delivery-walkthrough`、`post-dev-prd-sync`、`changelog-writer` | 否，主 Agent 收口 |
 | Release | 运维/运营/QA 发版交接 | `release-handoff` | 否 |
 
@@ -168,6 +170,7 @@ Intake -> Planning -> Discovery(按需) -> Contract(按需)
 - 必须有可执行验收标准。
 - 建议 SDD + TDD；有 OpenSpec change 时引用 change id。
 - 必须记录 SDD 落盘位置和 TDD 证据位置；已有 OpenSpec 时优先写入或关联 `openspec/changes/<change-id>/`，否则使用 `docs/sdd/<change-id>.md` 或项目约定位置。
+- 必须判断 E2E 是 `not-required`、`targeted` 还是 `required`；改变用户旅程、跨层交互或关键 API 流程时触发 `e2e-verification`。
 - API、FE/BE、共享类型或跨端字段变化时必须触发 `contract-handoff`。
 - 用户可见行为变化时触发 `post-dev-prd-sync` 草稿。
 
@@ -183,6 +186,7 @@ Intake -> Discovery -> OpenSpec/SDD -> Contract-Handoff
 要求：
 - 必须记录人工确认点和回滚/补救思路。
 - 必须暴露未测项、剩余风险和证据缺口。
+- 认证、权限、资金、隐私、迁移或跨服务关键链路使用 E2E gate；`blocked`、`partial` 或 `waived` 必须记录责任人和剩余风险。
 - 必须记录 PRD 草稿、SDD、TDD 证据和发版交接包的归属节点；多项目任务只能有一个主归属，其他项目作为引用或子项。
 - 涉及发版、SQL、脚本、运营使用或上线观察时触发 `release-handoff`。
 
@@ -220,6 +224,7 @@ standard / critical 任务，或者用户要求计划、任务存在关键歧义
 - Superpowers: planning / TDD / debugging / review / subagent / not required
 - Fan-out mode: disabled / read-only review / controlled execution
 - Agent session artifact: native-thread / not required / .tic/agent-runs/<run-dir>
+- E2E verification: not-required / targeted / required / required-gate + evidence root
 ```
 
 ---
@@ -246,5 +251,6 @@ TIC Orchestrator 决定“是否需要规格、证据、门禁和归档”；Sup
 - [ ] 是否识别 OpenSpec / Superpowers 接合点。
 - [ ] 如启用 fan-out / 社区 agent，是否冻结契约、分配文件域、保留主 Agent 收口责任。
 - [ ] 如启用独立 agent 会话，是否使用 `agent-session-protocol` 落盘 manifest、outbox、status 和证据。
+- [ ] 是否按验收标准和风险判断 E2E 必要性，并在触发时路由到 `e2e-verification`。
 - [ ] 是否区分事实、推断、待确认。
 - [ ] 是否保留 AI 在实现、工具选择和调试路径上的合理自主权。

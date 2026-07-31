@@ -80,6 +80,7 @@ Walkthrough 是“完成态交付走查”，不是开工前计划，也不是�
 | 需求与范围 | 用户消息、issue、PRD、OpenSpec、SDD、任务清单 | 说明为什么做、做到哪里 |
 | 实现事实 | `git diff`、改动文件、commit、架构图、接口契约 | 说明实际改了什么 |
 | 验证结果 | 测试、构建、lint、联调、脚本 dry-run、日志 | 证明交付可用 |
+| E2E gate | `e2e-verification` 的 requirement、journey coverage、verdict、证据根 | 证明受影响核心旅程的覆盖和缺口 |
 | UI / 浏览器证据 | Playwright、浏览器截图、录屏、Computer Use、Chrome | 证明界面和流程可见可操作 |
 | 运行与部署线索 | README、env、配置、runbook、systemd、CI | 说明怎么运行、怎么部署 |
 | 风险与缺口 | 未测项、环境限制、已知缺陷、回滚难点 | 让 reviewer 能做风险判断 |

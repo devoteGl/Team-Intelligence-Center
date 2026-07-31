@@ -61,6 +61,7 @@ Team-Intelligence-Center/
 │   ├── agent-session-protocol.md       #    [PM/Tech Lead] 多 agent 会话信箱协议
 │   ├── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
 │   ├── project-adapter-maintainer.md    #    [PM/CI/DS/Tech Lead] 项目适配器维护
+│   ├── e2e-verification.md              #    [QA/Test/Tech Lead] 风险驱动 E2E 验证
 │   ├── delivery-walkthrough.md         #    [PM/Tech Lead/QA/DS] 交付走查
 │   ├── release-handoff.md              #    [PM/Release/DS] 单变更/发版批次交接
 │   ├── git-flow-operator.md            #    [PM/Release] Git Flow 分支、合并、tag、回灌
@@ -193,7 +194,7 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 ```bash
 bash /path/to/Team-Intelligence-Center/tools/update.sh --preview --project /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/update.sh --channel current --project /path/to/project
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.2 --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.3.0 --project /path/to/project
 ```
 
 规则库存在未提交改动时，脚本拒绝 pull 或切换版本。若只想用当前工作树刷新入口，使用 `--no-pull`。规则库作为 submodule 时，更新后还需审阅并提交父项目的 submodule 指针。
@@ -213,8 +214,8 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/projec
 ```bash
 git -C /path/to/Team-Intelligence-Center status --short
 git -C /path/to/Team-Intelligence-Center fetch origin --prune --tags
-git -C /path/to/Team-Intelligence-Center checkout --detach 0.2.2
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.2 --project /path/to/project
+git -C /path/to/Team-Intelligence-Center checkout --detach 0.3.0
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.3.0 --project /path/to/project
 ```
 
 若团队使用的远端不叫 `origin`，将命令中的远端名替换为实际名称，并在后续更新中传 `--remote <name>`。如果规则库是 submodule，不让每位研发自行追踪浮动分支：由父项目 owner 更新并提交 submodule 指针，其他人执行父项目约定的 submodule 同步命令。
@@ -256,9 +257,9 @@ ai-harness/agent-session-protocol.md
 
 它也不会自动把 `Skills/` 差量复制到项目本地 skills 或开发者全局 skills。业务项目默认通过 `.tic-rules.lock` 的项目相对路径或 `.tic-rules.local` 的本机路径读取 Skills，避免覆盖个人配置和产生版本漂移。
 
-原则上，standard / critical 任务执行规格驱动与验收驱动流程：先明确行为规格和验收标准，再写自动测试或明确可观察验证，最后实现和复核。项目已有 `openspec/` 时，OpenSpec 是规格事实源；执行方法层负责计划、TDD、调试、review 和子代理执行。规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根由 `ai-harness/project-adapter.md` 声明。
+原则上，standard / critical 任务执行规格驱动与验收驱动流程：先明确行为规格和验收标准，再写自动测试或明确可观察验证，判断 E2E 必要性，最后实现和复核。改变用户旅程、跨层交互、关键 API 或 critical 关键链路时，执行 `e2e-verification`。项目已有 `openspec/` 时，OpenSpec 是规格事实源；执行方法层负责计划、TDD、调试和 review。规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根由 `ai-harness/project-adapter.md` 声明。
 
-其中 `ai-harness/project-adapter.md` 只在首次接入时生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、`.gitmodules` 子项目、OpenSpec、monorepo 线索，以及 SDD/TDD/PRD/发版登记根的默认归属。已有文件在普通安装、`--refresh`、`--force` 和日常升级时都保持不变；补全、审计、迁移或修复请使用 `project-adapter-maintainer`。只有明确放弃现有内容时才使用 `--regenerate-adapter` 或 PowerShell 的 `-RegenerateAdapter`，脚本会先备份。
+其中 `ai-harness/project-adapter.md` 只在首次接入时生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、`.gitmodules` 子项目、OpenSpec、monorepo 线索、SDD/TDD/PRD/发版登记根，以及 `verification.e2e` 的 policy、runner、环境、认证、数据、清理、核心旅程和证据根。已有文件在普通安装、`--refresh`、`--force` 和日常升级时都保持不变；补全、审计、迁移或修复请使用 `project-adapter-maintainer`。只有明确放弃现有内容时才使用 `--regenerate-adapter` 或 PowerShell 的 `-RegenerateAdapter`，脚本会先备份。
 
 ### 3.4 Codex 全局 Loader（可选）
 
@@ -379,6 +380,7 @@ AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候�
 | `agent-session-protocol` | PM/Tech Lead | standard / critical 任务需要多 agent 独立会话、mailbox、证据和收敛记录 | P1 |
 | `project-governance-bootstrap` | PM/DS | 项目首次接入组织范式 | P0 |
 | `project-adapter-maintainer` | PM/CI/DS/Tech Lead | 创建、补全、审计、迁移或修复 `project-adapter.md` | P0 |
+| `e2e-verification` | QA/Test Engineer/Tech Lead | 用户旅程、跨层交互、关键 API 或 critical 关键链路需要端到端证据 | P0 |
 | `delivery-walkthrough` | PM/Tech Lead/QA/DS | 实现完成后生成交付走查、Review 指引和验证证据 | P0 |
 | `release-handoff` | PM/Release/DS | 单变更或发版批次的运维、运营、QA、回滚、上线观察交接 | P0 |
 | `git-flow-operator` | PM/Release | 新需求开分支、release/hotfix 合并、tag、回灌 | P0 |
@@ -444,7 +446,8 @@ Intake 至少识别：
       └─ 可选：agent-session-protocol（跨任务/工具、长时或审计场景）
        │
 [QA] 测试验收
-  └─ Checklist: prd-review-checklist
+  ├─ Checklist: prd-review-checklist
+  └─ Skill: e2e-verification（按风险）
        │
 [PM/Tech Lead] 交付走查
   └─ Skill: delivery-walkthrough
@@ -459,6 +462,21 @@ Intake 至少识别：
 [PM] 会话接力（按需）
   └─ Template: session-snapshot-manager
 ```
+
+### 6.5 E2E Verification 使用
+
+E2E 是 Verification phase 的条件门禁，不是所有任务固定执行的浏览器全量回归。
+
+| 场景 | 默认动作 |
+| --- | --- |
+| consulting / 无行为 micro | 不触发完整 E2E，执行最小验证 |
+| 有局部交互的 micro | 验证受影响路径 |
+| standard 用户旅程、跨层交互、关键 API | 执行受影响核心旅程 |
+| critical 认证、权限、资金、隐私、迁移、跨服务关键链路 | E2E gate；缺失必须记录阻塞或豁免 |
+
+执行时先读取 `ai-harness/project-adapter.md` 的 `verification.e2e`。项目已有可重复 E2E、API、集成或系统测试时，使用项目原生命令和报告作为主要事实源。Web 项目未指定 runner 且确需新增可重复套件时，Playwright Test 是默认候选；Playwright MCP、Browser、Chrome、Computer Use、截图和 trace 用于探索、调试或可观察证据，不被 TIC 写死。
+
+验证结果使用 `passed`、`failed`、`partial`、`blocked` 或 `waived`。`policy=disabled` 是项目治理决策，不等于验证通过；critical gate 仍需阻塞或由有权责任人确认豁免。认证状态必须保持本地并 gitignored，只清理本次验证创建且能够证明所有权的数据；生产账号、真实资金、外部不可逆写入或范围不明的清理必须暂停确认。
 
 ---
 
@@ -484,7 +502,7 @@ Intake 至少识别：
          ├─ Discovery：现状调研、候选规则、风险（code-investigator）
          ├─ Contract：契约冻结 + FE/BE 交接（contract-handoff，按需）
          ├─ Execution：实现；共享域修改走 shared-domain-arbiter
-         ├─ Verification：测试、构建、lint、联调、UI/接口证据
+         ├─ Verification：测试、构建、lint、联调、E2E、UI/接口证据
          ├─ Closeout：delivery-walkthrough / post-dev-prd-sync / changelog
          └─ Release：release-handoff(mode=single|train，按需)
 ```

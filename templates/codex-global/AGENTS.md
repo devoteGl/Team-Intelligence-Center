@@ -33,10 +33,12 @@
 - “全自动”“你看着办”“不用问我”授权范围内可逆本地步骤和非破坏性验证；外部写入、不可逆迁移、生产变更、数据删除、发布或 PRD/OpenSpec 转正仍必须暂停确认。
 - consulting / micro 任务保持轻量，不强制 PRD / SDD / OpenSpec。
 - standard / critical 任务在项目已接入 TIC 时执行规格驱动与验收驱动流程，并按 `ai-harness/project-adapter.md` 记录规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根。
+- standard / critical 任务必须判断 E2E 必要性；改变用户旅程、跨层交互、关键 API 流程、认证、权限、资金、隐私、迁移或跨服务关键链路时读取 `Skills/e2e-verification.md`。优先复用项目原生可重复套件；Browser、Chrome、MCP、Computer Use、截图和 trace 只作为可替换适配或可观察证据。
 - API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前优先读取 `Skills/contract-handoff.md`；共享文件域修改优先读取 `Skills/shared-domain-arbiter.md`。
 - 如启用 subagent / multi-agent / 社区 agent，必须由项目 `tic-workflow-orchestrator` 先判断是否允许 fan-out；外部 agent 只能作为能力适配，必须遵守 TIC Agent Contract、文件 ownership、检查点和证据要求。
 - 同一 Codex 任务内的原生 subagent 使用宿主线程并由主 Agent 收口；跨独立任务、跨工具、长时异步或需要审计时，应读取项目 `Skills/agent-session-protocol.md` 或 `ai-harness/agent-session-protocol.md`，并把事实落盘到 manifest、outbox、status 和 evidence。
 - UI 相关变更应使用当前环境可用的设计与 UI/UX 专业能力；安装了 `design-taste-frontend` 与 `ui-ux-pro-max` 时优先使用。需要端到端真实操作验证时，优先使用可用的 Computer Use，并可结合 Playwright、浏览器截图或 Chrome 核对真实界面。
+- E2E 的 runner、环境、认证、数据、清理、核心旅程和证据根优先读取 `ai-harness/project-adapter.md` 的 `verification.e2e`；认证状态保持本地并 gitignored，只清理本次验证拥有的数据。critical gate 无法完成时必须记录 `blocked`、`partial` 或经责任人确认的 `waived`，不得写成通过。
 - standard / critical 任务实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明或用户要求 walkthrough，应生成交付 Walkthrough。
 - standard / critical 任务完成后，如影响用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程，应生成 PRD 更新草稿和待确认项。
 
@@ -48,6 +50,7 @@
 <rules_dir>/Skills/post-dev-prd-sync.md
 <rules_dir>/Skills/code-investigator.md
 <rules_dir>/Skills/project-adapter-maintainer.md
+<rules_dir>/Skills/e2e-verification.md
 <rules_dir>/Skills/tic-workflow-orchestrator.md
 ```
 
