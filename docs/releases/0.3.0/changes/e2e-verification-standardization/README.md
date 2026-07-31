@@ -16,8 +16,8 @@ date: 2026-07-31
 - tag 类型：`release`
 - tag 仓库：Team-Intelligence-Center
 - tag 来源：`release/0.3.0`
-- tag 目标：待 Git Flow 发布合并后回填
-- 远端状态：尚未创建或 push
+- tag 目标：`44a5360a6e1307eeeee177b452703e4b25474d5e`
+- 远端状态：本地 annotated tag 已创建；按用户要求未 push
 - 部署触发：tag push 后进入 stable 更新通道
 - 发布对象：E2E canonical Skill、Codex wrapper、工作流路由、
   Project Adapter schema、bootstrap 与验证规则
@@ -71,5 +71,10 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh \
 
 ## 发布结果
 
+- 本地 `master` 与 `0.3.0^{commit}` 均指向
+  `44a5360a6e1307eeeee177b452703e4b25474d5e`。
+- 本地 `develop` 已通过
+  `a68955e4690aaf74437d2449f8e2999d08b59bb4` 完成回灌。
+- 隔离 tag 安装冒烟通过；远端 stable 选择待后续 push 后验证。
 - tag 落点、远端状态、develop 回灌和 stable 更新结果见
   `docs/releases/0.3.0/evidence.md`。

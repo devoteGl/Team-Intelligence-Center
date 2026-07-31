@@ -1,6 +1,6 @@
 # 0.3.0 发布记录
 
-- 状态：本地验证通过；等待 Git Flow 完整链路确认
+- 状态：本地发布、tag 和 develop 回灌完成；按用户要求未 push
 - 目标日期：2026-07-31
 - 基线版本：`0.2.2`
 - 基线 tag commit：`0a55134555d25eab38220961db9f251375ef606c`
@@ -54,8 +54,9 @@
 - [x] 真实业务工作区父项目与 7 个已接入子项目接入烟测通过
 - [x] 本地逻辑 review 无阻塞问题
 - [x] PowerShell 运行时验证作为长期验证项，不阻塞本次发布
-- [ ] 用户确认 commit、release 分支、合并、tag、push 和回灌
-- [ ] tag 目标、远端状态和 stable 更新结果回填
+- [x] 用户确认本地 commit、release 分支、合并、tag 和回灌
+- [x] 本地 tag 目标、develop 回灌和隔离安装结果已回填
+- [ ] 远端 tag 与 stable 更新结果（本次明确不 push）
 
 规格见
 [../../sdd/tic-0.3.0-e2e-verification-standardization.md](../../sdd/tic-0.3.0-e2e-verification-standardization.md)，
