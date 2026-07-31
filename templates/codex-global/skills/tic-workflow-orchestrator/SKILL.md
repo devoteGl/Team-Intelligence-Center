@@ -15,4 +15,4 @@ When invoked:
 5. Do not copy TIC Skills into project-local or global skills.
 6. Route to child TIC Skills by reference; do not inline or duplicate child Skill templates.
 
-If the target TIC Skill is missing, produce a lightweight plan card with risk tier, risk_floor, phases, selected skills, skipped skills and reasons, OpenSpec/Superpowers integration points, checkpoints, required artifacts, and pending confirmations.
+If the target TIC Skill is missing, produce a lightweight plan card with risk tier, risk_floor, phases, selected skills, skipped skills and reasons, E2E requirement decision, OpenSpec/Superpowers integration points, checkpoints, required artifacts, and pending confirmations.
