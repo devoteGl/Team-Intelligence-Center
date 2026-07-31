@@ -27,6 +27,22 @@ artifact_roots:
   prd_root: "docs/PRD"
   prd_draft_root: "docs/PRD/drafts"
   walkthrough_root: "docs/walkthroughs"
+verification:
+  e2e:
+    policy: risk-based # disabled | risk-based | required
+    runner: project-native # project-native | playwright-test | api-suite | manual-assisted | 待确认
+    start_command: ""
+    test_command: ""
+    base_url: ""
+    test_root: ""
+    evidence_root: "docs/test-evidence"
+    auth_mode: "待确认" # none | fixture | storage-state | interactive | external | 待确认
+    auth_state_path: ""
+    auth_state_policy: local-only
+    data_strategy: "待确认" # isolated | seeded | disposable | external | 待确认
+    setup_command: ""
+    cleanup_command: ""
+    core_journeys: []
 release_ownership:
   owner_type: project # workspace | project | subproject | external
   owner_id: "待确认"
@@ -40,6 +56,8 @@ release_ownership:
   tag_policy: "preserve-existing" # preserve-existing | no-v-prefix | v-prefix | custom
   deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
 ```
+
+E2E 字段为空或为“待确认”时表示尚未从项目证据确认，不是要求 AI 猜测命令。`auth_state_path` 只能记录项目相对路径，`auth_state_policy=local-only` 要求认证状态保持本地并 gitignored；现有 adapter 升级时使用 `project-adapter-maintainer(mode=migrate)` 保护性补齐。
 
 ## 常用命令
 

@@ -414,6 +414,22 @@ artifact_roots:
   prd_root: "docs/PRD"
   prd_draft_root: "docs/PRD/drafts"
   walkthrough_root: "docs/walkthroughs"
+verification:
+  e2e:
+    policy: risk-based
+    runner: project-native
+    start_command: ""
+    test_command: ""
+    base_url: ""
+    test_root: ""
+    evidence_root: "docs/test-evidence"
+    auth_mode: "待确认"
+    auth_state_path: ""
+    auth_state_policy: local-only
+    data_strategy: "待确认"
+    setup_command: ""
+    cleanup_command: ""
+    core_journeys: []
 release_ownership:
   owner_type: project # workspace | project | subproject | external
   owner_id: "待确认"

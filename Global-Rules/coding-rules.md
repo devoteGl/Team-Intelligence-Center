@@ -144,7 +144,7 @@ effective_tier = max(classified_tier, risk_floor)
        → 选择 phase / Skill DAG → 验证 → Closeout / Release
 ```
 
-`tic-workflow-orchestrator` 只做路由，不复制子 Skill 正文。具体执行仍由 `task-decomposer`、`code-investigator`、`contract-handoff`、`delivery-walkthrough` 等技能承担。
+`tic-workflow-orchestrator` 只做路由，不复制子 Skill 正文。具体执行仍由 `task-decomposer`、`code-investigator`、`contract-handoff`、`e2e-verification`、`delivery-walkthrough` 等技能承担。
 
 ### 3.2 标准流程
 
@@ -286,17 +286,29 @@ FE/BE 并行开始前，PM 必须执行 `contract-handoff`，冻结 API、共享
 
 - [ ] 代码未经过自检（逻辑自洽性）
 - [ ] QA 未确认覆盖核心路径（中等及以上任务）
+- [ ] critical 任务要求的 E2E gate 仍为 `blocked` / `partial`，且没有明确豁免责任人、替代证据和剩余风险
 - [ ] 存在未处理的跨角色依赖项
 - [ ] 存在对共享文件的未仲裁修改
 - [ ] Git Commit Message 不符合规范
 
-### 7.1 UI 设计与验证技能路由
+### 7.1 E2E Verification Gate
+
+- standard / critical 任务必须先判断 E2E 是 `not-required`、`targeted`、`required` 还是 `required-gate`，判断依据来自验收标准和受影响旅程。
+- 用户旅程、跨层交互、关键 API 流程、认证、权限、资金、隐私、迁移或跨服务关键链路发生变化时，执行 `Skills/e2e-verification.md`。
+- 项目已有可重复 E2E、API、集成或系统测试时优先复用项目原生命令；Web 项目需要新增可重复套件且未指定 runner 时，Playwright Test 是默认候选，不是 TIC 强制依赖。
+- Playwright MCP、Browser、Chrome、Computer Use、截图和 trace 是可替换的探索、调试或真实界面证据能力；除非验收标准明确允许可观察验证，否则不单独作为完整 E2E 通过的事实源。
+- 环境、认证、数据、清理、核心旅程和证据路径以 `ai-harness/project-adapter.md` 的 `verification.e2e` 为准；字段缺失时不得猜测命令、账号或生产环境。
+- `verification.e2e.policy=disabled` 不等于通过；critical `required-gate` 仍需记录 `blocked`，或由有权责任人确认 `waived`。
+- 认证状态必须保持本地并 gitignored；只清理本次验证拥有的数据。`passed`、`failed`、`partial`、`blocked`、`waived` 必须如实记录。
+- consulting / micro 不强制完整 E2E；micro 有局部交互时只验证受影响路径。
+
+### 7.2 UI 设计与验证技能路由
 
 - UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归相关改动，应使用当前环境可用的设计与 UI/UX 专业能力；安装了 `design-taste-frontend` 与 `ui-ux-pro-max` 时优先使用。
 - 能力不可用或明确不适用时，按项目设计系统执行并说明替代依据，不因缺少某个命名 Skill 阻塞任务。
 - 需要端到端验证功能、真实点击输入、登录、桌面 App、用户本机状态、真实浏览器插件或账号态时，优先使用当前环境可用的 Computer Use、浏览器自动化或截图验证；无法执行真实界面验证时说明替代证据和剩余风险。
 
-### 7.2 CLI 输出压缩工具（如 rtk）
+### 7.3 CLI 输出压缩工具（如 rtk）
 
 rtk 等 CLI 输出压缩工具是可选效率辅助，用于降低长输出对 AI 上下文的污染。它只能改变 AI 阅读输出的方式，不得改变工作流判定成败的依据。
 

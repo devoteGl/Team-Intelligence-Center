@@ -61,6 +61,7 @@ delegates_to:
 - 项目或工作区身份、主要用户和技术栈。
 - 父工作区、子项目、子模块和关联仓库。
 - 模块边界、入口、常用命令和验证方式。
+- E2E policy、runner、环境启动、认证、测试数据、核心旅程、清理和证据根。
 - SDD、TDD 证据、PRD、契约、Walkthrough、记忆和发版资料的归属与落盘根。
 - Git 分支、版本、tag 和部署触发策略。
 - 认证、资金、迁移、生产配置和外部集成风险。
@@ -71,6 +72,7 @@ delegates_to:
 - 当前任务进度、临时分支状态或一次性调试结论。
 - 未经验证的业务推测。
 - 密钥、Token、密码、个人目录或机器专属绝对路径。
+- cookie、storage state 内容、验证码或其他可复用认证材料；adapter 只能记录 gitignored 的项目相对路径。
 - TIC 通用规则正文的重复副本。
 
 ---
@@ -173,6 +175,8 @@ git log --follow -- ai-harness/project-adapter.md
 - `artifact_ownership` 与父子项目关系一致。
 - 所有声明的 artifact root 有明确归属；路径不存在时标记为待创建，不伪造存在。
 - 常用命令来自真实脚本、CI、Makefile 或项目文档。
+- E2E 命令、runner、base URL、认证和数据策略来自项目证据；未知项保留空值或 `待确认`。
+- `auth_state_path` 是项目相对路径，认证状态本身已 gitignored，清理命令不会作用于所有权不明的数据。
 - `branch_strategy`、基线、版本格式和 tag 策略与 Git 历史一致。
 - 风险边界与项目实际敏感面一致。
 - 当前文件保留了原有自定义章节、本地决策和未知扩展字段。
@@ -210,6 +214,22 @@ artifact_roots:
   prd_root: "docs/PRD"
   prd_draft_root: "docs/PRD/drafts"
   walkthrough_root: "docs/walkthroughs"
+verification:
+  e2e:
+    policy: risk-based
+    runner: project-native
+    start_command: ""
+    test_command: ""
+    base_url: ""
+    test_root: ""
+    evidence_root: "docs/test-evidence"
+    auth_mode: "待确认"
+    auth_state_path: ""
+    auth_state_policy: local-only
+    data_strategy: "待确认"
+    setup_command: ""
+    cleanup_command: ""
+    core_journeys: []
 release_ownership:
   owner_type: project
   owner_id: "待确认"
