@@ -13,6 +13,7 @@ Team-Intelligence-Center 仍然是规则和技能知识库。自动化层只负�
 - single adaptive workflow：按风险分级处理任务，并通过 `risk_floor` 锁定强管控项目的最低档位。
 - 机器可读 `tic_skill.v1` contract，用于校验 Skill phase、风险档、canonical / alias / subflow 生命周期。
 - standard / critical 任务默认执行规格驱动与验收驱动验证；自动测试和可观察验证都可以承接验收标准。
+- E2E 作为 Verification phase 的按风险条件门禁；项目原生可重复套件优先，具体浏览器、MCP 或 Computer Use 能力可替换。
 - OpenSpec 作为规格事实源，用于已启用 OpenSpec 或需要长期行为追踪的变更；Superpowers 作为执行方法层。
 - UI 相关变更使用当前环境可用的设计与 UI/UX 专业能力，并优先核对真实界面；安装了 `design-taste-frontend` 与 `ui-ux-pro-max` 时优先使用。
 - standard / critical 实现完成后，生成面向异步 review 和验收的交付 Walkthrough artifact。
@@ -68,7 +69,7 @@ ai-harness/project-adapter.md
 - `pnpm-lock.yaml`、`yarn.lock`、`package-lock.json`、`bun.lock*` 推断包管理器。
 - `package.json` 中的 scripts、dependencies、devDependencies、peerDependencies 和 workspaces。
 - `.gitmodules`、`openspec/`、`apps/`、`packages/` 等项目关系线索和子项目路径。
-- `artifact_ownership`、`artifact_roots` 和 `release_ownership` 默认块，用于声明 SDD、TDD 证据、PRD、Walkthrough 和发版登记根的归属与落盘位置。
+- `artifact_ownership`、`artifact_roots`、`verification.e2e` 和 `release_ownership` 默认块，用于声明产物归属、E2E runner / 环境 / 认证 / 数据 / 清理 / 核心旅程 / 证据根和发版策略。
 
 已有 `ai-harness/project-adapter.md` 在普通安装、`--refresh` / `-Refresh`、`--force` / `-Force` 和日常升级中都不会覆盖。项目画像的补全、审计、迁移和修复由 `Skills/project-adapter-maintainer.md` 处理。只有用户明确放弃现有内容时，才使用 `--regenerate-adapter` / `-RegenerateAdapter`；脚本会先备份再替换。
 
@@ -84,7 +85,7 @@ bash /path/to/Team-Intelligence-Center/tools/install.sh --refresh
 bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/update.sh --preview --project /path/to/project
 bash /path/to/Team-Intelligence-Center/tools/update.sh --channel current --project /path/to/project
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.2.2 --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.3.0 --project /path/to/project
 ```
 
 Windows PowerShell：
@@ -116,6 +117,7 @@ powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\too
 - 测试或明确验证项应从 SDD 的验收标准推导出来，再进入实现。
 - SDD、TDD 证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根以 `ai-harness/project-adapter.md` 为准；未声明时使用轻量默认路径。
 - TDD 证据索引默认写入 `docs/test-evidence/<change-id>/README.md`，具体测试代码仍放在项目测试目录。
+- standard / critical 任务必须记录 E2E 判断；改变用户旅程、跨层交互、关键 API 或 critical 关键链路时执行 `Skills/e2e-verification.md`。
 
 因此，规格与验证是交付语义，不是独立 Skill 链；OpenSpec 是规格承载层，不是每个任务都必须启动的重流程。
 
@@ -146,6 +148,7 @@ task-decomposer
 code-investigator
 contract-handoff
 shared-domain-arbiter
+e2e-verification
 delivery-walkthrough
 release-handoff
 post-dev-prd-sync
@@ -184,6 +187,20 @@ Walkthrough 是完成态交付 artifact，用来让 PM、Reviewer、QA、运维�
 - 证据来源包括需求来源、OpenSpec / SDD、git diff、改动文件、测试/构建、接口契约、截图、录屏、日志和人工确认。
 - 输出重点是交付摘要、用户可见变化、技术走查、变更文件与影响面、验证证据、Review 指引、未测项、风险和后续动作。
 - Walkthrough 不替代发版 runbook。需要部署、运营使用、回滚和上线观察时，继续执行 `Skills/release-handoff.md`；单变更使用 `mode=single`，多项目、多服务、SQL/脚本使用 `mode=train`。
+
+## E2E 验证门禁
+
+E2E 是按验收标准和风险触发的 Verification gate，不是所有任务的固定浏览器流程。
+
+- consulting / micro 不强制完整 E2E；micro 有局部交互时只验证受影响路径。
+- standard 任务改变用户旅程、跨层交互或关键 API 流程时，验证受影响核心旅程。
+- critical 的认证、权限、资金、隐私、迁移或跨服务关键链路必须进入 gate；无法执行时记录 `blocked`、`partial` 或经责任人确认的 `waived`，不得写成通过。
+- 项目已有 E2E、API、集成或系统测试时，优先使用项目原生命令和报告作为事实源。
+- Web 项目需要新增可重复套件且未指定 runner 时，Playwright Test 是默认候选，但 TIC 不安装或强制依赖它。
+- Playwright MCP、Browser、Chrome、Computer Use、截图和 trace 用于探索、调试、真实账号态或可观察证据；除非验收标准允许，否则不能单独替代可重复套件。
+- `ai-harness/project-adapter.md` 的 `verification.e2e` 声明 policy、runner、启动命令、base URL、认证、数据、setup / cleanup、核心旅程和证据根。空字段不得靠猜测补齐。
+- `policy=disabled` 是项目治理决策，不等于验证通过；critical `required-gate` 仍需记录 `blocked`，或由有权责任人确认 `waived`。
+- 认证状态必须保持本地并 gitignored；只清理本次验证拥有的数据，证据不得包含秘密或个人绝对路径。
 
 ## UI 变更验证
 

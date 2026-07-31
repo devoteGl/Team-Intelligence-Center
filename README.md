@@ -3,8 +3,8 @@
 
 > *消除「PM 觉得说清楚了，开发觉得没说清楚」的永恒矛盾，将散落在代码与人脑中的业务真正沉淀为系统资产。*
 
-> Public preview: 当前版本为 `0.2.2`。本补丁版本修复 macOS Bash 3.2
-> 下默认一键更新的兼容问题，并保留 0.2.1 的 Project Adapter 保护能力。
+> Public preview: 当前版本为 `0.3.0`。本版本把端到端验证标准化为按风险
+> 触发、工具中立、可审计的 Verification Gate。
 
 ## 📖 项目简介
 
@@ -18,8 +18,8 @@
 - **定位**：Chinese-first、tool-neutral 的 AI 工程协作规则包。
 - **适用工具**：Codex、Cursor、Qoder、OpenCode、OpenSpec、Superpowers，以及其他能读取项目规则的 AI 编码工具。
 - **版本记录**：见 [CHANGELOG.md](./CHANGELOG.md) 与
-  [docs/releases/](./docs/releases/)；`0.1.0`、`0.2.0`、`0.2.1`
-  已归档，当前版本为 `0.2.2`。
+  [docs/releases/](./docs/releases/)；`0.1.0`、`0.2.0`、`0.2.1`、
+  `0.2.2` 已归档，当前版本为 `0.3.0`。
 
 ## 🏗️ 核心资产目录说明
 
@@ -46,6 +46,7 @@
 | `agent-session-protocol.md` | PM/Tech Lead | 多 agent 独立会话的运行态信箱协议（可读目录、manifest、outbox、status、收敛规则） |
 | `project-governance-bootstrap.md` | PM/DS | 项目首次接入组织范式时，生成 AGENTS、AI 规则说明、ai-harness、OpenSpec 基础治理文件，并声明 Superpowers 协作边界 |
 | `project-adapter-maintainer.md` | PM/CI/DS/Tech Lead | 保护性创建、补全、审计、迁移或修复项目 adapter，保留项目事实、自定义章节和本地决策 |
+| `e2e-verification.md` | QA/Test Engineer/Tech Lead | 按验收标准和风险路由端到端验证，统一 runner、环境、认证、数据、证据、清理与 verdict |
 | `delivery-walkthrough.md` | PM/Tech Lead/QA/DS | 完成实现后的交付走查 artifact（变更摘要、证据、截图/录屏、Review 指引、风险和后续动作） |
 | `release-handoff.md` | PM/Release Manager/DS | 发版交接统一入口，`mode=single` 单变更，`mode=train` 多项目/SQL/脚本发版总控 |
 | `git-flow-operator.md` | PM/Release Manager | Git Flow 分支创建、release/hotfix 合并、tag、push 与回灌门禁 |
@@ -77,7 +78,7 @@
 - **`tools/validate-pack.sh`**：校验规则包文件、版本、Skill 结构和轻量化约束。
 - **`docs/automation.md`**：记录从 Codex_Project 吸收的有益机制，以及明确剔除的冗余部分。
 
-自动化默认原则是 **adaptive workflow + 规格驱动 + 验收驱动验证**：consulting / micro 保持轻量；standard / critical 任务先明确行为规格，再从验收标准推导自动测试或可观察验证。OpenSpec 可作为规格事实源，执行方法层可替换。规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根由 `ai-harness/project-adapter.md` 声明。强管控项目通过 `risk_floor=standard|critical` 锁定最低档位，不维护第二套 strict 流程。
+自动化默认原则是 **adaptive workflow + 规格驱动 + 验收驱动验证 + 按风险 E2E gate**：consulting / micro 保持轻量；standard / critical 任务先明确行为规格，再从验收标准推导自动测试或可观察验证，并判断受影响旅程是否需要 E2E。项目原生可重复套件优先，Playwright Test、MCP、Browser、Chrome 与 Computer Use 都是可替换实现能力。OpenSpec 可作为规格事实源，执行方法层可替换。规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根由 `ai-harness/project-adapter.md` 声明。强管控项目通过 `risk_floor=standard|critical` 锁定最低档位，不维护第二套 strict 流程。
 
 ## 🔄 核心工作流理念
 
@@ -88,7 +89,7 @@
 3. **[CI] 代码基现状调研**：不带主观推测地盘点老代码现状并生成现状交接报告。
 4. **[PM/FE/BE] 契约与交接**：通过 `contract-handoff` 冻结契约和 FE/BE 交接清单。
 5. **[FE/BE] 并行执行隔离**：依照已冻结契约工作，修改共享域需 `shared-domain-arbiter`；如启用多 Agent / subagent，只能作为受控 fan-out 执行策略，必须遵守 TIC Agent Contract。跨独立会话时使用 `agent-session-protocol`，以人可读 run 目录和结构化 artifact 收口。
-6. **[QA] 测试准入验收**：核心流用例执行与边缘退回重测。
+6. **[QA] 测试准入验收**：按风险判断 E2E 必要性，执行受影响核心旅程、收集证据并如实给出 verdict。
 7. **[DS/Release] 交付归档**：Walkthrough、PRD sync、Changelog、Release handoff 按风险和影响触发。
 
 **📍 用户挂载点控制（Human-in-the-loop）**：人类用户是唯一 Product Owner。检查点不再按阶段机械暂停，而是在范围重大歧义、关键方案无法从事实确定、破坏性契约、高危动作、发布/外部写入或失败补救扩域时触发。定义以 `Global-Rules/coding-rules.md` 第 6 节为唯一事实源。

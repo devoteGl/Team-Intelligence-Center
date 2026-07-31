@@ -9,6 +9,7 @@ inputs:
   - delivery_evidence
   - release_scope
   - verification_results
+  - optional_e2e_verdict
 outputs:
   - release_handoff_package
   - rollback_plan
@@ -43,6 +44,8 @@ Release Handoff 把“研发完成”转化为“可发布、会使用、能回�
 发版按 tag 走时，Release Handoff 必须写清本次使用的 tag、tag 所在仓库、tag 目标 commit、远端状态和部署触发方式。只写版本号、不写 tag 证据，不算完整发版计划。
 
 发布、迁移、回滚、生产变更和 SQL/脚本执行证据必须保留原生命令或 raw 输出。rtk 等输出压缩工具只能作为辅助阅读，不得替代执行结果、影响行数、失败 stderr、回滚证据和审计底稿。
+
+本次变更触发 `e2e-verification` 时，Release Handoff 必须记录 requirement、verdict、journey coverage、证据根和未测项。critical gate 为 `blocked` / `partial` 时不得写成可发布；`waived` 必须有明确责任人、替代证据和剩余风险。
 
 ---
 
@@ -125,7 +128,7 @@ Release Handoff 把“研发完成”转化为“可发布、会使用、能回�
 - 规格与文档落盘：SDD / OpenSpec change、TDD 证据索引、PRD 草稿或正式稿、Walkthrough 的路径和状态。
 - 需求来源：PRD、OpenSpec、issue、验收标准。
 - 变更范围：diff、服务、前端入口、API 契约、数据库、配置、权限。
-- 验证证据：测试、构建、联调、人工验收、截图、日志。
+- 验证证据：测试、构建、联调、E2E requirement / verdict / journey coverage、人工验收、截图、日志。
 - 发布对象：服务、静态资源、App/H5/小程序、脚本、SQL、定时任务、tag 触发流水线和部署制品。
 - 使用对象：运维、运营、QA、客服、管理员、终端用户。
 - 风险与回滚：数据风险、配置风险、缓存、第三方、不可逆操作、回滚目标 tag、前向修复条件。
@@ -205,6 +208,7 @@ date: 2026-06-25
 | --- | --- | --- | --- |
 | SDD / OpenSpec |  | 已落盘 / 待补 / 不适用 |  |
 | TDD / 验证证据 |  | 已落盘 / 待补 / 不适用 |  |
+| E2E gate |  | passed / failed / partial / blocked / waived / 不适用 |  |
 | PRD 草稿 / 正式稿 |  | 已落盘 / 待确认 / 不适用 |  |
 | Walkthrough |  | 已落盘 / 待补 / 不适用 |  |
 

@@ -109,13 +109,13 @@ function Backup-File {
 function Merge-Agents {
     $template = Join-Path $PackageRoot "templates/AGENTS.md"
     $target = Join-Path $ProjectRoot "AGENTS.md"
-    $rendered = Render-Template $template
+    $rendered = (Render-Template $template).TrimEnd("`r", "`n")
     $block = "$BeginMarker`r`n$rendered`r`n$EndMarker`r`n"
 
     if (-not (Test-Path -LiteralPath $target)) {
         Add-Plan "create AGENTS.md"
         if (-not $DryRun) {
-            Set-Content -LiteralPath $target -Value $block -Encoding UTF8
+            Set-Content -LiteralPath $target -Value $block -Encoding UTF8 -NoNewline
         }
         return
     }
@@ -125,16 +125,21 @@ function Merge-Agents {
         Add-Plan "replace TIC block in AGENTS.md"
         if (-not $DryRun) {
             Backup-File $target
-            $pattern = [regex]::Escape($BeginMarker) + ".*?" + [regex]::Escape($EndMarker)
-            $updated = [regex]::Replace($existing, $pattern, $block.TrimEnd(), [System.Text.RegularExpressions.RegexOptions]::Singleline)
-            Set-Content -LiteralPath $target -Value $updated -Encoding UTF8
+            $pattern = [regex]::Escape($BeginMarker) + ".*?" + [regex]::Escape($EndMarker) + "(?:\r?\n)?"
+            $endAtEofPattern = [regex]::Escape($BeginMarker) + ".*?" + [regex]::Escape($EndMarker) + "[ \t]*(?:\r?\n[ \t]*)*\z"
+            if ([regex]::IsMatch($existing, $endAtEofPattern, [System.Text.RegularExpressions.RegexOptions]::Singleline)) {
+                $updated = [regex]::Replace($existing, $endAtEofPattern, $block, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+            } else {
+                $updated = [regex]::Replace($existing, $pattern, $block, [System.Text.RegularExpressions.RegexOptions]::Singleline)
+            }
+            Set-Content -LiteralPath $target -Value $updated -Encoding UTF8 -NoNewline
         }
     } else {
         Add-Plan "append TIC block to AGENTS.md"
         if (-not $DryRun) {
             Backup-File $target
             $updated = $existing.TrimEnd() + "`r`n`r`n" + $block
-            Set-Content -LiteralPath $target -Value $updated -Encoding UTF8
+            Set-Content -LiteralPath $target -Value $updated -Encoding UTF8 -NoNewline
         }
     }
 }
@@ -439,6 +444,22 @@ artifact_roots:
   prd_root: "docs/PRD"
   prd_draft_root: "docs/PRD/drafts"
   walkthrough_root: "docs/walkthroughs"
+verification:
+  e2e:
+    policy: risk-based # disabled | risk-based | required
+    runner: project-native # project-native | playwright-test | api-suite | manual-assisted | 待确认
+    start_command: ""
+    test_command: ""
+    base_url: ""
+    test_root: ""
+    evidence_root: "docs/test-evidence"
+    auth_mode: "待确认" # none | fixture | storage-state | interactive | external | 待确认
+    auth_state_path: ""
+    auth_state_policy: local-only
+    data_strategy: "待确认" # isolated | seeded | disposable | external | 待确认
+    setup_command: ""
+    cleanup_command: ""
+    core_journeys: []
 release_ownership:
   owner_type: $ownerType # workspace | project | subproject | external
   owner_id: "$projectName"
@@ -452,6 +473,8 @@ release_ownership:
   tag_policy: "preserve-existing" # preserve-existing | no-v-prefix | v-prefix | custom
   deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
 ````
+
+E2E 字段为空或为“待确认”时表示尚未从项目证据确认，不是要求 AI 猜测命令。``auth_state_path`` 只能记录项目相对路径，``auth_state_policy=local-only`` 要求认证状态保持本地并 gitignored；现有 adapter 升级时使用 ``project-adapter-maintainer(mode=migrate)`` 保护性补齐。
 
 ## 常用命令
 

@@ -2,8 +2,10 @@
 
 ## 1. 交付摘要
 
-- **一句话结论**：团队继续使用原来的一条更新命令，已有 `project-adapter.md` 不再被浅层自动探测结果覆盖。
-- **当前状态**：独立代码审查已 APPROVE，用户已授权 commit、merge、tag、push 与 develop 回灌。
+- **一句话结论**：已有 `project-adapter.md` 不再被浅层自动探测结果覆盖；
+  0.2.1 默认一键更新入口另有 Bash 3.2 已知问题。
+- **当前状态**：独立代码审查已 APPROVE，0.2.1 已发布并完成 develop 回灌；
+  已知问题需用新 hotfix 修复。
 - **关联来源**：用户反馈、`docs/sdd/tic-0.2.1-project-adapter-preservation.md`、`hotfix/0.2.1`。
 - **适用读者**：规则维护者、项目 owner、Reviewer、使用 TIC 的研发。
 
@@ -19,10 +21,12 @@
 
 ## 3. 使用路径
 
-普通使用者仍执行：
+0.2.1 在 Bash 3.2 下需要显式传入 Codex 目录：
 
 ```bash
-bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project
+bash /path/to/Team-Intelligence-Center/tools/update.sh \
+  --project /path/to/project \
+  --codex-home /path/to/.codex
 ```
 
 规则入口会刷新，现有 `ai-harness/project-adapter.md` 保持不变。需要补全、审计、迁移或恢复时调用 `project-adapter-maintainer`。
@@ -91,14 +95,23 @@ install --regenerate-adapter
 | 显式重生成 | 检查新文件、备份 sentinel、workspace 和子项目 | 通过 |
 | 用户更新链 | `update --no-pull --no-global --project <fixture>` | adapter 不变，lock 为 0.2.1 |
 | Codex wrapper | `skill-creator/scripts/quick_validate.py` | 通过 |
-| 独立代码审查 | code-reviewer 审查全部 diff 与未跟踪新增文件 | 22 个文件，0 个问题，APPROVE |
+| 独立代码审查 | code-reviewer 审查全部 diff 与未跟踪新增文件 | 24 个文件，0 个问题，APPROVE |
 
 ### 未执行
 
 | 验证项 | 原因 | 剩余风险 | 建议补救 |
 | --- | --- | --- | --- |
 | PowerShell 运行时解析与行为测试 | 当前环境没有 `pwsh` | Windows 特有语法或编码差异 | 发布前在 Windows 或带 `pwsh` 的 CI 运行同等 fixture |
-| 真实远端更新 | 尚未实际创建并 push tag | stable 通道在 tag 发布前不会选中 0.2.1 | Git Flow 发布后验证远端 stable 更新 |
+| PowerShell stable 更新 | 当前环境没有 `pwsh` | Windows 运行时行为未验证 | 在 Windows CI 补同等冒烟 |
+
+### 发布后发现
+
+| 验证项 | 结果 | 影响 |
+| --- | --- | --- |
+| 默认 stable preview | Bash 3.2 空数组展开失败 | 阻塞默认一键更新 |
+| 默认 stable apply | 同一位置失败 | 阻塞默认一键更新 |
+| 显式 `--codex-home` preview | 通过 | 可作为 0.2.1 临时规避 |
+| 真实父子项目 adapter 保护 | 既有文件校验和不变 | adapter 主修复有效 |
 
 ## 7. Review 指引
 
@@ -113,10 +126,11 @@ install --regenerate-adapter
 | 级别 | 内容 | 处理建议 |
 | --- | --- | --- |
 | 重要 | PowerShell 尚未运行时验证 | 发布前补 Windows / pwsh 验证，或明确接受结构对照证据 |
+| 阻塞 | 0.2.1 默认一键更新在 Bash 3.2 下退出 | 不移动 tag，以 0.2.2 hotfix 修复并增加覆盖 |
 | 已处理 | 受影响业务工作区的 adapter 已从最近完整备份恢复，当前文件与备份 SHA-256 一致 | 保留为项目未提交改动，由项目 owner 后续审阅提交 |
-| 已解除 | commit、merge、tag、push 和 develop 回灌已获用户明确授权 | 按 Git Flow 顺序执行并保留原生 Git 证据 |
+| 已解除 | commit、merge、tag、push 和 develop 回灌 | 已完成并保留原生 Git 证据 |
 
 ## 9. 后续动作
 
-- 业务工作区 owner 审阅已恢复的 adapter，并决定是否单独提交。
-- 按 `git-flow-operator` 完成发布，并在 release handoff 中记录 tag 落点、远端状态和 develop 回灌证据。
+- 业务工作区 owner 审阅本地规则更新，并决定各仓库如何提交。
+- 经确认后创建 `hotfix/0.2.2`，修复 Bash 3.2 空数组展开并补默认全局刷新冒烟。

@@ -1,7 +1,7 @@
 {
   "package": "Team_Intelligence_Center",
-  "version": "0.2.2",
-  "package_id": "Team_Intelligence_Center_0.2.2",
+  "version": "0.3.0",
+  "package_id": "Team_Intelligence_Center_0.3.0",
   "type": "lightweight_rules_automation",
   "release_status": "public_preview",
   "license": "Apache-2.0",
@@ -9,8 +9,8 @@
   "automation_policy": {
     "default_install_mode": "minimal",
     "tool_neutral": true,
-    "principle": "adaptive workflow + specification-driven delivery + acceptance-driven verification",
-    "mainline_policy": "TIC routes risk, action-based checkpoints, evidence, and closeout; OpenSpec remains the specification source of truth; execution methods remain replaceable; tests or observable verification derive from acceptance criteria",
+    "principle": "adaptive workflow + specification-driven delivery + acceptance-driven verification + risk-based E2E gate",
+    "mainline_policy": "TIC routes risk, action-based checkpoints, conditional E2E verification, evidence, and closeout; OpenSpec remains the specification source of truth; execution methods remain replaceable; tests or observable verification derive from acceptance criteria",
     "workflow_orchestrator": "Skills/tic-workflow-orchestrator.md",
     "workflow_model": "single_adaptive_with_risk_floor",
     "risk_floor": "none",
@@ -23,6 +23,9 @@
     "post_dev_prd_sync": "generate_evidence_based_prd_update_draft_after_standard_or_critical_delivery_when_product_behavior_changes",
     "one_command_user_update": "select_stable_current_or_explicit_ref_then_refresh_rules_source_codex_global_wrappers_and_project_entrypoint_while_preserving_existing_project_adapter",
     "project_adapter_lifecycle": "preserve_existing_project_facts_by_default; create_enrich_audit_migrate_repair_via_project_adapter_maintainer",
+    "e2e_verification": "conditionally_route_standard_and_critical_changes_to_a_tool_neutral_verification_gate_derived_from_acceptance_criteria",
+    "e2e_provider_policy": "prefer_project_native_repeatable_suites; playwright_test_is_default_web_candidate; mcp_browser_chrome_computer_use_are_replaceable_exploration_debug_or_observable_evidence_adapters",
+    "e2e_adapter_schema": "project_adapter_declares_policy_runner_environment_auth_data_cleanup_core_journeys_and_evidence_root_without_secrets",
     "update_channels": [
       "stable",
       "current",
@@ -57,7 +60,7 @@
     "project_tool_rule_entries": true,
     "no_codex_only_constraint": true,
     "release_archive_root": "docs/releases",
-    "previous_version_archive": "docs/releases/0.2.1"
+    "previous_version_archive": "docs/releases/0.2.2"
   },
   "skill_lifecycle": {
     "canonical": [
@@ -67,6 +70,7 @@
       "contract-handoff",
       "shared-domain-arbiter",
       "agent-session-protocol",
+      "e2e-verification",
       "delivery-walkthrough",
       "release-handoff",
       "post-dev-prd-sync",
@@ -161,7 +165,8 @@
     "risk based task routing",
     "single adaptive workflow with risk_floor",
     "machine-readable TIC skill contracts",
-    "human-readable agent session artifacts for controlled multi-agent fan-out"
+    "human-readable agent session artifacts for controlled multi-agent fan-out",
+    "risk-based tool-neutral E2E verification gate with project-native runner preference"
   ],
   "intentionally_excluded": [
     "Codex-only workflow binding",
@@ -171,6 +176,7 @@
     "automatic Git branch/commit/push/merge/tag execution",
     "mandatory CodeGraph installation or initialization",
     "mandatory full end-to-end browser flow for every UI micro task",
+    "mandatory Playwright, MCP, Browser, Chrome, or Computer Use dependency",
     "automatic copy of Skills into project-local or global skill directories",
     "full project rules in Codex global AGENTS",
     "RTK requirement",

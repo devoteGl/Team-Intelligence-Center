@@ -43,9 +43,9 @@
 - [x] 用户确认 commit、合并、tag、push、回灌和业务工作区更新
 - [x] 最终代码审查通过（14 个文件，0 个问题，`APPROVE`）
 - [x] 规则包和 Bash 3.2 冒烟通过
-- [ ] tag 目标与远端状态由原生 Git 命令确认
-- [ ] develop 回灌与发版目录落点确认
-- [ ] 父子项目和全局 Loader 更新为 `0.2.2`
+- [x] tag 目标与远端状态由原生 Git 命令确认
+- [x] develop 回灌与发版目录落点确认
+- [x] 父子项目和全局 Loader 更新为 `0.2.2`
 
 规格见
 [../../sdd/tic-0.2.2-bash32-update.md](../../sdd/tic-0.2.2-bash32-update.md)，

@@ -25,7 +25,7 @@
 
 默认入口是 single adaptive workflow：`tic-workflow-orchestrator` 先判断 consulting / micro / standard / critical，再应用项目 `risk_floor`。如果项目配置 `risk_floor=standard|critical`，AI 不得自行降级到该档位以下。
 
-规格与验证是工作流语义，不是独立 Skill 链。项目已有 OpenSpec 时，OpenSpec 是规格事实源；执行方法层负责计划、TDD、调试、review 和子代理执行。规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根以 `ai-harness/project-adapter.md` 为准。
+规格与验证是工作流语义，不是独立 SDD/TDD Skill 链。项目已有 OpenSpec 时，OpenSpec 是规格事实源；执行方法层负责计划、TDD、调试和 review。E2E 是 Verification phase 的条件门禁：standard / critical 任务先判断必要性，改变用户旅程、跨层交互或关键链路时执行 `e2e-verification`。规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根以 `ai-harness/project-adapter.md` 为准。
 
 需要创建、补全、审计、迁移或修复 `project-adapter.md` 时，使用 `project-adapter-maintainer`。已有非占位内容、自定义章节和本地决策默认保留；自动探测只提供候选事实，不得在升级时静默覆盖。
 
@@ -38,6 +38,8 @@
 同一 Codex 任务内的原生 subagent 使用宿主线程并由主 Agent 收口，不强制落盘运行态文件。跨独立任务、跨工具、长时异步或需要审计时使用 `agent-session-protocol`。项目侧入口是 `ai-harness/agent-session-protocol.md`，运行态目录建议为 `.tic/agent-runs/YYYYMMDD-HHMM-任务短标题/`。
 
 UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归相关变更，应使用当前环境可用的设计与 UI/UX 专业能力，并优先核对真实界面。安装了 `design-taste-frontend` 与 `ui-ux-pro-max` 时优先使用；能力不可用时说明替代依据。需要端到端真实操作时优先使用当前环境可用的 Computer Use、浏览器自动化或截图验证。
+
+E2E 验证优先复用项目原生可重复套件。项目未指定 runner 且 Web 变更需要新增可重复套件时，Playwright Test 是默认候选；Playwright MCP、Browser、Chrome、Computer Use、截图和 trace 用于探索、调试或可观察证据。环境、认证、数据、清理、核心旅程和证据根从 `project-adapter.md` 的 `verification.e2e` 读取；认证状态保持本地并 gitignored，只清理本次验证拥有的数据。
 
 standard / critical 任务实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明，或你明确要求“walkthrough / 交付走查”，AI 应生成交付 Walkthrough。它应说明交付摘要、用户可见变化、技术走查、变更文件、验证证据、Review 指引、未测项、风险和后续动作。
 

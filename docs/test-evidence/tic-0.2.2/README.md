@@ -39,7 +39,16 @@ git diff --check
 bash tools/validate-pack.sh
 ```
 
-发布前需再次执行全部命令；发布后需补 stable preview/apply 和真实父子工作区证据。
+上述命令在 hotfix、`master` 发布合并和 develop 回灌树上均已通过。
+
+## 发布后验证
+
+- 远端 stable tag 为 `0.2.2`。
+- 从 0.2.1 使用一次性显式 `--codex-home` 参数成功切换到 0.2.2。
+- 0.2.2 默认 preview 和默认 apply 均未传 `--codex-home`，结果通过。
+- 父项目和 8 个子项目 lock 全部为 `0.2.2`。
+- 9 个 Project Adapter 更新前后 SHA-256 全部一致。
+- Codex 全局 Loader 规则版本为 `0.2.2`。
 
 ## 未测项
 
