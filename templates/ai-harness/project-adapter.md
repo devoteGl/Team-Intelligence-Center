@@ -27,6 +27,7 @@ artifact_roots:
   prd_root: "docs/PRD"
   prd_draft_root: "docs/PRD/drafts"
   walkthrough_root: "docs/walkthroughs"
+  memory_root: "ai-harness/memory"
 verification:
   e2e:
     policy: risk-based # disabled | risk-based | required

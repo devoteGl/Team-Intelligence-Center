@@ -1,18 +1,22 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: delivery-walkthrough
 status: canonical
-phase: closeout
-role: PM / Tech Lead / QA / DS
-risk_min: standard
-inputs:
-  - implementation_diff
-  - verification_evidence
-  - user_scope
-outputs:
-  - delivery_walkthrough
+category: delivery
+activation:
+  when:
+    - Reviewer、QA、运营或使用方需要异步理解交付
+  not_when:
+    - 当前任务摘要已经足以支持后续动作
+side_effects: local-reversible
+artifacts:
+  default: delivery-walkthrough
+  when_needed:
+    - 消费者需要长期可引用的交付说明
 requires: []
-delegates_to: []
+related:
+  - e2e-verification
+  - release-handoff
 ---
 
 # Delivery Walkthrough（交付走查技能）
@@ -20,7 +24,7 @@ delegates_to: []
 ## 技能用途
 
 - 服务角色：**PM / Tech Lead / QA / DS**
-- 触发时机：standard / critical 任务实现完成、用户要求“生成 walkthrough / 交付说明 / 走查文档”、需要异步 review 或验收交接时
+- 触发时机：用户要求交付说明，或 Reviewer、QA、运营、使用方需要异步理解交付时
 - 输出物：面向 PM、Reviewer、QA、运营或使用方的交付 Walkthrough，可作为 `docs/walkthroughs/<change-id>.md` 或项目约定位置的交付 artifact
 - 适用场景：功能实现说明、代码变更走查、UI/浏览器验证说明、架构改动说明、脚本交付使用说明、异步验收材料
 
@@ -97,7 +101,8 @@ Walkthrough 是“完成态交付走查”，不是开工前计划，也不是�
 - 脚本 / 工具使用 Walkthrough：放在该工具目录或 `docs/operations/`
 - UI 证据资产：`docs/walkthroughs/assets/<change-id>/`
 
-如果只是当前对话的最终说明，允许不落文件；但 standard / critical、跨端、UI 或运维交接场景建议生成 Markdown 文件。
+如果当前任务摘要已经足以支持后续动作，不落文件。只有明确消费者需要异步
+理解或长期引用时才生成 Markdown 文件。
 
 ---
 

@@ -1,890 +1,350 @@
-# Team-Intelligence-Center 使用指南 📘
+# Team-Intelligence-Center 使用指南
 
-> 本文档是 Team-Intelligence-Center（AI 研发团队智能协作中枢）的完整使用手册。
-> 阅读本文档后，你将了解如何将本工程引入你的项目，以及如何在日常开发中配合 AI 编辑器使用整套规则体系。
+本指南面向规则包维护者和接入业务项目的团队。0.5.1 的默认模型是
+“结果优先、原生执行、五个维度独立判断”。
 
----
+## 1. 先理解三个对象
 
-## 目录
+### Workflow Core
 
-- [1. 工程概述](#1-工程概述)
-- [2. 目录结构](#2-目录结构)
-- [3. 快速开始](#3-快速开始)
-- [4. Global-Rules 使用说明](#4-global-rules-使用说明)
-- [5. Prompts 使用说明](#5-prompts-使用说明)
-- [6. Skills 使用说明](#6-skills-使用说明)
-- [7. 工作流全景图](#7-工作流全景图)
-- [8. 集成方式](#8-集成方式)
-- [9. OpenSpec、Superpowers 与多工具统一范式](#9-openspecsuperpowers-与多工具统一范式)
-- [10. 轻量自动化接入](#10-轻量自动化接入)
-- [11. 常见问题 FAQ](#11-常见问题-faq)
+[`Workflow/core.md`](Workflow/core.md) 是唯一的通用决策源，回答：
 
----
+- 需要多深的计划？
+- 哪个具体动作需要确认？
+- 什么结论需要什么验证与 Review？
+- 是否真的需要持久化 artifact？
 
-## 1. 工程概述
+### Capability
 
-**Team-Intelligence-Center** 是一个面向 AI 编程编辑器的**协作规则引擎库**。它不包含任何业务代码，而是提供一整套标准化的：
+`Skills/*.md` 是可独立选择的能力。每个文件使用
+[`Workflow/capability-schema.md`](Workflow/capability-schema.md) 定义的
+`tic_capability.v1` 契约。
 
-- **协作角色定义**（PM / CI / FE / BE / QA / DS）
-- **工作流流转协议**（任务拆解 → 调研 → 实现 → 验收 → 归档）
-- **System Prompts**（AI-PRD 生成器、AI-PRD 编辑器）
-- **执行能力模块**（Skills）
+相关能力不会因为被列在 metadata 中而自动串联。调用一个 Capability 也
+不会自动授权另一个 Capability 的副作用。
 
-**核心价值**：消除 AI 编辑器在大型项目协作中的常见问题——输出发散、角色越界、信息失真、结构漂移。
+### Project Adapter
 
----
+`ai-harness/project-adapter.md` 保存当前项目的事实和治理配置，例如项目
+边界、测试命令、E2E 环境、证据根、发布归属和 memory 根。普通安装、刷新
+和升级逐字节保留已有 adapter。
 
-## 2. 目录结构
+## 2. 五个维度如何选择
 
-```text
-Team-Intelligence-Center/
-│
-├── README.md                           # 项目说明
-├── USAGE.md                            # 本使用指南
-├── VERSION                             # 规则包版本
-├── manifest.json                       # 轻量自动化资产清单
-│
-├── Global-Rules/                       # 🔒 全局约束层（不可违反的底线）
-│   └── coding-rules.md                 #    Git 规范 + AI Agent Team 多角色协议
-│
-├── Prompts/                            # 📝 指令层（场景化 System Prompt）
-│   ├── ai-prd-generator.rules.md       #    新需求 PRD 生成器
-│   └── ai-prd-editor.rules.md          #    存量项目 PRD 编辑器
-│
-├── Skills/                             # ⚡ 能力层（可复用执行模块）
-│   ├── tic-workflow-orchestrator.md    #    [PM/Tech Lead] adaptive 工作流总控
-│   ├── code-investigator.md            #    [CI] 代码调研方法论
-│   ├── contract-handoff.md             #    [PM/FE/BE] 契约冻结与前后端交接
-│   ├── changelog-writer.md             #    [DS] 双层 Changelog 编写
-│   ├── task-decomposer.md              #    [PM] 任务拆解方法
-│   ├── shared-domain-arbiter.md        #    [PM/Tech Lead] 共享文件域仲裁
-│   ├── agent-session-protocol.md       #    [PM/Tech Lead] 多 agent 会话信箱协议
-│   ├── project-governance-bootstrap.md #    [PM/DS] 项目治理接入
-│   ├── project-adapter-maintainer.md    #    [PM/CI/DS/Tech Lead] 项目适配器维护
-│   ├── e2e-verification.md              #    [QA/Test/Tech Lead] 风险驱动 E2E 验证
-│   ├── delivery-walkthrough.md         #    [PM/Tech Lead/QA/DS] 交付走查
-│   ├── release-handoff.md              #    [PM/Release/DS] 单变更/发版批次交接
-│   ├── git-flow-operator.md            #    [PM/Release] Git Flow 分支、合并、tag、回灌
-│   ├── post-dev-prd-sync.md            #    [DS/PM] 开发后 PRD 同步
-│   └── legacy aliases / subflows        #    api-contract-freezer、fe-be-handoff 等兼容入口
-│
-├── templates/                          # 🧩 业务项目最小接入模板
-│   ├── AGENTS.md
-│   ├── docs/ai-rules-usage.md
-│   └── ai-harness/
-│       ├── project-adapter.md
-│       └── agent-session-protocol.md
-│
-├── tools/                              # 🛠️ 轻量自动化脚本
-│   ├── bootstrap-project.sh
-│   ├── bootstrap-project.ps1
-│   ├── codegraph-helper.sh
-│   ├── codegraph-helper.ps1
-│   ├── git-advice.sh
-│   ├── git-advice.ps1
-│   ├── install-codex-global.sh
-│   ├── install-codex-global.ps1
-│   ├── install.sh
-│   ├── install.ps1
-│   ├── update.sh
-│   ├── update.ps1
-│   └── validate-pack.sh
-│
-└── docs/
-    └── automation.md                   # 自动化取舍说明
-```
-
-### 三层架构关系
-
-```text
-┌──────────────────────────────────────────────────────┐
-│                 Global-Rules（约束层）                  │
-│            定义「什么不可以做」——行为边界                  │
-├──────────────────────────────────────────────────────┤
-│                  Prompts（指令层）                      │
-│          定义「AI 是谁、怎么做」——角色身份                 │
-├──────────────────────────────────────────────────────┤
-│                  Skills（能力层）                       │
-│       定义「遇到 X 场景，按此方法做」——执行能力            │
-└──────────────────────────────────────────────────────┘
-```
-
----
-
-## 3. 快速开始
-
-### 3.1 最简使用方式（5 分钟上手）
-
-**适用场景**：个人项目或小团队，使用支持自定义 System Prompt 的 AI 编辑器。
-
-1. **优先把 `Global-Rules/coding-rules.md` 接入项目级规则配置**
-   - Cursor：放入项目根目录的 `.cursorrules` 文件
-   - Windsurf：放入 `.windsurfrules` 文件
-   - Claude Code / Gemini Code Assist：优先放入项目 `.rules` 目录
-   - 不建议默认覆盖开发者全局 System Prompt，除非个人明确选择全局生效
-
-2. **根据场景选择 Prompt**：
-   - 新项目/新需求 → 使用 `ai-prd-generator.rules.md`
-   - 老项目/文档补全 → 使用 `ai-prd-editor.rules.md`
-
-3. **按需引用 Skills**：
-   - 在对话中提示 AI："请按照 `code-investigator` 技能执行调研"
-   - AI 将按照 Skill 中定义的标准化流程执行
-
-### 3.2 团队集成方式（推荐）
-
-**适用场景**：多人团队、多项目共享统一规范。
-
-```bash
-# 方式一：作为 Git Submodule 引入
-cd your-project
-git submodule add https://github.com/devoteGl/Team-Intelligence-Center.git .ai-rules/Team-Intelligence-Center
-git submodule update --init --recursive
-
-# 方式二：开发者本机单独 clone
-git clone https://github.com/devoteGl/Team-Intelligence-Center.git
-```
-
-长期业务项目推荐 submodule，因为可以锁定规则版本、随业务仓库 review 和升级；个人本地试用或维护规则库时直接 `git clone` 即可。然后在 AI 编辑器的配置中引用 `.ai-rules/Team-Intelligence-Center/` 或本机 clone 目录下的规则文件。
-
-### 3.3 轻量自动化接入（推荐试点）
-
-**适用场景**：希望把 TIC 接入业务项目，但不想复制重流程包、vendor、Git hooks 或历史 PRD。
-
-最简单用法：在业务项目目录执行规则库的安装入口。
-
-```bash
-bash /path/to/Team-Intelligence-Center/tools/install.sh
-```
-
-需要指定项目路径时：
-
-```bash
-bash /path/to/Team-Intelligence-Center/tools/install.sh /path/to/project
-```
-
-预览不写入：
-
-```bash
-bash /path/to/Team-Intelligence-Center/tools/install.sh --preview /path/to/project
-```
-
-Windows 原生 PowerShell：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1
-powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -ProjectRoot C:\path\to\project
-powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\install.ps1 -Preview -ProjectRoot C:\path\to\project
-```
-
-日常升级时，研发只需要一条命令。默认 `stable` 通道会选择远端最高 SemVer release tag，验证后刷新 Codex 全局 `tic-*` wrapper 和业务项目入口：
-
-```bash
-bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project
-```
-
-Windows PowerShell：
-
-```powershell
-powershell -ExecutionPolicy Bypass -File C:\path\to\Team-Intelligence-Center\tools\update.ps1 -ProjectRoot C:\path\to\project
-```
-
-预览不写入，贡献者更新当前分支，或锁定明确版本：
-
-```bash
-bash /path/to/Team-Intelligence-Center/tools/update.sh --preview --project /path/to/project
-bash /path/to/Team-Intelligence-Center/tools/update.sh --channel current --project /path/to/project
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.3.0 --project /path/to/project
-```
-
-规则库存在未提交改动时，脚本拒绝 pull 或切换版本。若只想用当前工作树刷新入口，使用 `--no-pull`。规则库作为 submodule 时，更新后还需审阅并提交父项目的 submodule 指针。
-
-### 从 0.1.0 首次升级
-
-正常情况下仍然只需要原来的一条命令：
-
-```bash
-bash /path/to/Team-Intelligence-Center/tools/update.sh --project /path/to/project
-```
-
-前提是规则库工作树干净，并且当前位于团队正常维护的发布或集成分支。`0.1.0` 的旧脚本会先 fast-forward 当前分支，取得新版脚本和规则后完成刷新；从下一次开始，新脚本默认跟随 stable tag。
-
-只有旧规则库停在 detached HEAD、不再维护的自定义分支，或普通更新没有取得当前稳定版本时，才使用下面的兜底恢复：
-
-```bash
-git -C /path/to/Team-Intelligence-Center status --short
-git -C /path/to/Team-Intelligence-Center fetch origin --prune --tags
-git -C /path/to/Team-Intelligence-Center checkout --detach 0.3.0
-bash /path/to/Team-Intelligence-Center/tools/update.sh --ref 0.3.0 --project /path/to/project
-```
-
-若团队使用的远端不叫 `origin`，将命令中的远端名替换为实际名称，并在后续更新中传 `--remote <name>`。如果规则库是 submodule，不让每位研发自行追踪浮动分支：由父项目 owner 更新并提交 submodule 指针，其他人执行父项目约定的 submodule 同步命令。
-
-### 团队更新策略
-
-| 使用者 | 推荐方式 | 说明 |
+| 维度 | 选择 |
 | --- | --- | --- |
-| 普通使用者 | 默认 `stable` | 始终选择最高 SemVer release tag。 |
-| 规则贡献者 | `--channel current` | 只 fast-forward 当前开发分支。 |
-| 需要复现或受控发布的项目 | `--ref <tag-or-commit>` | 固定版本，避免团队成员隐式漂移。 |
-| submodule 项目 | 父项目统一更新指针 | 由父项目 commit 决定规则版本。 |
+| 规划深度 | 内联 / 简短 / Living ExecPlan |
+| 执行授权 | 自主 / 动作前确认 |
+| 验证范围 | 针对性 / 集成 / E2E / 运行态 |
+| Review | diff 自审 / 独立 Review / 用户决策 |
+| 事实持久化 | 当前任务 / OpenSpec / PRD / Runbook / Release / 本地候选 |
 
-更新后用规则库 `VERSION` 和业务项目 `.tic-rules.lock` 的 `rules_version` 核对版本。TIC 不做后台静默更新；发布 tag、团队通知和项目刷新是三个可审计步骤。
+这些维度不能互相替代。大型本地重构可以需要 Living ExecPlan 但无需额外
+授权；一个很小的生产写入仍然需要确认。
 
-默认只生成或合并：
+## 3. 受保护动作
+
+以下动作执行前必须获得明确授权：
+
+- 外部系统写入或通知他人；
+- 不可逆或难恢复的数据迁移、删除和覆盖；
+- 生产环境、真实资金、真实账号或真实用户数据操作；
+- Git 分支创建、提交、push、merge、tag 和发布；
+- PRD、候选规则或 Collaboration Memory 的正式晋升；
+- 明显超出用户原始目标的范围扩张。
+
+“全自动”“你决定”“不用问我”允许在原目标内自主完成可逆本地工作，不
+自动包含上述动作。
+
+## 4. 安装到项目
+
+### 4.1 Shell
+
+先预览：
+
+```bash
+bash /path/to/Team-Intelligence-Center/tools/install.sh \
+  --preview \
+  --rules-dir /path/to/Team-Intelligence-Center \
+  /path/to/project
+```
+
+确认后应用：
+
+```bash
+bash /path/to/Team-Intelligence-Center/tools/install.sh \
+  --rules-dir /path/to/Team-Intelligence-Center \
+  /path/to/project
+```
+
+刷新生成入口：
+
+```bash
+bash /path/to/Team-Intelligence-Center/tools/install.sh \
+  --refresh \
+  --rules-dir /path/to/Team-Intelligence-Center \
+  /path/to/project
+```
+
+仅在明确希望重新探测项目结构时重建 adapter：
+
+```bash
+bash /path/to/Team-Intelligence-Center/tools/install.sh \
+  --refresh \
+  --regenerate-adapter \
+  --rules-dir /path/to/Team-Intelligence-Center \
+  /path/to/project
+```
+
+重建前会备份原文件。普通 `--refresh` 不会覆盖 adapter。
+
+### 4.2 PowerShell
+
+```powershell
+powershell -ExecutionPolicy Bypass -File `
+  C:\path\to\Team-Intelligence-Center\tools\install.ps1 `
+  -Preview `
+  -RulesDir C:\path\to\Team-Intelligence-Center `
+  -ProjectRoot C:\path\to\project
+```
+
+移除 `-Preview` 后应用；显式重建 adapter 使用
+`-RegenerateAdapter`。
+
+### 4.3 生成内容
+
+安装器按需生成：
 
 ```text
 AGENTS.md
 .tic-rules.lock
-docs/ai-rules-usage.md
+.tic-rules.local                  # 只在需要本机绝对路径时生成，不提交
 .cursorrules
 .windsurfrules
 .rules/team-intelligence-center.md
+docs/ai-rules-usage.md
 ai-harness/project-adapter.md
 ai-harness/agent-session-protocol.md
+ai-harness/memory/
 ```
 
-开源版保留的 `templates/` 只服务于这组最小接入产物。`.cursorrules`、`.windsurfrules` 和 `.rules/team-intelligence-center.md` 只是让不同 AI 工具先读取 `AGENTS.md`，不引入第二套流程。它们不提供业务脚手架或示例工程；团队继续使用自己的脚手架和目录结构，只把 TIC 作为规则层接入。
+`.tic/local/` 只用于个人偏好和待确认 memory 候选，默认加入
+`.gitignore`，安装器不会自动创建其中的个人文件。
 
-同时会生成本机配置：
+## 5. 规则源解析
 
-```text
-.tic-rules.local    # 记录当前开发者机器上的规则库绝对路径，自动加入 .gitignore
-.gitignore          # 补充 .tic-rules.local 和 .tic-backups/
-```
+项目入口按以下顺序解析规则源：
 
-它不会默认安装 Git hooks、不会复制 `tools/` 到业务项目、不会绑定 Codex-only，也不会要求咨询和 micro 任务走完整 PRD/SDD 流程。
+1. 从当前目录向上查找 `.tic-rules.lock`；
+2. 使用其中非空的项目相对 `rules_path=`；
+3. 否则读取同级 `.tic-rules.local` 的本机 `rules_dir=`；
+4. 再按项目 `AGENTS.md` 的说明解析；
+5. 显式调用 TIC 能力但仍未解析时，才使用全局 Loader 的 fallback。
 
-它也不会自动把 `Skills/` 差量复制到项目本地 skills 或开发者全局 skills。业务项目默认通过 `.tic-rules.lock` 的项目相对路径或 `.tic-rules.local` 的本机路径读取 Skills，避免覆盖个人配置和产生版本漂移。
+提交到仓库的文件不包含个人机器绝对路径。
 
-原则上，standard / critical 任务执行规格驱动与验收驱动流程：先明确行为规格和验收标准，再写自动测试或明确可观察验证，判断 E2E 必要性，最后实现和复核。改变用户旅程、跨层交互、关键 API 或 critical 关键链路时，执行 `e2e-verification`。项目已有 `openspec/` 时，OpenSpec 是规格事实源；执行方法层负责计划、TDD、调试和 review。规格、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 的归属与落盘根由 `ai-harness/project-adapter.md` 声明。
+## 6. 更新
 
-其中 `ai-harness/project-adapter.md` 只在首次接入时生成项目画像，包括技术栈文件、常见目录、包管理器、Node 版本声明、package scripts、依赖清单、workspaces、`.gitmodules` 子项目、OpenSpec、monorepo 线索、SDD/TDD/PRD/发版登记根，以及 `verification.e2e` 的 policy、runner、环境、认证、数据、清理、核心旅程和证据根。已有文件在普通安装、`--refresh`、`--force` 和日常升级时都保持不变；补全、审计、迁移或修复请使用 `project-adapter-maintainer`。只有明确放弃现有内容时才使用 `--regenerate-adapter` 或 PowerShell 的 `-RegenerateAdapter`，脚本会先备份。
-
-### 3.4 Codex 全局 Loader（可选）
-
-**适用场景**：希望 Codex 全局知道如何发现 TIC，但不想让全局规则压过项目规则。
-
-预览：
+默认稳定通道选择最高 SemVer release tag：
 
 ```bash
-bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh --dry-run
+bash /path/to/Team-Intelligence-Center/tools/update.sh \
+  --preview \
+  --project /path/to/project
+
+bash /path/to/Team-Intelligence-Center/tools/update.sh \
+  --project /path/to/project
 ```
 
-确认写入：
+跟随当前检出分支：
 
 ```bash
-bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh --yes
+bash /path/to/Team-Intelligence-Center/tools/update.sh \
+  --channel current \
+  --project /path/to/project
 ```
 
-写入内容只有：
+固定到 0.5.1：
 
-```text
-~/.codex/AGENTS.md
-~/.codex/skills/tic-*/SKILL.md
+```bash
+bash /path/to/Team-Intelligence-Center/tools/update.sh \
+  --ref 0.5.1 \
+  --project /path/to/project
 ```
 
-全局 `AGENTS.md` 使用 marker 块合并，不替换整份文件。`tic-*` skills 只是包装器：它们先找项目 `.tic-rules.lock` 和项目 `AGENTS.md`，再读取 `<rules_dir>/Skills/*.md`。
+`--no-pull`、`--no-global` 和 `--no-project` 可分别关闭规则源更新、Codex
+全局 wrapper 刷新和项目入口刷新。
 
-不建议把 `templates/AGENTS.md`、`Prompts/*.md` 或完整 `Skills/*.md` 直接复制到 Codex 全局。
+更新顺序是：更新规则源、运行验证、刷新全局 wrapper、刷新项目入口。
+Project Adapter 和 shared memory 仍按保留优先策略处理。
 
----
+## 7. 可选 Codex 全局 Loader
 
-## 4. Global-Rules 使用说明
+预览安装：
 
-### 4.1 coding-rules.md 包含什么
-
-| 内容块 | 作用 | 何时生效 |
-|--------|------|---------|
-| Git Commit 规范 | 约束 AI 生成的 commit message 格式 | 每次代码提交 |
-| AI Agent Team 角色定义 | 定义 PM/CI/FE/BE/QA/DS 六大角色 | 每次 AI 响应 |
-| 任务流转协议 | 约束阶段不可跳跃 | 贯穿整个任务生命周期 |
-| 文件域隔离 | 防止 FE/BE 并行时的代码冲突 | 并行开发阶段 |
-| 检查点（CP-1~6） | 强制人工确认的节点，定义以 `Global-Rules/coding-rules.md` 第 6 节为准 | 关键决策节点 |
-| 会话快照 | 跨对话恢复上下文 | standard / critical、跨会话、存在冻结契约或待决策项时 |
-
-### 4.2 如何验证规则生效
-
-规则加载成功后，AI 的每次响应应具备以下特征：
-- ✅ 响应以角色标签开头，如 `⚙️ [Tech Lead/PM]`
-- ✅ 新任务开始时，PM 输出任务清单
-- ✅ standard / critical、跨会话、存在冻结契约或待决策项时，响应末尾附带 SESSION SNAPSHOT
-- ✅ 在 CP 检查点主动暂停等待用户确认
-- ✅ 不跨越阶段直接写代码
-
-如果 AI 没有表现出以上行为，说明规则未正确加载，请检查配置。
-
----
-
-## 5. Prompts 使用说明
-
-### 5.1 何时使用 PRD Generator
-
-**场景**：产品经理有一个新需求，需要 AI 帮助生成结构化 PRD。
-
-**工作流**：
-```text
-PM 口述需求 → AI 结构化追问（7大维度）→ AI 生成 PRD 初稿
-→ PM 审阅 → AI 修正 → PRD 终稿 → 自动拆分 FE/BE 任务清单
+```bash
+bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh \
+  --dry-run \
+  --rules-dir /path/to/Team-Intelligence-Center
 ```
 
-**使用方法**：
-1. 将 `ai-prd-generator.rules.md` 的内容加载为 AI 的 System Prompt
-2. 向 AI 描述你的需求（任意形式：文字、截图、功能列表、竞品参考均可）
-3. AI 会先复述你的需求，然后进入追问阶段
-4. 回答 AI 的追问后，AI 产出完整 PRD
+应用：
 
-### 5.2 何时使用 PRD Editor
-
-**场景**：老项目缺少文档，需要 AI 帮助从代码中还原业务规则。
-
-**工作流**：
-```text
-AI 读取代码 → 识别业务规则（标注可信度 S1~S4）→ 输出候选规则
-→ PM 人工确认 → 转正的规则写入 main-prd.md
+```bash
+bash /path/to/Team-Intelligence-Center/tools/install-codex-global.sh \
+  --yes \
+  --rules-dir /path/to/Team-Intelligence-Center
 ```
 
-**使用方法**：
-1. 将 `ai-prd-editor.rules.md` 的内容加载为 AI 的 System Prompt
-2. AI 会按照交接协议（§13.4）自动读取项目中的 PRD 文件
-3. 告诉 AI 当前的工作模式：
-   - 整理模式（默认）：忠实整理已有信息
-   - 补全模式：在已确认事实基础上补充
-   - 演进模式：评估新需求的影响
+Loader 只做规则发现和 wrapper 路由：
 
-### 5.3 两个 Prompt 可以同时使用吗？
+- 项目规则优先；
+- 不复制完整 Skills；
+- 不覆盖个人全局规则；
+- 不让 Orchestrator 成为所有任务的入口；
+- 不扩大任何 Capability 的授权。
 
-**不建议同时使用**。它们面向不同场景：
+## 8. Capability 选择
 
-| 维度 | Generator | Editor |
-|------|-----------|--------|
-| 适用项目 | 新项目/新功能 | 运行中的老项目 |
-| 信息来源 | PM 的口述需求 | 代码+历史文档 |
-| 输出物 | 全新 PRD | 补全/修复后的 PRD |
-| AI 自由度 | 较高（可推导） | 较低（必须有证据） |
-
----
-
-## 6. Skills 使用说明
-
-### 6.1 Skill 总览
-
-| Skill | 服务角色 | 触发场景 | 优先级 |
-|-------|---------|---------|--------|
-| `tic-workflow-orchestrator` | PM/Tech Lead | 需要按 TIC 研发范式路由任务、判断风险、选择 phase 和 Skill | P0 |
-| `code-investigator` | CI | 现状、影响面或业务规则需要证据调查时 | P0 |
-| `contract-handoff` | PM/FE/BE | API、共享类型、字段、错误码、权限点、FE/BE 并行前 | P0 |
-| `changelog-writer` | DS | QA 验收通过后归档 | P0 |
-| `task-decomposer` | PM | 新任务开始时拆解 | P2 |
-| `shared-domain-arbiter` | PM/Tech Lead | 需要修改 router/types/constants/全局配置等共享域 | P2 |
-| `agent-session-protocol` | PM/Tech Lead | standard / critical 任务需要多 agent 独立会话、mailbox、证据和收敛记录 | P1 |
-| `project-governance-bootstrap` | PM/DS | 项目首次接入组织范式 | P0 |
-| `project-adapter-maintainer` | PM/CI/DS/Tech Lead | 创建、补全、审计、迁移或修复 `project-adapter.md` | P0 |
-| `e2e-verification` | QA/Test Engineer/Tech Lead | 用户旅程、跨层交互、关键 API 或 critical 关键链路需要端到端证据 | P0 |
-| `delivery-walkthrough` | PM/Tech Lead/QA/DS | 实现完成后生成交付走查、Review 指引和验证证据 | P0 |
-| `release-handoff` | PM/Release/DS | 单变更或发版批次的运维、运营、QA、回滚、上线观察交接 | P0 |
-| `git-flow-operator` | PM/Release | 新需求开分支、release/hotfix 合并、tag、回灌 | P0 |
-| `post-dev-prd-sync` | DS/PM | 开发完成后基于证据同步 PRD 更新草稿 | P0 |
-
-兼容入口：
-- `api-contract-freezer`、`fe-be-handoff` 仍保留，但新任务优先使用 `contract-handoff`。
-- `conflict-arbiter` 仍保留，但新任务优先使用 `shared-domain-arbiter`。
-- `release-ops-handoff`、`release-train-handoff` 仍保留，但新任务优先使用 `release-handoff(mode=single|train)`。
-- `candidate-rule-extractor` 是 `code-investigator` 的 Phase 4 子流程。
-- `prd-review-checklist` 是验收 checklist。
-- `session-snapshot-manager` 是总控和全局规则使用的快照模板。
-
-### 6.2 如何在对话中引用 Skill
-
-在与 AI 对话时，你可以通过以下方式触发 Skill：
-
-```text
-# 方式一：直接指定
-"请按照 code-investigator 技能，对 src/order/ 模块执行标准调研"
-
-# 方式二：场景触发
-"我需要冻结接口契约并交接前后端"  → AI 自动匹配 contract-handoff
-
-# 方式三：角色触发
-"切换到 CI 角色开始调研" → AI 自动匹配 code-investigator
-
-# 方式四：项目接入
-"请按照 project-governance-bootstrap 技能初始化本项目 AI 治理入口"
-```
-
-### 6.3 Intent Intake 与用户类型
-
-TIC 不要求用户懂流程。用户可以只说“帮我把登录体验优化一下”或“全自动做掉”，AI 先做轻量 Intent Intake，再决定要不要追问、进入哪个风险档、是否触发检查点。
-
-Intake 至少识别：
-- 目标：用户真正想达成什么。
-- 危险词：全自动、顺便、重构、删除、上线、迁移、清空、登录、支付、权限等。
-- 自治诉求：用户希望 AI 自主推进到什么程度。
-- 缺失信息：范围、验收、数据安全、不可逆授权等。
-- 确认方式：直接执行、先给计划、等待 CP、或要求人工确认。
-
-用户类型判断只影响沟通方式，不降低门禁。懂流程的用户可以少解释、快执行；不懂流程或表达模糊的用户，AI 要把风险和下一步翻译清楚。“全自动”“你看着办”“不用问我”授权范围内可逆本地步骤和非破坏性验证；外部写入、不可逆迁移、生产变更、数据删除、发布或 PRD/OpenSpec 转正仍必须暂停确认。
-
-### 6.4 Skill 在工作流中的位置
-
-```text
-[Orchestrator] 风险分级 + 路由
-  └─ Skill: tic-workflow-orchestrator
-       │
-[PM] 任务拆解
-  └─ Skill: task-decomposer
-       │
-[CI] 现状调研
-  ├─ Skill: code-investigator
-  └─ Subflow: candidate-rule-extractor
-       │
-[PM/FE/BE] 方案制定 + 契约冻结 + 交接
-  └─ Skill: contract-handoff
-       │
-[FE/BE] 并行实现
-  └─ Skill: shared-domain-arbiter（共享域修改时）
-      └─ 可选：agent-session-protocol（跨任务/工具、长时或审计场景）
-       │
-[QA] 测试验收
-  ├─ Checklist: prd-review-checklist
-  └─ Skill: e2e-verification（按风险）
-       │
-[PM/Tech Lead] 交付走查
-  └─ Skill: delivery-walkthrough
-       │
-[Release] 发版交接（按需）
-  └─ Skill: release-handoff(mode=single|train)
-       │
-[DS] 文档归档
-  ├─ Skill: post-dev-prd-sync
-  └─ Skill: changelog-writer
-       │
-[PM] 会话接力（按需）
-  └─ Template: session-snapshot-manager
-```
-
-### 6.5 E2E Verification 使用
-
-E2E 是 Verification phase 的条件门禁，不是所有任务固定执行的浏览器全量回归。
-
-| 场景 | 默认动作 |
+| 需要解决的问题 | 选择的 Capability |
 | --- | --- |
-| consulting / 无行为 micro | 不触发完整 E2E，执行最小验证 |
-| 有局部交互的 micro | 验证受影响路径 |
-| standard 用户旅程、跨层交互、关键 API | 执行受影响核心旅程 |
-| critical 认证、权限、资金、隐私、迁移、跨服务关键链路 | E2E gate；缺失必须记录阻塞或豁免 |
+| 不清楚代码路径、业务规则或影响面 | `code-investigator` |
+| 需要把复杂目标拆成独立结果和 ownership | `task-decomposer` |
+| API、字段、枚举、错误码或权限需要跨边界对齐 | `contract-handoff` |
+| 多执行方并发修改同一共享域 | `shared-domain-arbiter` |
+| 当前验证不足以证明关键用户旅程 | `e2e-verification` |
+| 跨任务、跨工具、长时异步或审计交接 | `agent-session-protocol` |
+| 明确消费者需要异步交付说明 | `delivery-walkthrough` |
+| 产品维护者需要同步已变更行为 | `post-dev-prd-sync` |
+| 发布方需要部署、回滚、tag 和证据交接 | `release-handoff` |
+| 用户明确要求 Git Flow 建议或操作 | `git-flow-operator` |
+| 用户要求维护可复用协作事实 | `collaboration-memory-maintainer` |
+| 需要显式生成复杂工作计划或迁移旧路由 | `tic-workflow-orchestrator` |
 
-执行时先读取 `ai-harness/project-adapter.md` 的 `verification.e2e`。项目已有可重复 E2E、API、集成或系统测试时，使用项目原生命令和报告作为主要事实源。Web 项目未指定 runner 且确需新增可重复套件时，Playwright Test 是默认候选；Playwright MCP、Browser、Chrome、Computer Use、截图和 trace 用于探索、调试或可观察证据，不被 TIC 写死。
+普通本地任务不需要调用 `tic-workflow-orchestrator`。
 
-验证结果使用 `passed`、`failed`、`partial`、`blocked` 或 `waived`。`policy=disabled` 是项目治理决策，不等于验证通过；critical gate 仍需阻塞或由有权责任人确认豁免。认证状态必须保持本地并 gitignored，只清理本次验证创建且能够证明所有权的数据；生产账号、真实资金、外部不可逆写入或范围不明的清理必须暂停确认。
+## 9. 规格、验证和产物是三件事
 
----
+### 规格
 
-## 7. 工作流全景图
+只有行为需要长期契约、多方对齐或项目本身要求时，才创建或更新 OpenSpec、
+SDD、PRD。项目已有事实源时继续使用该事实源。
 
-### 7.1 Adaptive Workflow 全景图
+### 验证
 
-```text
-用户提出需求
-    │
-    ▼
-⚙️ [Orchestrator] 风险分级与路由
-    │  ├─ classified_tier: consulting / micro / standard / critical
-    │  ├─ 应用 risk_floor: none / standard / critical
-    │  ├─ 输出 TIC Workflow Plan
-    │  └─ 选择 phase / Skill DAG
-    │
-    ├─ consulting / micro
-    │    └─ 轻流程：直接回答或窄改动 + 最小验证
-    │
-    └─ standard / critical
-         ├─ Planning：任务拆解、验收标准、SDD / OpenSpec（task-decomposer）
-         ├─ Discovery：现状调研、候选规则、风险（code-investigator）
-         ├─ Contract：契约冻结 + FE/BE 交接（contract-handoff，按需）
-         ├─ Execution：实现；共享域修改走 shared-domain-arbiter
-         ├─ Verification：测试、构建、lint、联调、E2E、UI/接口证据
-         ├─ Closeout：delivery-walkthrough / post-dev-prd-sync / changelog
-         └─ Release：release-handoff(mode=single|train，按需)
-```
+验证回答“什么证据足以支持当前结论”。它与规划、授权和 Review 分别判断：
 
-### 7.2 关键节点说明
+- 纯文档改动可以只做结构和链接检查；
+- 单点代码修复应运行相关单元或集成测试；
+- UI 结论在环境可运行时应核对真实界面；
+- 用户旅程、跨层流程、认证、权限、资金、隐私或迁移可能需要 E2E；
+- 无法完成必要验证时记录 `partial`、`blocked` 或经责任人确认的
+  `waived`，不能写成通过。
 
-```text
-micro:
-  Intake -> Execution -> Verification -> Short Closeout
+优先使用项目原生、可重复的测试套件。Browser、Chrome、Computer Use、
+截图和 trace 是可替换的观察适配，不是强制依赖。
 
-standard:
-  Intake -> Planning -> Discovery(按需) -> Contract(按需)
-  -> Execution -> Verification -> Closeout(按需)
+### 产物
 
-critical:
-  Intake -> Discovery -> OpenSpec/SDD -> Contract-Handoff
-  -> Execution with TDD -> Verification with evidence
-  -> Delivery Walkthrough -> Release Handoff(按需)
-  -> PRD Sync -> Changelog
-```
+创建额外 artifact 前必须回答：
 
-### 7.3 旧线性流程映射
+1. 谁会读取？
+2. 用于什么决定或后续动作？
+3. 不创建会丢失什么重要信息？
+
+没有明确答案时，不创建 Walkthrough、PRD 草稿、Release Handoff、
+session manifest 或 memory 候选。
+
+## 10. Collaboration Memory
+
+Memory 是显式 Capability，不是默认任务上下文。
+
+共享范围：
 
 ```text
-旧: api-contract-freezer + fe-be-handoff
-新: contract-handoff
-
-旧: conflict-arbiter
-新: shared-domain-arbiter
-
-旧: release-ops-handoff / release-train-handoff
-新: release-handoff(mode=single|train)
-
-旧: session-snapshot-manager 按阶段或档位强制
-新: 跨任务/工具接力、长时异步或上下文无法可靠恢复时输出
+ai-harness/memory/project-context.md
+ai-harness/memory/decision-log.md
+ai-harness/memory/runbooks.md
+ai-harness/memory/team-collaboration.md
 ```
 
-### 7.4 检查点速查表
+个人范围：
 
-| 检查点 | 触发时机 | 不暂停的后果 |
-|--------|---------|------------|
-| CP-1 | PM 完成任务拆解 | 可能执行不必要的任务 |
-| CP-2 | CI 完成调研 | 可能基于错误理解推进 |
-| CP-3 | 并行阶段开始前 | FE/BE 可能基于未确认的契约开发 |
-| CP-4 | 删除/重构文件前 | 可能误删重要文件 |
-| CP-5 | 任务交付前（快速通道） | 可能在未验收时交付 |
-| CP-6 | QA 不通过回退时 | 可能回退范围不正确 |
+```text
+.tic/local/collaboration-profile.md
+.tic/local/memory-candidates.md
+```
 
----
+允许保存：
 
-## 8. 集成方式
+- 已确认且有来源的项目事实；
+- 明确决策及其适用范围；
+- 可复现 runbook；
+- 团队确认的协作约定。
 
-### 8.1 方式一：项目级规则入口（推荐）
+禁止保存：
 
-通过 `tools/install.sh` / `tools/install.ps1` 在业务项目生成 `AGENTS.md`，让 AI 从项目级入口读取组织规则。
+- 原始聊天；
+- 密钥、token、认证状态；
+- 个人敏感信息；
+- 未经确认的推断；
+- 已过期但仍被当作当前事实的条目。
 
-**优点**：项目内生效，不冲掉开发者全局配置
-**适用**：团队协作、多人共享规则
+检索、提取、review、promote、reconcile、audit 和 deprecate 都是显式
+操作。候选不会自动晋升为团队规则，个人偏好不会自动晋升为共享记忆。
 
-### 8.2 方式二：Git Submodule
+## 11. Git 与发布
+
+TIC 默认只提供建议，不执行 Git 写操作。用户明确要求 Git Flow 时：
+
+1. 解析项目声明的分支、版本和 tag 策略；
+2. 运行或要求运行 `git fetch --all --prune --tags`；
+3. 检查基线同步和本地/远端同名分支；
+4. 输出候选命令和证据；
+5. 在执行分支、提交、push、merge、tag 或发布前等待确认。
+
+已 push 的发布 tag 默认不可移动。release/hotfix tag 也不是自动完成态，
+仍需记录项目要求的回灌或收尾状态。
+
+## 12. 跨任务协作
+
+同一任务内优先使用宿主线程、当前计划和工具状态。只有跨独立任务、跨
+工具、长时异步或需要审计时，才创建 session manifest、status、outbox 和
+evidence。
+
+启用多个执行方时必须明确：
+
+- 每个执行方的结果责任；
+- 可写文件域；
+- 共享契约；
+- 检查点；
+- 验证证据；
+- 主执行方如何收口。
+
+artifact 不是跨任务协作本身；它只在接手者确实需要时存在。
+
+## 13. 从旧配置迁移
+
+旧版任务档位和流程下限不再控制 0.5.1 的执行。迁移时：
+
+1. 把旧档位拆成规划、授权、验证、Review 和事实持久化五个独立判断；
+2. 把原来的全局最小流程约束改写成具体受保护动作；
+3. 删除 Skill metadata 中的路由和自动调用关系；
+4. 将 Orchestrator 改为显式规划或兼容用途；
+5. 将自动产物改为有消费者时创建；
+6. 将默认 memory 检索和提取改为显式激活。
+
+旧 `.tic-rules.lock` 中未知字段会在普通刷新时保留，便于团队逐步迁移，
+但不再作为 Workflow Core 的决策源。
+
+## 14. 维护者验证
 
 ```bash
-# 添加为子模块
-git submodule add https://github.com/devoteGl/Team-Intelligence-Center.git .ai-rules
-
-# 更新子模块（获取最新规则）
-git submodule update --remote
-
-# 在 .gitignore 中排除（如不想跟踪子模块变更）
-echo ".ai-rules" >> .gitignore
+bash -n tools/*.sh
+jq empty manifest.json Workflow/scenarios.json
+bash tools/validate-pack.sh
+git diff --check
 ```
 
-**优点**：多项目共享统一规范，版本可控
-**适用**：团队协作、多项目场景
-
-添加子模块后，可让 AI 执行项目治理接入技能：
-
-```text
-请读取 ai-rules/Team-Intelligence-Center/Skills/project-governance-bootstrap.md，
-按该技能初始化本项目的 AGENTS、ai-rules-usage、ai-harness 和 openspec。
-```
-
-### 8.3 方式三：按需引用 / 显式镜像
-
-默认只引用规则库路径，不复制 Skills。确实需要本地镜像时，应显式执行并记录来源版本：
-
-```bash
-# 只读引用：让 AI 读取规则库内的技能
-ai-rules/Team-Intelligence-Center/Skills/code-investigator.md
-
-# 显式镜像时，必须记录来源 commit，并由团队维护
-cp -R ai-rules/Team-Intelligence-Center/Skills your-project/.ai-rules/Skills
-```
-
-**优点**：灵活，可按需裁剪
-**适用**：离线环境、工具不支持跨目录读取、团队明确维护本地镜像的场景
-
----
-
-## 9. OpenSpec、Superpowers 与多工具统一范式
-
-如果团队同时使用 Codex、Cursor、Qoder、OpenCode 等不同 AI 编码工具，建议在业务项目中引入 OpenSpec 作为统一规格层。若团队已启用 Superpowers，可把它作为执行方法层，与 OpenSpec 搭配使用。
-
-推荐阅读：
-
-- [Design/development-paradigm-openspec-guide.md](./Design/development-paradigm-openspec-guide.md)：组织研发范式 + OpenSpec / Superpowers 落地指南。
-
-### 9.1 推荐项目分层
-
-```text
-your-project/
-├── ai-rules/Team-Intelligence-Center/ # 组织规则层
-├── openspec/                          # OpenSpec 规格层
-├── .superpowers/                       # Superpowers 临时执行状态，可加入 .gitignore
-├── ai-harness/                        # 项目适配与记忆
-├── docs/                              # PRD、契约、设计、外部服务
-└── <业务工程目录>/                      # 后端、前端、后台等实现
-```
-
-`.superpowers/` 只用于 Superpowers 运行过程中的临时状态、头脑风暴材料或本地辅助产物。除非团队明确要保留某类输出，否则建议加入 `.gitignore`。
-
-### 9.2 安装与初始化
-
-```bash
-npm install -g @fission-ai/openspec@latest
-cd your-project
-openspec init --tools codex,cursor,qoder,opencode --force
-```
-
-生成后重启对应 IDE 或 AI 工具。
-
-Superpowers 按 AI 工具分别安装。执行 `project-governance-bootstrap` 时会自动检测并尽力安装；Codex App、Codex CLI、Cursor 等需要图形插件市场或交互式命令的环境，会在接入报告中留下人工安装步骤。Gemini CLI、Factory Droid、GitHub Copilot CLI 等存在明确 CLI 命令时，可由 bootstrap 尝试执行。
-
-### 9.3 终端与 AI 工具的区别
-
-`opsx` 不是终端命令。终端使用：
-
-```bash
-openspec list
-openspec show <change-name>
-openspec validate --all --no-interactive
-```
-
-AI 工具中使用 `/opsx:*`：
-
-```text
-/opsx:explore
-/opsx:propose
-/opsx:apply
-/opsx:archive
-```
-
-不需要每次对话都输入 `/opsx`。只有探索、立项、实现、归档等阶段切换时使用；普通沟通和小修小改可直接和 AI 对话。
-
-### 9.4 OpenSpec 与 Superpowers 的分工
-
-| 层级 | 工具 / 目录 | 职责 |
-| --- | --- | --- |
-| 组织规则层 | `Team-Intelligence-Center` | 角色、流程、Prompts、Skills、提交纪律 |
-| 规格事实源 | `openspec/` | proposal、specs、design、tasks、archive |
-| 执行方法层 | Superpowers | brainstorming、planning、TDD、debugging、code review、subagent-driven development |
-| 长期文档层 | `docs/` | PRD、API 契约、外部服务、设计资料 |
-| 项目适配层 | `ai-harness/` | 项目记忆、决策、runbook |
-
-推荐链路：
-
-```text
-需求 / 问题
-  -> /opsx:explore 或 /opsx:propose
-  -> openspec/changes/<change-id>/
-  -> Superpowers 执行计划、TDD、调试、review、并行开发
-  -> 测试 / 构建 / 验证
-  -> /opsx:sync 或 /opsx:archive
-```
-
-协作约束：
-
-- 大需求、跨端、跨模块、接口契约变化：先走 OpenSpec。
-- Superpowers 的计划、调试和 review 产物必须引用 OpenSpec change id 或任务来源。
-- 稳定规格最终回写 `openspec/specs/`，不要把 `docs/superpowers/specs/` 当主事实源。
-- 小修、小 bug 可直接用 Superpowers 的 TDD 或 debugging，不强制开 OpenSpec change。
-- Superpowers 产生的临时状态默认不提交；确需保留的计划或复盘应归入 `docs/` 或 `ai-harness/memory/`。
-- 多 agent / subagent 是执行层 fan-out 能力，不是新的顶层工作流；启用前必须由 `tic-workflow-orchestrator` 判断风险、冻结契约、分配文件域，并由主 Agent 收口验证证据。
-- 多 agent 如果拆成独立会话，应使用 `agent-session-protocol`：run 目录给用户看，`run_id` / `agent_id` / `session_id` 写入 manifest/status，agent 只通过结构化 outbox 和 evidence 协作。
-- 社区 agent 或工具原生 agent 只能作为专业能力适配，不替代 TIC 的 PM/CI/FE/BE/QA/DS/Release 角色合同；不建议全量安装外部 agent 后自由接管 standard / critical 任务。
-
-### 9.5 与本规则库的关系
-
-- `Team-Intelligence-Center` 定义角色、流程、Prompts、Skills 和工程纪律。
-- OpenSpec 定义 proposal、specs、design、tasks、archive 等规格工件。
-- Superpowers 定义 Agent 执行方法，例如计划、测试驱动、系统化调试、代码审查和子代理开发。
-- 社区 agent 库可作为专家能力来源，但必须被 TIC Agent Contract 包裹，遵守文件 ownership、检查点、契约冻结和证据要求。
-- 项目 `docs/` 保存长期 PRD、API 契约、外部服务和设计资料。
-- 项目 `ai-harness/` 保存项目适配、agent 会话协议、长期记忆、决策和 runbook。
-
-### 9.6 老项目接入
-
-老项目不要求使用指定业务脚手架，也不要求先迁移技术栈。
-
-推荐方式：
-
-1. 保留现有代码结构。
-2. 接入 `ai-rules/Team-Intelligence-Center/`。
-3. 执行 `openspec init --tools codex,cursor,qoder,opencode --force`。
-4. 如团队已启用 Superpowers，让 `project-governance-bootstrap` 自动检测并尽力安装；不能自动安装的工具按报告人工处理，并把 `.superpowers/` 加入 `.gitignore`。
-5. 新建 `ai-harness/`，记录真实项目现状、决策和 runbook。
-6. 用 `ai-prd-editor` 和 `code-investigator`（含 candidate rules 子流程）反向梳理存量业务。
-7. 从新需求开始走 `/opsx:propose -> Superpowers 执行 -> /opsx:archive`。
-
-也可以直接让 AI 执行 `project-governance-bootstrap`，自动生成上述基础入口，再由人补齐 TODO。
-
-详细说明见 [老项目接入模式](./Design/development-paradigm-openspec-guide.md#10-老项目接入模式)。
-
----
-
-## 10. 轻量自动化接入
-
-### 10.1 自动化目标
-
-本项目的自动化目标是“一条命令把 TIC 规则接入任意业务项目，但 TIC 本身保持轻量、可读、跨工具”。它吸收自动接入、manifest、marker 合并和 dry-run 的优点，不复制重型分发包。
-
-### 10.2 从 Codex_Project 吸收什么
-
-- `manifest.json` 记录版本、资产、模板和安装产物。
-- `bootstrap-project.sh` 支持 `--dry-run`、幂等写入和 marker-bounded `AGENTS.md` 合并。
-- `.tic-rules.lock` 只记录规则版本和项目相对规则源，不写个人本机绝对路径。
-- `.tic-rules.local` 记录当前开发者机器上的规则库绝对路径，并自动加入 `.gitignore`。
-- `ai-harness/project-adapter.md` 首次接入时生成项目画像；之后由项目维护，升级默认保留，避免项目事实和本地决策丢失。
-- 任务按 `consulting / micro / standard / critical` 分级，简单事保持简单，高风险才升级流程。
-- standard / critical 任务坚持 SDD + TDD；这是工作流阶段语义，不是独立 Skill 链。已有 OpenSpec 时，OpenSpec 是规格事实源；Superpowers 是执行方法层。
-
-### 10.3 明确不吸收什么
-
-- 不绑定 Codex-only。
-- 不默认安装 Git hooks。
-- 不引入 RTK、vendor 二进制或离线包。
-- 不复制历史 PRD、tests、docs、tools 到业务仓库。
-- 不要求只读咨询、解释、微小非行为改动走完整 SDD/Plan/Approval。
-- 不默认接管分支生命周期、release 合并和 tag。
-
-### 10.4 脚本说明
-
-日常接入优先使用 `tools/install.sh`：
-
-| 参数 | 作用 |
-| --- | --- |
-| `--preview` | 只预览，不写文件 |
-| `--refresh` | 刷新生成的规则入口文档并备份；保留现有项目 adapter |
-| `--regenerate-adapter` | 明确放弃并重生成项目 adapter；替换前备份 |
-| `--rules-dir PATH` | 指定 TIC 规则库路径；项目内路径写入相对 `rules_path`，项目外路径只写入 `.tic-rules.local` |
-
-Windows PowerShell 使用同义参数：`-Preview`、`-Refresh`、`-RegenerateAdapter`、`-RulesDir`、`-ProjectRoot`。
-
-日常升级优先使用 `tools/update.sh`，让用户只执行一条命令：
-
-| 参数 | 作用 |
-| --- | --- |
-| `--preview` | 只预览，不写文件、不拉取 |
-| `--project PATH` | 指定业务项目路径；默认当前目录 |
-| `--codex-home PATH` | 指定 Codex home |
-| `--no-pull` | 不拉取规则源 |
-| `--no-global` | 不刷新 Codex 全局 Loader 和 wrapper |
-| `--no-project` | 不刷新业务项目入口 |
-
-Windows PowerShell 使用同义参数：`-Preview`、`-ProjectRoot`、`-CodexHome`、`-NoPull`、`-NoGlobal`、`-NoProject`。
-
-底层高级入口 `tools/bootstrap-project.sh` 仍可使用：
-
-| 参数 | 作用 |
-| --- | --- |
-| `--dry-run` | 只预览，不写文件 |
-| `--yes` / `-y` | 跳过交互确认 |
-| `--force` | 刷新已有生成入口并备份；保留现有项目 adapter |
-| `--regenerate-adapter` | 明确重生成现有项目 adapter，替换前备份 |
-| `--rules-dir PATH` | 指定 TIC 规则库路径；项目内路径写入相对 `rules_path`，项目外路径只写入 `.tic-rules.local` |
-
-Windows PowerShell 高级入口使用同名参数：`-DryRun`、`-Yes`、`-Force`、`-RegenerateAdapter`、`-RulesDir`、`-ProjectRoot`。
-
-Codex 全局 Loader 入口：
-
-| 参数 | 作用 |
-| --- | --- |
-| `--dry-run` / `--preview` | 只预览，不写文件 |
-| `--yes` / `-y` | 跳过交互确认 |
-| `--force` | 覆盖已有非 TIC `tic-*` wrapper，覆盖前备份 |
-| `--codex-home PATH` | 指定 Codex home，用于测试或非默认安装 |
-| `--rules-dir PATH` | 指定全局 Loader 的默认 TIC 规则源 |
-
-Windows PowerShell 使用同义参数：`-DryRun`、`-Preview`、`-Yes`、`-Force`、`-CodexHome`、`-RulesDir`。
-
-可选 Git 建议脚本只读检查仓库状态并给出分支/提交建议，不执行任何 Git 变更：
-
-```bash
-bash tools/git-advice.sh --type feature "lightweight automation"
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\git-advice.ps1 -Type feature "lightweight automation"
-```
-
-Git 策略以项目 `AGENTS.md` 与 `ai-harness/project-adapter.md` 为准，支持 trunk-based、Git Flow 或自定义策略。默认版本格式是 SemVer，tag 前缀保留项目既有风格；`three-digit-patch` 等旧策略可显式配置。AI 创建任何分支前必须先 `git fetch --all --prune --tags`，同时检查本地/远端同名分支和项目基线新鲜度；创建前必须给出候选分支、命名依据、release owner、release registry root、远端刷新状态、基线同步状态、起点 commit 和待执行命令，等待用户确认后才执行。release/hotfix 打 tag 后不得视为完成，必须继续输出项目要求的回灌或收尾状态、tag 落点、发版目录、命令和证据。
-
-可选 CodeGraph helper 用于老项目、monorepo、跨模块改动或重构前的上下文和影响面分析。它不默认安装 CodeGraph，也不默认初始化 `.codegraph/`：
-
-```bash
-bash tools/codegraph-helper.sh status --project /path/to/project
-bash tools/codegraph-helper.sh init --project /path/to/project
-bash tools/codegraph-helper.sh impact --project /path/to/project src/order/service.ts
-```
-
-```powershell
-powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command status -ProjectRoot C:\path\to\project
-powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command init -ProjectRoot C:\path\to\project
-powershell -ExecutionPolicy Bypass -File tools\codegraph-helper.ps1 -Command impact -ProjectRoot C:\path\to\project src\order\service.ts
-```
-
-`tools/validate-pack.sh` 会检查：
-
-- `VERSION` 与 `manifest.json` 版本一致。
-- 核心规则、Prompts、Skills、Design、templates 和 tools 存在。
-- Skill 文件保留标准标题和 `## 技能用途` 结构。
-- 自动化策略仍声明“不默认 Git hooks”和“不强制 micro/consulting 全流程”。
-- Codex 全局 Loader 仍保持“项目优先、包装器优先”，不复制完整 Skills。
-
----
-
-## 11. 常见问题 FAQ
-
-### Q1：AI 没有按照角色协议工作怎么办？
-
-**A**：检查以下几点：
-1. `coding-rules.md` 是否完整加载（部分 AI 编辑器有字符限制）
-2. 尝试在对话开头明确指令：「请严格按照 AI Agent Team Rules 工作」
-3. 如果 AI 模型更换了，SESSION SNAPSHOT 可以帮助恢复上下文
-
-### Q2：Skill 是自动触发还是需要手动调用？
-
-**A**：分两层：
-- 高频、低争议场景由项目 `AGENTS.md` 自动触发，例如 UI 真实界面验证、standard / critical 交付后的 `post-dev-prd-sync` 判断。
-- 专项能力仍可手动触发，例如直接说“执行 code-investigator”“生成本次 walkthrough”或“补一下本次 PRD”。
-- Skills 默认从规则库路径读取，不自动复制到项目本地 skills 或全局 skills。团队要做本地镜像时，应单独显式同步并记录版本。
-- Codex 全局的 `tic-*` skills 只是包装器，不是 TIC Skill 正文本体。
-
-### Q3：可以只用 Skills 不用 Global-Rules 吗？
-
-**A**：不推荐。三层架构是协同工作的：
-- Global-Rules 定义了角色和流程边界
-- Skills 依赖这些角色定义来确定「谁在什么时候执行」
-- 缺少 Global-Rules 的约束，Skills 的执行时机和输出格式会失去一致性保障
-
-### Q4：Superpowers 会替代 OpenSpec 吗？
-
-**A**：不会。OpenSpec 是规格事实源，Superpowers 是执行方法层。大需求、跨端、跨模块、接口契约变化仍先走 `/opsx:propose`；Superpowers 用于计划、TDD、调试、代码审查和子代理执行。
-
-### Q5：如何为自己的项目定制新的 Skill？
-
-**A**：参考现有 Skill 的结构，每个 Skill 应包含：
-1. **技能用途**：服务角色、触发时机、输出物
-2. **核心原则**：绝对禁止项
-3. **执行流程**：Step-by-Step 操作指南
-4. **输出模板**：标准化的输出格式
-5. **自检清单**：执行后的质量自查
-6. **上下游衔接**：与其他角色的交接关系
-
-### Q6：SESSION SNAPSHOT 丢失了怎么办？
-
-**A**：如果无法恢复快照：
-1. PM 需要重新评估当前项目状态
-2. 检查 Git 提交历史了解最近的进展
-3. 如有 PRD 文档，从文档中恢复任务上下文
-4. 重新拆解任务（可能需要再次调研）
-
-### Q7：这套规则适用于哪些 AI 编辑器？
-
-**A**：任何支持 System Prompt 或项目级规则文件的 AI 编辑器，包括但不限于：
-- Cursor（`.cursorrules`）
-- Windsurf（`.windsurfrules`）
-- Claude Code
-- Gemini Code Assist
-- GitHub Copilot（自定义指令）
-- 其他支持 Markdown 规则加载的编辑器
-
----
-
-> 📌 本指南将随项目演进持续更新。如有疑问或建议，欢迎提出 Issue 或直接修改本文档。
+验证器会创建隔离 fixture，不修改业务项目。若系统安装 `pwsh`，还会运行
+PowerShell 创建与保留性 fixture；否则输出明确 warning。

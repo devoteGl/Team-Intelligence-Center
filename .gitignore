@@ -1,5 +1,6 @@
 .DS_Store
 .tic-backups/
 .tic/agent-runs/
+.tic/local/
 .omx/
 .superpowers/

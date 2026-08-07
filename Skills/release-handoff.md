@@ -1,22 +1,23 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: release-handoff
 status: canonical
-phase: release
-role: PM / Tech Lead / Release Manager / DS
-risk_min: standard
-inputs:
-  - delivery_evidence
-  - release_scope
-  - verification_results
-  - optional_e2e_verdict
-outputs:
-  - release_handoff_package
-  - rollback_plan
-  - smoke_checklist
-requires:
+category: delivery
+activation:
+  when:
+    - 变更真实进入部署、运营或生产交接
+  not_when:
+    - 研发完成但尚未进入发布或交接
+side_effects: local-reversible
+artifacts:
+  default: release-handoff-package
+  when_needed:
+    - 发布、运维、运营或 QA 需要部署和回滚信息
+requires: []
+related:
   - delivery-walkthrough
-delegates_to: []
+  - e2e-verification
+  - changelog-writer
 legacy_sources:
   - release-ops-handoff
   - release-train-handoff
@@ -45,7 +46,10 @@ Release Handoff 把“研发完成”转化为“可发布、会使用、能回�
 
 发布、迁移、回滚、生产变更和 SQL/脚本执行证据必须保留原生命令或 raw 输出。rtk 等输出压缩工具只能作为辅助阅读，不得替代执行结果、影响行数、失败 stderr、回滚证据和审计底稿。
 
-本次变更触发 `e2e-verification` 时，Release Handoff 必须记录 requirement、verdict、journey coverage、证据根和未测项。critical gate 为 `blocked` / `partial` 时不得写成可发布；`waived` 必须有明确责任人、替代证据和剩余风险。
+本次变更触发 `e2e-verification` 时，Release Handoff 必须记录 requirement、
+verdict、journey coverage、证据根和未测项。受保护链路的 gate 为
+`blocked` / `partial` 时不得写成可发布；`waived` 必须有明确责任人、
+替代证据和剩余风险。
 
 ---
 
