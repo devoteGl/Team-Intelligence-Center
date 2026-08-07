@@ -1,19 +1,20 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: api-contract-freezer
 status: alias
-canonical: contract-handoff
-phase: planning
-role: PM
-risk_min: standard
-inputs:
-  - ci_report
-  - task_list
-outputs:
-  - frozen_contract
-requires:
-  - task-decomposer
-delegates_to:
+category: compatibility
+activation:
+  when:
+    - 用户或旧提示词显式调用 api-contract-freezer
+  not_when:
+    - 新任务可以直接调用 contract-handoff
+side_effects: local-reversible
+artifacts:
+  default: none
+  when_needed:
+    - canonical capability 需要输出契约记录
+requires: []
+related:
   - contract-handoff
 ---
 
@@ -41,7 +42,7 @@ Skills/contract-handoff.md
 1. 读取并遵守 `Skills/contract-handoff.md`。
 2. 若旧任务只要求“冻结接口契约”，按 `contract-handoff` 的冻结声明部分输出。
 3. 若同时涉及 FE/BE 并行交接，按 `contract-handoff` 同时输出 FE / BE handoff。
-4. 契约冻结后触发 `Global-Rules/coding-rules.md` 第 6 节的 CP-3 检查点。
+4. 契约形成后，仅在存在重大兼容选择或受保护动作时请求用户决策。
 
 ## 兜底输出
 
@@ -57,5 +58,5 @@ Skills/contract-handoff.md
 - 错误码：
 - Mock / fixture：
 - 变更流程：
-- CP-3 确认状态：
+- 契约 Review 状态：
 ```

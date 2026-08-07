@@ -1,19 +1,22 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: prd-review-checklist
 status: checklist
-canonical: task-decomposer
-phase: verification
-role: QA
-risk_min: standard
-inputs:
-  - prd_or_spec
-  - acceptance_criteria
-outputs:
-  - prd_review_findings
-requires:
+category: verification
+activation:
+  when:
+    - 用户要求审查已有 PRD
+  not_when:
+    - 当前任务没有 PRD 或只需要实现验证
+side_effects: read-only
+artifacts:
+  default: none
+  when_needed:
+    - 产品维护者需要可引用的 PRD 审查报告
+requires: []
+related:
   - task-decomposer
-delegates_to: []
+  - post-dev-prd-sync
 ---
 
 # PRD Review Checklist（PRD 质量审查技能）

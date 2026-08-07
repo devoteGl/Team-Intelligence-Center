@@ -1,22 +1,22 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: e2e-verification
 status: canonical
-phase: verification
-role: QA / Test Engineer / Tech Lead
-risk_min: standard
-inputs:
-  - acceptance_criteria
-  - effective_risk_tier
-  - project_adapter
-  - changed_surfaces
-outputs:
-  - e2e_requirement_decision
-  - e2e_verification_plan
-  - e2e_verdict
-  - verification_evidence_index
+category: verification
+activation:
+  when:
+    - 局部测试不足以证明关键用户或系统旅程
+  not_when:
+    - 已有单元或集成测试完整覆盖本次受影响行为
+side_effects: local-reversible
+artifacts:
+  default: none
+  when_needed:
+    - 验收、审计或异步交接需要可引用证据
 requires: []
-delegates_to: []
+related:
+  - delivery-walkthrough
+  - release-handoff
 ---
 
 # E2E Verification（端到端验证技能）
@@ -24,7 +24,7 @@ delegates_to: []
 ## 技能用途
 
 - 服务角色：**QA / Test Engineer / Tech Lead**
-- 触发时机：standard / critical 任务改变用户旅程、跨层交互、关键 API 流程、认证、权限、资金或跨服务链路，或者用户明确要求端到端验证
+- 触发时机：局部测试不足以证明关键用户或系统旅程，或者用户明确要求端到端验证
 - 输出物：E2E 必要性判断、受影响旅程、执行计划、证据索引、verdict、未测项与剩余风险
 - 适用场景：Web、API、桌面 App、浏览器插件、移动端或多服务系统的验收驱动验证
 
@@ -36,7 +36,7 @@ delegates_to: []
 
 - **验收标准驱动**：先把验收标准映射为用户或系统可观察旅程，再选择 runner 和工具。
 - **项目原生优先**：项目已有 E2E、API、集成或系统测试命令时，以它们作为主要事实源。
-- **风险决定深度**：验证受影响的核心旅程，不把“全量浏览器回归”机械应用到所有任务。
+- **结论决定深度**：验证足以支持当前交付结论的核心旅程，不把“全量浏览器回归”机械应用到所有任务。
 - **可重复证据优先**：自动化套件的命令、exit code、断言和报告优先于一次性探索操作。
 - **工具是适配层**：Playwright Test、Playwright MCP、Browser、Chrome、Computer Use 或其他能力可替换；TIC 只约束输入、生命周期、证据和结论。
 - **安全数据闭环**：认证状态本地保存且 gitignored；只清理本次验证拥有的数据，不执行范围不明的删除。
@@ -51,15 +51,14 @@ delegates_to: []
 
 ---
 
-## 1. 判断是否进入 E2E Gate
+## 1. 判断是否需要 E2E
 
-| 档位与影响 | 默认结论 |
+| 证明条件 | 默认结论 |
 | --- | --- |
-| consulting | `not-required` |
-| micro 且无行为变化 | `not-required`，执行最小验证 |
-| micro 且有局部交互 | 对受影响路径做窄范围真实界面验证 |
-| standard 且改变用户旅程、跨层交互或关键 API 流程 | `required`，验证受影响核心旅程 |
-| critical，或涉及认证、权限、资金、隐私、迁移、跨服务关键链路 | `required-gate`；缺失时不得静默完成 |
+| 没有行为变化，或局部测试已经完整证明结果 | `not-required` |
+| 局部交互需要真实界面才能证明 | 验证受影响路径 |
+| 用户旅程、跨层交互或关键 API 无法由局部测试证明 | `required` |
+| 受保护的认证、权限、资金、隐私、迁移或跨服务链路 | `required-gate`；缺失时不得静默完成 |
 
 以下情况通常需要升级验证深度：
 
@@ -117,7 +116,8 @@ verification:
 `policy` 的处理：
 
 - `risk-based`：按第 1 节判断。
-- `required`：所有有行为变化的 standard / critical 任务至少执行受影响旅程；无行为变化仍可记录 `not-required`。
+- `required`：执行足以证明本次受影响行为的旅程；已有局部测试完整证明时
+  仍可记录 `not-required`。
 - `disabled`：表示项目明确不运行 E2E，不等于验证通过。若本次判断为 `required-gate`，必须输出 `blocked`，或者由有权责任人确认 `waived` 并记录替代证据和风险。
 
 `evidence_root` 为空时跟随 `artifact_roots.tdd_evidence_root`；两者都存在但不一致时，以显式 E2E 配置为本次证据根，并在结果中记录差异，避免静默分散证据。
@@ -149,7 +149,7 @@ verification:
 - 需要的环境、账号、fixture 和清理范围。
 - 失败时应保留的日志、截图、trace 或响应。
 
-只选择本次变更影响的核心旅程；critical 可增加相邻高风险回归路径。
+只选择本次变更影响的核心旅程；高后果或受保护动作可增加相邻高风险回归路径。
 
 ### Step 2：Preflight
 
@@ -208,7 +208,8 @@ verification:
 | `blocked` | 环境、账号、依赖或安全边界导致无法执行 |
 | `waived` | 明确责任人批准不执行，并记录原因、替代证据和风险 |
 
-critical 的 `blocked`、`partial` 或 `waived` 必须进入完成报告和 Release Handoff（如触发），不得省略。
+受保护链路的 `blocked`、`partial` 或 `waived` 必须进入完成报告和
+Release Handoff（如触发），不得省略。
 
 ---
 
@@ -242,7 +243,8 @@ critical 的 `blocked`、`partial` 或 `waived` 必须进入完成报告和 Rele
 - Follow-up:
 ```
 
-`not-required` 仍应在 standard / critical 计划或完成报告中简要记录判断理由，避免把“未执行”误解为遗漏。
+`not-required` 在用户可能预期 E2E 时应简要记录判断理由，避免把“未执行”
+误解为遗漏。
 
 ---
 
@@ -252,7 +254,7 @@ critical 的 `blocked`、`partial` 或 `waived` 必须进入完成报告和 Rele
 - 目标是生产环境、真实资金、真实通知或外部不可逆写入。
 - 清理范围不明确，可能删除非本次创建的数据。
 - 多个环境或 runner 选择会实质改变成本、风险或验证结论。
-- critical gate 需要豁免、降级或缩小必测范围。
+- 受保护链路的 gate 需要豁免、降级或缩小必测范围。
 
 除上述边界外，已授权范围内的本地启动、测试执行、截图、trace、精确清理和证据落盘应连续推进。
 

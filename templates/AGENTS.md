@@ -1,136 +1,69 @@
 # Team-Intelligence-Center 轻量规则
 
-本项目使用 Team-Intelligence-Center 作为轻量 AI 协作规则层。
-
-规则来源：见下方“规则源解析”。本文件不得记录个人本机绝对路径。
 规则版本：`{{TIC_VERSION}}`
 
-## 规则源解析
+## 规则源
 
-AI 需要读取 TIC 正文规则或 Skills 时，按以下顺序定位规则源：
+按 `.tic-rules.lock` 的非空 `rules_path=`（项目相对路径）、gitignored
+`.tic-rules.local` 的 `rules_dir=`、开发者 Loader 的顺序定位规则源。
+`Workflow/core.md` 是唯一 workflow 事实源。
 
-1. 若 `.tic-rules.lock` 中存在非空 `rules_path=`，按项目相对路径读取该目录。
-2. 若 `rules_path=` 为空或不存在，则读取 `.tic-rules.local` 中的 `rules_dir=`；该文件只保存个人本机绝对路径，必须保持 gitignored。
-3. 若仍未找到，使用开发者已安装的 Codex 全局 Loader 或人工指定的规则库路径作为兜底。
+## 默认协作
 
-提交到仓库的 `AGENTS.md` 和 `.tic-rules.lock` 不应包含 `/Users/...`、`/home/...`、`C:\...` 等个人路径。
+普通任务直接调查、修改和验证，不先调用 Orchestrator 或总控型外部 Skill。
+开始时理解：
 
-## 工作原则
+- `outcome`：最终可观察结果；
+- `boundaries`：范围、兼容性和不能触碰的副作用；
+- `done`：全部验收标准；
+- `verification`：证明结果的新鲜证据；
+- `authority`：可自主执行和必须确认的动作。
 
-- 简单任务保持简单。咨询、只读查询、代码解释、微小非行为改动，不走完整 PRD/SDD/Plan 流程。
-- 默认使用 single adaptive workflow：先由 `tic-workflow-orchestrator` 判断 consulting / micro / standard / critical，再套用项目 `risk_floor`。强管控项目使用 `risk_floor=standard|critical`，不维护第二套 strict 流程。
-- AI 应先做轻量 Intent Intake：识别目标、自治诉求、缺失信息、风险信号、建议档位和确认方式。分级看破坏性、影响面、可恢复性、外部副作用和验证成本，不使用乘法复杂度分。
-- standard / critical 任务执行规格驱动与验收驱动流程。先明确行为规格，再把验收标准转成自动测试或可观察验证，最后实现；必须判断 E2E 必要性，受影响的用户旅程、跨层交互和 critical 关键链路按 `Skills/e2e-verification.md` 验证；SDD、验证证据、PRD 草稿、Walkthrough 和 Release Handoff 必须按 `ai-harness/project-adapter.md` 的归属与落盘根写入。
-- SDD/TDD 是工作流阶段语义，不是独立工具链。项目已有 `openspec/`，或任务涉及跨模块、API、数据模型、长期产品行为时，OpenSpec 是规格事实源；Superpowers 是执行方法层。
-- 按风险升级，而不是按关键词升级。支付、认证、数据迁移、生产配置、安全、删除、跨模块契约需要更严格处理。
-- “全自动”“你看着办”“不用问我”授权范围内可逆本地步骤和非破坏性验证；外部写入、不可逆迁移、生产变更、数据删除、发版或 PRD/OpenSpec 转正仍必须暂停确认。
-- 改代码前先读本项目上下文，优先复用现有模式、命令、测试和文档。
-- 完成前必须验证。最终说明要写清楚跑了哪些命令、哪些通过、哪些未测、还有什么风险。
-- 不编造业务事实。反推到的行为要标注可信度，候选规则确认前不得写成正式需求。
-- 不覆盖人的工作。保留项目已有规则和用户未提交改动。
-- `ai-harness/project-adapter.md` 是项目维护的事实与治理配置，不是每次升级都可重写的 AI 摘要。普通安装和升级必须保留现有非占位内容、自定义章节与本地决策；创建、补全、审计、迁移或修复时使用 `Skills/project-adapter-maintainer.md`。
-- E2E 验证优先复用项目原生可重复套件。Playwright Test 可作为 Web 项目的默认候选；Playwright MCP、Browser、Chrome、Computer Use、截图和 trace 只作为可替换适配或可观察证据。认证状态必须保持本地并 gitignored，只清理本次验证拥有的数据；无法完成时如实记录 `partial`、`blocked` 或经责任人确认的 `waived`。
-- 涉及创建分支、release/hotfix、merge、tag、push 或回灌时，必须执行 `Skills/git-flow-operator.md`。默认版本使用 SemVer；分支基线、tag 前缀和版本格式以 `ai-harness/project-adapter.md` 的项目策略为准。创建任何分支前必须 `git fetch --all --prune --tags`，同时检查本地/远端同名分支和基线新鲜度。创建前必须输出候选分支、release owner、release registry root、远端刷新状态、基线同步状态、同名分支检查和待执行命令，等待用户确认；release/hotfix 打 tag 后必须继续输出回灌或收尾状态、tag 落点、发版目录、命令和证据，不得把 tag 视为完成态。
-- 涉及 API、共享类型、字段、枚举、错误码、权限点或 FE/BE 并行前，优先使用 `Skills/contract-handoff.md`；旧 `api-contract-freezer.md` 与 `fe-be-handoff.md` 仅作为兼容入口。
-- 涉及共享文件域修改时，优先使用 `Skills/shared-domain-arbiter.md`；旧 `conflict-arbiter.md` 仅作为兼容入口。
-- 如启用 subagent / multi-agent / 社区 agent，必须由 `tic-workflow-orchestrator` 先判断是否允许 fan-out；外部 agent 只能作为能力适配，必须遵守 TIC Agent Contract、文件 ownership、检查点和证据要求。禁止全量外部 agent 自由接管 standard / critical 任务。
-- 同一 Codex 任务内的原生 subagent 使用宿主线程和主 Agent 汇总，不强制落盘运行态文件。跨独立任务、跨工具、长时异步或需要审计时，必须遵守 `Skills/agent-session-protocol.md` 或项目 `ai-harness/agent-session-protocol.md`：目录名给人看，`session_id` 只做追踪，通信通过结构化 artifact，冲突或越权时收敛回主 Agent。
-- standard / critical 任务实现完成后，如需要异步 review、QA 验收、UI/浏览器证据、脚本交付说明或用户要求 walkthrough，应生成交付 Walkthrough。
-- 需要发版、运维、运营、QA、回滚或上线观察交接时，优先使用 `Skills/release-handoff.md`；单变更使用 `mode=single`，多项目、多服务、SQL/脚本使用 `mode=train`。发版计划必须写清 release owner、release registry root、发布 tag、tag 目标 commit、远端 tag 状态、部署触发方式和 SDD/TDD/PRD 落盘状态。
-- standard / critical 任务完成后，如涉及用户可见行为、UI、API、数据模型、状态流转、业务规则或运营流程变化，应自动生成 PRD 更新草稿和待确认项。
+规划、授权、验证、Review 和事实持久化分别判断：
 
-## CLI 输出压缩工具（可选）
+- 规划使用内联判断、简短计划或长时任务的 Living ExecPlan；
+- 本地可逆工作自主执行；外部、不可逆、生产、迁移、权限、资金、隐私、
+  Git 状态变更和正式发布动作先确认；
+- 修改过程中就近验证，交付前执行对应完成标准的最终验证；
+- 每次交付做完整 diff 自审；公共契约、跨项目或高后果变更按需独立 Review；
+- 当前任务摘要是默认产物，有长期消费者时才写 OpenSpec、PRD、Runbook、
+  Release Handoff 或共享 Memory。
 
-rtk 等 CLI 输出压缩工具只用于降低长输出对 AI 上下文的污染，不是 TIC 工作流必需依赖。
+只暂停需要确认的具体动作，不阻塞安全调查与准备。
 
-- 未安装或项目未显式启用时，所有命令必须能按原生命令正常执行。
-- 仅在只读、高噪音、幂等场景优先使用 rtk，例如 `rtk git status/log/diff`、`rtk grep/find/read`、测试 / lint / build 的摘要输出。
-- 涉及 `git push/merge/cherry-pick/rebase/tag/reset`、Git Flow 发版、数据迁移、生产部署、回滚、破坏性操作或失败调试时，必须使用原生命令或保留 raw/proxy 原始输出。
-- 关键证据以原生命令 exit code、stderr 和完整日志为准；rtk 摘要只能作为辅助阅读，不得替代审计底稿。
-- 团队/公司环境启用 rtk 前必须确认 telemetry 已关闭，建议设置 `RTK_TELEMETRY_DISABLED=1`。
+## Capability 与外部方法
 
-## 任务分级
+Capability 仅在用户明确要求或事实满足 `activation.when` 时选择，不自动级联。
+Superpowers 是按需工程方法库，不是 workflow 总入口；其 brainstorm、plan、
+TDD、subagent、Review 或 verification 方法不能因为安装而强制进入每个任务。
+OpenSpec 是跨任务、跨项目或多人长期维护的长期规格事实源，不是任务入口。
+同一事实只保留一个主事实源，不重复创建 OpenSpec、Superpowers spec 和 SDD。
 
-| 档位 | 适用场景 | 处理要求 |
-| --- | --- | --- |
-| consulting | 解释、对比、只读 review、流程讨论 | 直接回答并给证据，不改文件。 |
-| micro | 文案、注释、文档、微小非行为改动 | 做窄改动，跑最小有意义验证。 |
-| standard | 新功能、行为变化、API/UI 契约、跨模块改动 | 写或更新规格，从验收标准推导自动测试或可观察验证，实现后复核。 |
-| critical | 支付、认证、安全、生产配置、破坏性迁移、数据丢失风险 | 需要明确人工确认、规格与验证证据、回滚思路、更强验证和清晰发版说明。 |
+常用 TIC capability：
 
-`risk_floor` 可由 `.tic-rules.lock`、`ai-harness/project-adapter.md` 或用户明确要求提供。AI 不得把任务降级到 floor 以下。
+- 事实与影响面未知：`code-investigator`
+- 公共契约有多个消费者：`contract-handoff`
+- 并发修改存在 ownership 冲突：`shared-domain-arbiter`
+- 局部检查不能证明关键旅程：`e2e-verification`
+- 跨任务、跨工具、长时异步或审计：`agent-session-protocol`
+- Reviewer、QA 或使用者需要异步说明：`delivery-walkthrough`
+- 产品维护者需要同步行为事实：`post-dev-prd-sync`
+- 真实进入发布或运营交接：`release-handoff`
+- 用户要求 Git 生命周期操作：`git-flow-operator`
 
-## SDD + TDD 原则
+## 项目资产
 
-- SDD 定义目标行为、范围、不做什么、验收标准和边界场景。
-- 验收驱动把 SDD 的验收标准转成失败测试或明确的可观察验证项，再进入实现。
-- 实现必须能追溯到 SDD 和测试。
-- 已有 `openspec/` 时，SDD 优先关联或写入 `openspec/changes/<change-id>/`；没有 OpenSpec 时使用 `docs/sdd/<change-id>.md` 或项目约定位置。
-- TDD 证据索引默认写入 `docs/test-evidence/<change-id>/README.md`，具体测试代码仍放在项目测试目录。
-- OpenSpec 可以作为 SDD 语义的存储和生命周期承载方式，但 consulting 和 micro 任务不强制使用 OpenSpec。
-- 不新增绕过 OpenSpec / Superpowers 的独立 SDD/TDD Skill 链。
-- 不把未确认的代码反推当成既定业务事实；老项目反推规则要使用可信度标签和候选规则机制。
+- 优先遵守当前用户指令、代码、运行时、正式规格和项目 adapter。
+- 不覆盖用户未提交改动。
+- 普通安装与升级不得覆盖 `ai-harness/project-adapter.md` 或已有 memory。
+- Memory 不默认参与每个任务；不得保存原始聊天、密钥、认证状态、敏感信息或
+  未确认推断。
+- UI 改动在环境可运行时核对真实界面、交互、控制台和网络请求。
+- 没有与完成标准对应的新鲜证据，不得声称完成。
 
-## UI 验证规则
+## Git 与交付
 
-涉及 UI、页面布局、交互状态、样式、响应式、表单流程或可视化回归的变更时，AI 应优先核对真实界面。
+不默认创建分支、提交、推送、合并、tag 或发布。获得明确授权后仍需刷新
+远端引用并检查基线与同名分支、影响和恢复方式。
 
-- UI 相关改动必须使用当前环境可用的设计与 UI/UX 专业能力；安装了 `design-taste-frontend` 与 `ui-ux-pro-max` 时优先使用。能力不可用或场景不适用时，按项目设计系统执行并说明替代依据。
-- 本地应用可运行时，优先使用 Playwright、浏览器截图、Computer Use 或 Chrome 打开页面并核对。
-- 需要端到端验证功能、真实点击输入、登录、桌面 App、用户本机状态、真实浏览器插件或账号态时，优先使用当前环境可用的 Computer Use、浏览器自动化或截图验证。
-- 核对重点：页面是否可打开、核心流程是否可操作、样式是否错位、桌面/移动端是否异常、控制台是否有关键错误。
-- micro 级纯文案或无行为样式微调，可只做最小截图、局部检查或说明级验证。
-- 无法运行或自动核对界面时，最终报告必须说明原因、替代验证内容和剩余 UI 风险。
-
-## E2E 验证规则
-
-- consulting / micro 不强制完整 E2E；micro 只有局部交互时验证受影响路径。
-- standard 任务改变用户旅程、跨层交互或关键 API 流程时，执行 `Skills/e2e-verification.md`。
-- critical 的认证、权限、资金、隐私、迁移或跨服务关键链路使用 E2E gate；`blocked`、`partial` 或 `waived` 必须记录责任人、替代证据和剩余风险。
-- runner、启动命令、认证、数据、清理、核心旅程和证据根优先读取 `ai-harness/project-adapter.md` 的 `verification.e2e`；空字段不得靠猜测补齐。
-- `verification.e2e.policy=disabled` 不等于通过；critical `required-gate` 仍需记录 `blocked`，或由有权责任人确认 `waived`。
-
-## 开发后 PRD 同步
-
-- 触发条件：开发完成、验收通过、发版前整理，或本次变更影响用户可见行为、UI、API、数据模型、状态流转、业务规则、运营流程。
-- 默认动作：执行 `Skills/post-dev-prd-sync.md`，基于 OpenSpec / SDD、git diff、测试、UI 验证、API 契约等证据生成 PRD 更新草稿。
-- PRD 草稿默认写入 `docs/PRD/drafts/<change-id>-prd-update.md`，正式 PRD 默认归 `docs/PRD/` 或项目声明位置；多项目变更只能有一个主归属，其他项目作为引用或子项。
-- 不触发场景：纯重构、格式化、注释、测试补充、内部实现优化且无行为变化。
-- 草稿不得自动转正。S2/S3 代码反推和推测内容必须进入候选规则或待确认项，人工确认后才能同步到正式 PRD / OpenSpec specs。
-
-## 交付 Walkthrough
-
-- 触发条件：实现完成、准备异步 review、QA/PM 需要快速理解交付内容、UI/浏览器任务有截图或录屏证据、脚本/工具需要使用说明，或用户明确要求“walkthrough / 交付走查 / 交付说明”。
-- 默认动作：执行 `Skills/delivery-walkthrough.md`，基于需求来源、git diff、改动文件、测试/构建、UI 截图/录屏、接口契约和人工确认生成可审阅交付 artifact。
-- 输出重点：交付摘要、用户可见变化、技术走查、变更文件与影响面、验证证据、Review 指引、未测项、剩余风险和后续动作。
-- 边界：Walkthrough 不替代开工前计划、正式 PRD、Changelog 或发版 runbook；需要上线交接时继续执行发版交接技能。
-
-## 推荐使用的 TIC 资产
-
-- 全局行为规则：`Global-Rules/coding-rules.md`
-- 新需求生成：`Prompts/ai-prd-generator.rules.md`
-- 老项目补文档：`Prompts/ai-prd-editor.rules.md`
-- 开发后 PRD 同步：`Skills/post-dev-prd-sync.md`
-- 交付走查：`Skills/delivery-walkthrough.md`
-- 工作流总控：`Skills/tic-workflow-orchestrator.md`
-- 端到端验证：`Skills/e2e-verification.md`
-- 项目适配器维护：`Skills/project-adapter-maintainer.md`
-- OpenSpec / Superpowers 接合：`Design/development-paradigm-openspec-guide.md`
-- 代码调研：`Skills/code-investigator.md`
-- 任务拆解：`Skills/task-decomposer.md`
-- Git Flow 分支操作：`Skills/git-flow-operator.md`
-- 契约冻结与交接：`Skills/contract-handoff.md`
-- 共享域仲裁：`Skills/shared-domain-arbiter.md`
-- Agent 会话协议：`Skills/agent-session-protocol.md`
-- 发版交接：`Skills/release-handoff.md`
-
-默认从规则来源目录读取这些 Skills，不自动复制到项目本地 skills 或全局 skills。只有团队明确维护镜像时，才做显式同步。
-
-## 完成报告
-
-涉及代码或文档改动时，最终报告应包含：
-
-- 修改了哪些文件。
-- 做了哪些简化或关键决策。
-- 执行了哪些验证命令和结果。
-- 未覆盖的验证和剩余风险。
+交付说明结果、修改范围、验证、Review、未测项、剩余风险和尚未授权的动作。

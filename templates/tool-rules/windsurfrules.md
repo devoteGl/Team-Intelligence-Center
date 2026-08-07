@@ -4,8 +4,10 @@
 
 请先读取项目根目录 `AGENTS.md`，再按其中的规则源解析读取 `.tic-rules.lock`、`.tic-rules.local` 和 `ai-harness/project-adapter.md`。
 
-执行 TIC 能力时只引用规则源中的 `Skills/*.md`，不要把完整 Skills 复制进 Windsurf 全局规则。
+执行 TIC 能力时读取规则源中的 `Workflow/core.md` 和对应
+`Skills/*.md`，不要把完整 Skills 复制进 Windsurf 全局规则。
 
-主线边界：TIC 负责风险分级、路由、检查点和证据闭环；OpenSpec 是规格事实源；Superpowers 是执行方法层。SDD + TDD 是 standard / critical 任务中的阶段语义，不是另一套独立工具链。
-
-consulting / micro 任务保持轻量；standard / critical 任务按 `AGENTS.md` 中的检查点、OpenSpec / Superpowers 接合点和验证要求推进。
+普通任务直接调查、修改和验证。规划深度、执行授权、验证范围、Review 和
+事实持久化分别判断；Capability 按事实选择，不经过默认 Orchestrator，也不
+自动级联。Superpowers 等外部方法不是总入口，OpenSpec 只保存需要长期维护
+的规格事实。

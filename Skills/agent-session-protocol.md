@@ -1,23 +1,20 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: agent-session-protocol
 status: canonical
-phase: orchestration
-role: PM / Tech Lead
-risk_min: standard
-inputs:
-  - workflow_plan_card
-  - fanout_boundary
-  - optional_contract_handoff
-  - optional_agent_adapter_whitelist
-outputs:
-  - agent_run_manifest
-  - agent_inbox_outbox
-  - agent_status_index
-  - evidence_refs
-requires:
-  - tic-workflow-orchestrator
-delegates_to:
+category: coordination
+activation:
+  when:
+    - Agent 协作跨独立任务、跨工具、长时异步或需要审计
+  not_when:
+    - 同一任务内的原生 subagent 可由宿主线程可靠承载
+side_effects: local-reversible
+artifacts:
+  default: agent-session-artifacts
+  when_needed:
+    - 跨会话执行需要 manifest、inbox、outbox、status 和证据
+requires: []
+related:
   - contract-handoff
   - shared-domain-arbiter
   - delivery-walkthrough
@@ -28,7 +25,7 @@ delegates_to:
 ## 技能用途
 
 - 服务角色：**PM / Tech Lead / Workflow Coordinator**
-- 触发时机：standard / critical 任务需要跨独立任务、跨工具、长时异步或可审计的 agent 协作
+- 触发时机：Agent 协作跨独立任务、跨工具、长时异步或需要审计
 - 输出物：agent run 目录、manifest、inbox/outbox、status、证据索引和收敛记录
 - 适用场景：把多会话执行变成可读、可审计、可收敛的执行层 fan-out
 
@@ -36,7 +33,7 @@ delegates_to:
 
 ## 0. 核心原则
 
-- `tic-workflow-orchestrator` 仍是唯一总控；本协议只管理需要持久化的 agent 会话产物。
+- 主 Agent 负责最终收口；本协议只管理需要持久化的 agent 会话产物。
 - 同一 Codex 任务内的原生 subagent 默认使用宿主线程、权限和主 Agent 汇总，不强制创建本协议文件。
 - 目录名给人看，`run_id` / `agent_id` / `session_id` 给机器追踪。
 - `session_id` 只作为追踪字段，不是事实源；事实源是落盘 artifact。
@@ -45,7 +42,7 @@ delegates_to:
 - 发现冲突、越权、范围漂移或重复阻塞时，必须收敛回主 Agent。
 
 绝对禁止：
-- 用独立会话绕过 Intent Intake、风险检查点、契约冻结或共享域仲裁。
+- 用独立会话绕过任务边界、受保护动作确认、必要契约或 ownership 仲裁。
 - 让子 agent 执行 Git Flow、发版、push、merge、tag、删除、迁移或生产配置。
 - 把 agent outbox 直接当最终结论；最终收口必须由主 Agent 完成。
 
@@ -54,15 +51,14 @@ delegates_to:
 ## 1. 准入条件
 
 只有满足以下条件时，才建议启用 agent session protocol：
-- effective tier 为 standard / critical，子任务能独立验证，且协作跨越当前宿主可可靠保存的原生线程边界。
+- 子任务能独立验证，且协作跨越当前宿主可可靠保存的原生线程边界。
 - fan-out 边界已写清：任务、角色、可读域、可写域、禁止动作和证据要求。
-- 涉及 API、字段、错误码、权限点或 FE/BE 并行时，已完成 `contract-handoff`。
-- 涉及共享域写入时，已完成 `shared-domain-arbiter`。
+- 多个消费者共享契约时，已明确是否需要 `contract-handoff`。
+- 多个执行者存在共享域 ownership 冲突时，已明确是否需要 `shared-domain-arbiter`。
 - 用户需要异步 review、跨任务接力、跨工具协作、长时任务观察或多 agent 证据归档。
 
-同一 Codex 任务内的原生 subagent 即使参与 standard / critical 任务，也不因风险档位本身启用本协议；主 Agent 应直接收口其结果并运行最终验证。
-
-consulting / micro 默认不启用本协议，除非用户明确要求跨任务接力或只读异步评审。
+同一 Codex 任务内的原生 subagent 不因任务规模或技术风险本身启用本协议；
+主 Agent 应直接收口其结果并运行最终验证。
 
 ---
 
@@ -150,7 +146,7 @@ consulting / micro 默认不启用本协议，除非用户明确要求跨任务�
 以下情况必须停止 fan-out，并由主 Agent 收敛：
 - 两个 agent 对契约、业务事实或共享文件 ownership 给出冲突结论。
 - 子 agent 请求越权动作或修改未授权文件域。
-- 任务范围从原目标扩张到新的 standard / critical 变更。
+- 任务范围扩张到新的产品结果或受保护动作。
 - 同一阻塞连续出现两次，或证据不足以支持继续并行。
 - 用户要求暂停、改方向或只保留单线执行。
 

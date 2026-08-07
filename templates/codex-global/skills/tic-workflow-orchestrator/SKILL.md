@@ -1,6 +1,6 @@
 ---
 name: tic-workflow-orchestrator
-description: Use as the Team-Intelligence-Center workflow router. Classifies risk, applies risk_floor, selects TIC Skills, OpenSpec, Superpowers, checkpoints, evidence, and closeout artifacts without copying child skill bodies.
+description: Use when the user explicitly requests TIC workflow planning, governance review, or a decision summary for protected actions. Ordinary local tasks do not require this capability.
 ---
 
 # TIC Workflow Orchestrator Wrapper
@@ -11,8 +11,13 @@ When invoked:
 1. Locate the current project's `.tic-rules.lock`; if it has a non-empty `rules_path=`, resolve it relative to the project root.
 2. If no project-relative source exists, read `.tic-rules.local` and use its `rules_dir=`.
 3. If no project source exists, use fallback rules source: `{{TIC_RULES_DIR}}`.
-4. Read and follow `<rules_dir>/Skills/tic-workflow-orchestrator.md`.
-5. Do not copy TIC Skills into project-local or global skills.
-6. Route to child TIC Skills by reference; do not inline or duplicate child Skill templates.
+4. Read `<rules_dir>/Workflow/core.md`.
+5. Read and follow `<rules_dir>/Skills/tic-workflow-orchestrator.md`.
+6. Do not copy TIC Skills into project-local or global skills.
+7. Treat related capabilities as discovery hints, not automatic routing.
 
-If the target TIC Skill is missing, produce a lightweight plan card with risk tier, risk_floor, phases, selected skills, skipped skills and reasons, E2E requirement decision, OpenSpec/Superpowers integration points, checkpoints, required artifacts, and pending confirmations.
+If the target TIC capability is missing, produce only a lightweight decision
+summary containing outcome, boundaries, done criteria, verification, authority,
+planning depth, execution authority, verification scope, review level, fact
+persistence, and pending confirmations. Do not generate a task tier, fixed
+capability graph, skipped-capability inventory, or mandatory external workflow.

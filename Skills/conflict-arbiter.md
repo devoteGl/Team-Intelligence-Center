@@ -1,18 +1,20 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: conflict-arbiter
 status: alias
-canonical: shared-domain-arbiter
-phase: execution
-role: PM
-risk_min: standard
-inputs:
-  - shared_file_change_request
-outputs:
-  - arbitration_decision
-requires:
-  - task-decomposer
-delegates_to:
+category: compatibility
+activation:
+  when:
+    - 用户或旧提示词显式调用 conflict-arbiter
+  not_when:
+    - 新任务可以直接调用 shared-domain-arbiter
+side_effects: local-reversible
+artifacts:
+  default: none
+  when_needed:
+    - canonical capability 需要输出 ownership 仲裁
+requires: []
+related:
   - shared-domain-arbiter
 ---
 
