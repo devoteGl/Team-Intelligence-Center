@@ -13,7 +13,7 @@ Thanks for helping improve Team-Intelligence-Center. This project is a Chinese-f
 - Keep the core flow readable before making it clever.
 - Preserve high cohesion and low coupling between rules, skills, templates, and automation scripts.
 - Do not add private organization names, internal repository URLs, secrets, personal machine paths, or customer-specific details.
-- Keep automation lightweight: no default Git hooks, no forced branch operations, no vendored binaries, and no mandatory heavy workflow for consulting or micro tasks.
+- Keep automation lightweight: direct by default, no mandatory orchestrator, no default Git hooks, no forced branch operations, and no vendored binaries.
 - Prefer evidence-based rules. If behavior is inferred from code, mark confidence instead of turning it into confirmed product truth.
 
 ## Local Validation

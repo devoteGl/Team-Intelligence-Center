@@ -172,6 +172,26 @@ function Install-TemplateFile {
     }
 }
 
+function Install-PreservedTemplateFile {
+    param(
+        [string]$Source,
+        [string]$Destination
+    )
+
+    $relative = $Destination.Substring($ProjectRoot.Length).TrimStart([char[]]@('\', '/'))
+    if (Test-Path -LiteralPath $Destination) {
+        Add-Plan "preserve existing $relative"
+        return
+    }
+
+    Add-Plan "create $relative"
+    if (-not $DryRun) {
+        $destDir = Split-Path -Parent $Destination
+        New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+        Set-Content -LiteralPath $Destination -Value (Render-Template $Source) -Encoding UTF8
+    }
+}
+
 function Get-PackageManager {
     if (Test-Path -LiteralPath (Join-Path $ProjectRoot "pnpm-lock.yaml")) { return "pnpm" }
     if (Test-Path -LiteralPath (Join-Path $ProjectRoot "yarn.lock")) { return "yarn" }
@@ -444,6 +464,7 @@ artifact_roots:
   prd_root: "docs/PRD"
   prd_draft_root: "docs/PRD/drafts"
   walkthrough_root: "docs/walkthroughs"
+  memory_root: "ai-harness/memory"
 verification:
   e2e:
     policy: risk-based # disabled | risk-based | required
@@ -606,6 +627,7 @@ function Ensure-GitignoreLocalConfig {
     $needsLocal = $true
     $needsBackups = $true
     $needsAgentRuns = $true
+    $needsTicLocal = $true
 
     if (Test-Path -LiteralPath $target) {
         $lines = @(Get-Content -LiteralPath $target -Encoding UTF8)
@@ -617,9 +639,10 @@ function Ensure-GitignoreLocalConfig {
         $needsLocal = -not ($lines -contains ".tic-rules.local")
         $needsBackups = -not ($lines -contains ".tic-backups/")
         $needsAgentRuns = -not ($lines -contains ".tic/agent-runs/")
+        $needsTicLocal = -not ($lines -contains ".tic/local/")
     }
 
-    if (-not $needsLocal -and -not $needsBackups -and -not $needsAgentRuns) {
+    if (-not $needsLocal -and -not $needsBackups -and -not $needsAgentRuns -and -not $needsTicLocal) {
         Add-Plan "skip .gitignore TIC local entries"
         return
     }
@@ -642,6 +665,7 @@ function Ensure-GitignoreLocalConfig {
         if ($needsLocal) { [void]$additions.Add(".tic-rules.local") }
         if ($needsBackups) { [void]$additions.Add(".tic-backups/") }
         if ($needsAgentRuns) { [void]$additions.Add(".tic/agent-runs/") }
+        if ($needsTicLocal) { [void]$additions.Add(".tic/local/") }
 
         $content = if ([string]::IsNullOrWhiteSpace($existing)) {
             ($additions -join "`r`n") + "`r`n"
@@ -659,6 +683,11 @@ Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/windsurfrules
 Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/rules/team-intelligence-center.md") (Join-Path (Join-Path $ProjectRoot ".rules") "team-intelligence-center.md")
 Install-ProjectAdapter
 Install-TemplateFile (Join-Path $PackageRoot "templates/ai-harness/agent-session-protocol.md") (Join-Path (Join-Path $ProjectRoot "ai-harness") "agent-session-protocol.md")
+Install-PreservedTemplateFile (Join-Path (Join-Path $PackageRoot "templates/ai-harness/memory") "README.md") (Join-Path (Join-Path (Join-Path $ProjectRoot "ai-harness") "memory") "README.md")
+Install-PreservedTemplateFile (Join-Path (Join-Path $PackageRoot "templates/ai-harness/memory") "project-context.md") (Join-Path (Join-Path (Join-Path $ProjectRoot "ai-harness") "memory") "project-context.md")
+Install-PreservedTemplateFile (Join-Path (Join-Path $PackageRoot "templates/ai-harness/memory") "decision-log.md") (Join-Path (Join-Path (Join-Path $ProjectRoot "ai-harness") "memory") "decision-log.md")
+Install-PreservedTemplateFile (Join-Path (Join-Path $PackageRoot "templates/ai-harness/memory") "runbooks.md") (Join-Path (Join-Path (Join-Path $ProjectRoot "ai-harness") "memory") "runbooks.md")
+Install-PreservedTemplateFile (Join-Path (Join-Path $PackageRoot "templates/ai-harness/memory") "team-collaboration.md") (Join-Path (Join-Path (Join-Path $ProjectRoot "ai-harness") "memory") "team-collaboration.md")
 Write-LockFile
 Write-LocalConfig
 Ensure-GitignoreLocalConfig

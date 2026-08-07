@@ -1,6 +1,6 @@
 ---
 name: tic-post-dev-prd-sync
-description: Use after standard or critical delivery when PRD updates may be needed; generates evidence-based PRD update drafts without promoting inferred rules automatically.
+description: Use when product maintainers need an evidence-based PRD update for delivered behavior; never promotes inferred rules automatically.
 ---
 
 # TIC Post Dev PRD Sync Wrapper

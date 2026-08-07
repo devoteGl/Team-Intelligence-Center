@@ -2,7 +2,7 @@
 
 本文面向组织内所有业务项目，说明如何把 `Team-Intelligence-Center`、OpenSpec、Superpowers、项目级规则入口和不同 AI 编码工具组合成统一研发范式。
 
-结论先行：这套组合可以作为组织的统一开发范式。关键不是绑定某一个 AI 工具，而是让所有工具共同遵守同一套规则、规格、契约、验证和归档链路。OpenSpec 是规格事实源，Superpowers 是可选但推荐的 Agent 执行方法层，TIC Workflow Orchestrator 是风险路由和治理入口。
+结论先行：这套组合可以作为组织的统一开发范式。关键不是绑定某一个 AI 工具，而是让所有工具共同遵守同一套动作边界、规格事实源、契约和验证原则。TIC Workflow Core 是轻量决策入口；OpenSpec 在需要持久规格时承载规格事实；Superpowers 是可选的 Agent 执行方法层；Orchestrator 只用于显式复杂规划或旧版迁移。
 
 ## 1. 范式分层
 
@@ -13,7 +13,7 @@
 | 组织规则层 | `ai-rules/Team-Intelligence-Center/` | 通用角色、流程、Prompts、Skills、提交纪律 |
 | OpenSpec 规格层 | `openspec/` | 活跃变更、稳定规格、设计说明、任务清单、归档 |
 | Superpowers 执行层 | AI 工具插件 / `.superpowers/` | 头脑风暴、计划、TDD、调试、代码审查、子代理执行 |
-| TIC 工作流路由层 | `Skills/tic-workflow-orchestrator.md` | 风险分级、risk_floor、Skill DAG、检查点、证据和归档触发 |
+| TIC Workflow Core | `Workflow/core.md` | direct-by-default、动作升级、受保护动作、验证与产物边界 |
 | 项目适配层 | `ai-harness/` | 当前项目的角色映射、记忆、决策、runbook |
 | 长期文档层 | `docs/` | PRD、API 契约、外部服务、设计资料、验收记录 |
 
@@ -37,61 +37,36 @@ your-project/
 
 目录名可按项目实际调整，但职责边界应保持稳定。
 
-## 3. 标准开发链路
+## 3. 自适应开发路径
 
 ```text
 需求 / 问题
-  -> TIC orchestrator   # 风险分级、risk_floor、phase/Skill DAG
-  -> /opsx:explore       # 可选：先探索和澄清
-  -> /opsx:propose       # 生成 OpenSpec 变更工件
-  -> docs/PRD            # 必要时沉淀 PRD
-  -> docs/api-contracts  # 跨端需求先冻结契约
-  -> /opsx:apply         # 按 tasks 进入实现阶段
-  -> Superpowers         # 可选：计划、TDD、调试、review、子代理开发
-  -> 验证                # 测试、构建、联调、人工验收
-  -> openspec/specs      # 稳定行为同步为主规格
-  -> ai-harness/memory   # 稳定事实、决策、踩坑回写
-  -> /opsx:archive       # 归档完成变更
+  -> Workflow Core 判断当前动作
+  -> direct：本地实现 + 相称验证
+  -> structured（按需）：
+       /opsx:explore / proposal / contract-handoff / execution plan
+  -> Superpowers（按需）：计划、TDD、调试、review、子代理开发
+  -> 验证：测试、构建、联调、真实界面或 E2E
+  -> guarded（仅受保护动作）：外部写入、生产、Git、发布或正式晋升
+  -> 长期规格 / PRD / memory / archive（仅有明确消费者时）
 ```
 
 对应到组织角色：
 
 | 阶段 | 组织角色 | 关键产物 |
 | --- | --- | --- |
-| 需求拆解 | PM / Tech Lead | proposal、PRD、验收标准 |
-| 现状调研 | CI | 影响范围、候选规则、风险清单 |
-| 契约冻结 | PM + FE + BE | `contract-handoff`、API 契约、字段、错误码、Mock fixture |
-| 并行实现 | FE / BE + Superpowers | 各端代码、交接清单、自测记录、TDD / review 证据 |
-| 验收 | QA | 测试结果、回归风险、缺陷记录 |
-| 归档 | DS | specs、Changelog、memory、archive |
+| 目标和边界 | PM / Tech Lead | 完成标准、受保护动作 |
+| 现状调研（按需） | CI | 影响范围、候选规则、风险清单 |
+| 契约冻结（按需） | PM + FE + BE | API 契约、字段、错误码、Mock fixture |
+| 实现 | FE / BE + 可选执行能力 | 代码与必要测试 |
+| 验证 | QA / Reviewer | 支持交付结论的证据、未测风险 |
+| 长期同步（按需） | 明确消费者 | specs、PRD、Changelog、memory 或 archive |
 
 ## 4. OpenSpec 与 Superpowers 安装方案
 
-OpenSpec 官方要求 Node.js 20.19.0 或更高版本。推荐全局安装：
-
-```bash
-npm install -g @fission-ai/openspec@latest
-```
-
-进入业务项目根目录后初始化：
-
-```bash
-cd your-project
-openspec init --tools codex,cursor,qoder,opencode --force
-```
-
-Superpowers 按 AI 工具分别安装，不由 OpenSpec 初始化命令生成。执行 `project-governance-bootstrap` 时应自动检测并尽力安装 Superpowers；如果当前工具只支持图形插件市场或交互式命令，则在接入报告中留下人工步骤。
-
-| 工具 | 安装方式 |
-| --- | --- |
-| Codex App | 图形插件市场搜索 `Superpowers`，通常需人工点击安装 |
-| Codex CLI | 打开 `/plugins`，搜索 `superpowers` 并安装，通常需交互 |
-| Claude Code | 在 Claude Code 内执行 `/plugin install superpowers@claude-plugins-official` |
-| Gemini CLI | 可尝试 `gemini extensions install https://github.com/obra/superpowers` |
-| Factory Droid | 可尝试 `droid plugin marketplace add https://github.com/obra/superpowers` 后 `droid plugin install superpowers@superpowers` |
-| GitHub Copilot CLI | 可尝试 `copilot plugin marketplace add obra/superpowers-marketplace` 后 `copilot plugin install superpowers@superpowers-marketplace` |
-| Cursor | 在 Agent chat 执行 `/add-plugin superpowers` 或插件市场安装 |
-| OpenCode | 按 OpenCode 插件机制读取官方安装说明 |
+OpenSpec 和 Superpowers 都是可选外部系统。团队明确选择后，应按各自当前
+官方文档独立安装和初始化；TIC 不代替包管理器或插件管理器，也不把某个
+版本和安装命令固化成项目 bootstrap 的隐式副作用。
 
 如果团队使用 Superpowers，建议在业务项目 `.gitignore` 中加入：
 
@@ -99,7 +74,10 @@ Superpowers 按 AI 工具分别安装，不由 OpenSpec 初始化命令生成。
 .superpowers/
 ```
 
-确需保留的执行计划、复盘或验收记录，应转写到 `docs/`、`ai-harness/memory/` 或对应 OpenSpec change 中，不直接把 `.superpowers/` 当长期文档库。Superpowers 安装失败不应阻塞项目治理接入，但必须在最终报告中记录失败原因和人工补救步骤。
+确需保留的执行计划、复盘或验收记录，应写入有明确消费者的 `docs/` 或
+对应 OpenSpec change，不直接把 `.superpowers/` 当长期文档库。只有经过
+明确 memory 维护动作确认具有长期复用价值时，才写入
+`ai-harness/memory/`。
 
 如果业务项目已经以 submodule 引入本仓库，推荐先让 AI 执行接入技能，自动生成项目根入口和治理目录：
 
@@ -197,7 +175,8 @@ openspec validate --all --no-interactive
 - 平时正常和 AI 对话。
 - 只有探索、立项、实现、同步、归档这些阶段切换时使用 `/opsx:*`。
 - 小修小改、错字、局部 bug 可直接处理。
-- 跨端、跨模块、契约变化、回滚风险较高的需求必须先 `/opsx:propose`。
+- 跨边界契约变化先对齐契约；需要持久规格和多方评审时再使用
+  `/opsx:propose`。
 
 ## 7. 各工具生成位置
 
@@ -224,7 +203,7 @@ OpenSpec 负责“规格和变更工件”，`Team-Intelligence-Center` 负责�
 | `tasks.md` | `Skills/task-decomposer.md`、`Skills/contract-handoff.md` |
 | API 契约 | `Skills/contract-handoff.md` |
 | 验收 | `Skills/prd-review-checklist.md` |
-| 归档 | `Skills/changelog-writer.md`、`Skills/tic-workflow-orchestrator.md` 的 snapshot 输出规则 |
+| 归档 | 有版本消费者时使用 `Skills/changelog-writer.md` 或 `Skills/release-handoff.md` |
 | 项目接入 | `Skills/project-governance-bootstrap.md` |
 
 落地项目不应复制或改写组织规则原文。推荐作为 submodule 接入：
@@ -252,32 +231,33 @@ Superpowers 负责“Agent 如何把任务做扎实”，不负责替代 OpenSpe
 ### 9.1 协作原则
 
 - OpenSpec 是规格事实源；Superpowers 是执行方法层。
-- TIC Orchestrator 是路由层：它决定风险档、检查点和需要哪些产物，不替代 OpenSpec 或 Superpowers。
+- TIC Workflow Core 决定动作边界；Orchestrator 只在用户明确需要复杂计划或治理审计时使用。
 - 有 OpenSpec change 时，Superpowers 的计划、调试、review 产物必须引用该 change id。
 - `docs/superpowers/specs/` 不能成为第二套主规格；稳定行为应同步回 `openspec/specs/`。
 - `.superpowers/` 默认视为本地运行态目录，除非团队明确要求，不提交。
 - 小修、小 bug 可以直接用 Superpowers 的 TDD / debugging，不强制创建 OpenSpec change。
-- 跨端、跨模块、接口契约变化仍必须先 `/opsx:propose`。
+- 跨端、跨模块或接口契约变化需要先明确共享契约；只有需要持久规格时才创建 OpenSpec change。
 
 ### 9.2 Guardrailed Multi-Agent / 受控并行
 
 多 Agent 是执行层 fan-out 能力，不是 TIC 的顶层工作流。TIC 不维护 agent 市场，TIC 维护 agent 上岗制度。
 
-启用 fan-out 前，`tic-workflow-orchestrator` 必须先完成 Intent Intake：识别用户目标、危险词、自治诉求、缺失信息、建议档位和确认方式。用户说“全自动”只表示希望 AI 少打扰，不表示授权外部 agent 执行删除、迁移、发版、Git Flow、生产配置或规格转正等高危动作。
+启用 fan-out 前，主 Agent 必须依据 `Workflow/core.md` 明确目标、边界、每个执行方的 ownership、共享契约、验证要求和受保护动作。用户说“全自动”只表示希望 AI 少打扰，不表示授权外部 agent 执行删除、迁移、发版、Git Flow、生产配置或规格转正等高危动作。
 
 Agent Contract：
 - TIC canonical role：PM / CI / FE / BE / QA / DS / Release / Reviewer 是稳定协作合同，定义职责、检查点、文件 ownership 和交付证据。
 - 社区 agent：只作为专业能力 adapter，例如前端、后端、安全、测试、代码审查、专项领域顾问。
-- 工具原生 subagent：只执行被总控派发的叶子任务，不拥有风险分级、契约冻结、共享域仲裁、最终验收、发版或 Git Flow 权限。
-- 外部 orchestrator：可参考其角色库或局部执行能力，不得替代 `tic-workflow-orchestrator`。
+- 工具原生 subagent：只执行主 Agent 分配的有界任务，不拥有动作模式裁决、
+  契约冻结、共享域仲裁、最终验收、发版或 Git Flow 权限。
+- 外部 orchestrator：可参考其角色库或局部执行能力，不得替代 Workflow Core 和主 Agent 的收口责任。
 
 Fan-out 准入：
 - Discovery 可并行做多模块只读调研。
 - Execution 只有在任务可独立验证、文件域清晰、契约已冻结时才能 fan-out。
 - Verification 可并行跑测试、lint、构建、截图或专项 review，但主 Agent 必须收口证据。
-- `contract-handoff` 是 API、字段、错误码、共享类型、权限点、FE/BE 并行前置闸门。
-- `shared-domain-arbiter` 是 `router/`、`types/`、`constants/`、全局配置、公共工具或契约文件写入前置闸门。
-- standard / critical 任务应记录 fan-out 的 agent、任务范围、可写文件域、验证证据和未测风险。
+- API、字段、错误码、共享类型或权限点会跨边界改变时，使用 `contract-handoff`。
+- 多执行方确实会并发写入同一共享域时，使用 `shared-domain-arbiter`。
+- 发生跨任务、跨工具、长时异步或审计协作时，记录参与方、任务范围、可写文件域、验证证据和未测风险。
 
 跨会话执行：
 - 每个 agent 单独开会话时，必须使用 `agent-session-protocol` 或项目等价 mailbox。
@@ -316,7 +296,7 @@ Fan-out 准入：
 - 把同一需求同时维护在 OpenSpec specs 和另一套 Superpowers spec 中。
 - 把 `tic-workflow-orchestrator` 写成复制所有子 Skill 模板的巨型 Skill。
 - 让社区 agent 库或工具原生 orchestrator 替代 TIC Agent Contract。
-- 全量安装外部 agent 后由模型自由挑选角色执行 standard / critical 任务。
+- 全量安装外部 agent 后由模型在没有 ownership 和验证边界时自由派发任务。
 
 ## 10. 老项目接入模式
 
@@ -361,7 +341,8 @@ legacy-project/
    openspec init --tools codex,cursor,qoder,opencode --force
    ```
 
-3. 如团队使用 Superpowers，执行项目治理接入 Skill 时自动检测并尽力安装；不能自动安装的工具按报告中的人工步骤处理，并将 `.superpowers/` 加入 `.gitignore`。
+3. 如团队明确选择 Superpowers，按当前工具的官方插件机制独立安装，并按
+   团队约定处理 `.superpowers/`；TIC bootstrap 不安装插件。
 
 4. 执行项目治理接入 Skill：
 
@@ -393,7 +374,7 @@ legacy-project/
    - 不确定的现状写入候选清单，不直接写成稳定事实。
    - 接口、字段、枚举、错误码写入 `docs/api-contracts/`。
 
-8. 从新需求开始执行标准链路：
+8. 对需要持久规格的新需求使用 OpenSpec 路径：
 
    ```text
    /opsx:propose -> 契约冻结 -> /opsx:apply -> Superpowers 执行 -> 验证 -> /opsx:archive
@@ -425,11 +406,12 @@ legacy-project/
 - 每次新需求顺手补齐受影响模块的事实。
 - 每次修 bug 都把复现条件和修复后的行为写入对应 spec。
 - 每次接口变动都更新 `docs/api-contracts/`。
-- 每次踩坑都回写 `ai-harness/memory/runbooks.md` 或 `decision-log.md`。
+- 反复出现且确认具有长期复用价值的问题，显式维护到 runbook 或
+  decision log。
 
 ## 11. 上手检查清单
 
-新项目接入完成前，至少检查：
+如果项目明确采用完整 OpenSpec / Superpowers 组合，再检查：
 
 - `ai-rules/Team-Intelligence-Center/` 已存在并固定版本。
 - `Skills/project-governance-bootstrap.md` 已执行，或等价治理入口已人工补齐。
@@ -437,7 +419,8 @@ legacy-project/
 - `openspec/specs/` 至少有一个工作区或核心领域 spec。
 - `openspec validate --all --no-interactive` 能通过。
 - Codex、Cursor、Qoder、OpenCode 中至少团队实际使用的工具已生成 `/opsx:*` 入口。
-- 如果团队启用 Superpowers，bootstrap 已检测并尝试安装；不能自动安装的工具已有人工待办，且 `.superpowers/` 已按团队约定处理。
+- 如果团队启用 Superpowers，它已通过独立安装流程就绪，且
+  `.superpowers/` 已按团队约定处理。
 - Superpowers 产物边界已写明：OpenSpec 是规格事实源，Superpowers 是执行方法层。
 - `docs/` 已声明 PRD、API 契约、外部服务文档位置。
 - `ai-harness/` 已声明项目角色映射、记忆和 runbook 位置。

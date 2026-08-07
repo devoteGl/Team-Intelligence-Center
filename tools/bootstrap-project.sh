@@ -203,6 +203,23 @@ install_template_file() {
   fi
 }
 
+install_preserved_template_file() {
+  local src="$1"
+  local dst="$2"
+  local rel="${dst#$PROJECT_ROOT/}"
+
+  if [ -e "$dst" ]; then
+    plan "preserve existing $rel"
+    return
+  fi
+
+  plan "create $rel"
+  if [ "$DRY_RUN" -eq 0 ]; then
+    mkdir -p "$(dirname "$dst")"
+    render_template "$src" > "$dst"
+  fi
+}
+
 detect_package_manager() {
   if [ -f "$PROJECT_ROOT/pnpm-lock.yaml" ]; then
     printf 'pnpm'
@@ -512,6 +529,7 @@ artifact_roots:
   prd_root: "docs/PRD"
   prd_draft_root: "docs/PRD/drafts"
   walkthrough_root: "docs/walkthroughs"
+  memory_root: "ai-harness/memory"
 verification:
   e2e:
     policy: risk-based # disabled | risk-based | required
@@ -663,6 +681,7 @@ ensure_gitignore_local_config() {
   local needs_local=1
   local needs_backups=1
   local needs_agent_runs=1
+  local needs_tic_local=1
 
   if [ -f "$target" ]; then
     if grep -Fxq "# Team-Intelligence-Center local files" "$target" ||
@@ -679,9 +698,13 @@ ensure_gitignore_local_config() {
     if grep -Fxq ".tic/agent-runs/" "$target"; then
       needs_agent_runs=0
     fi
+    if grep -Fxq ".tic/local/" "$target"; then
+      needs_tic_local=0
+    fi
   fi
 
-  if [ "$needs_local" -eq 0 ] && [ "$needs_backups" -eq 0 ] && [ "$needs_agent_runs" -eq 0 ]; then
+  if [ "$needs_local" -eq 0 ] && [ "$needs_backups" -eq 0 ] &&
+     [ "$needs_agent_runs" -eq 0 ] && [ "$needs_tic_local" -eq 0 ]; then
     plan "skip .gitignore TIC local entries"
     return
   fi
@@ -713,6 +736,9 @@ ensure_gitignore_local_config() {
       if [ "$needs_agent_runs" -eq 1 ]; then
         printf '.tic/agent-runs/\n'
       fi
+      if [ "$needs_tic_local" -eq 1 ]; then
+        printf '.tic/local/\n'
+      fi
     } > "$target.tmp"
     mv "$target.tmp" "$target"
   fi
@@ -725,6 +751,11 @@ install_template_file "$PACKAGE_ROOT/templates/tool-rules/windsurfrules.md" "$PR
 install_template_file "$PACKAGE_ROOT/templates/tool-rules/rules/team-intelligence-center.md" "$PROJECT_ROOT/.rules/team-intelligence-center.md"
 install_project_adapter
 install_template_file "$PACKAGE_ROOT/templates/ai-harness/agent-session-protocol.md" "$PROJECT_ROOT/ai-harness/agent-session-protocol.md"
+install_preserved_template_file "$PACKAGE_ROOT/templates/ai-harness/memory/README.md" "$PROJECT_ROOT/ai-harness/memory/README.md"
+install_preserved_template_file "$PACKAGE_ROOT/templates/ai-harness/memory/project-context.md" "$PROJECT_ROOT/ai-harness/memory/project-context.md"
+install_preserved_template_file "$PACKAGE_ROOT/templates/ai-harness/memory/decision-log.md" "$PROJECT_ROOT/ai-harness/memory/decision-log.md"
+install_preserved_template_file "$PACKAGE_ROOT/templates/ai-harness/memory/runbooks.md" "$PROJECT_ROOT/ai-harness/memory/runbooks.md"
+install_preserved_template_file "$PACKAGE_ROOT/templates/ai-harness/memory/team-collaboration.md" "$PROJECT_ROOT/ai-harness/memory/team-collaboration.md"
 write_lock
 write_local_config
 ensure_gitignore_local_config

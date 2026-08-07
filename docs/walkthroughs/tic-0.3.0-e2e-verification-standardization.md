@@ -3,8 +3,9 @@
 ## 1. 交付摘要
 
 - **一句话结论**：TIC 现在能按验收标准和风险决定是否进入 E2E gate，并用统一契约管理 runner、环境、认证、数据、证据、清理和 verdict。
-- **当前状态**：Ready for Release；本地验证与逻辑 review 通过，PowerShell
-  运行时 fixture 作为长期验证项，不阻塞本次发布。
+- **当前状态**：Local Release Complete；本地 `0.3.0` tag、develop 回灌
+  和隔离安装冒烟完成，按用户要求未 push。PowerShell 运行时 fixture
+  作为长期验证项，不阻塞本次发布。
 - **关联来源**：用户讨论、`docs/sdd/tic-0.3.0-e2e-verification-standardization.md`、`feature/e2e-verification-standardization`。
 - **适用读者**：规则维护者、Reviewer、QA、Tech Lead、使用 TIC 的项目 owner。
 
@@ -99,7 +100,7 @@ requirement 为 `targeted`，verdict 为 `passed`；业务工作区没有产品�
 | --- | --- | --- | --- |
 | PowerShell 运行时 fixture | 当前环境无 `pwsh` | Windows 运行时差异 | 已接受为长期验证项，在 Windows / pwsh CI 补跑 |
 | 业务浏览器 E2E | 本仓库无业务应用 | 不覆盖具体业务旅程 | 由接入项目执行 |
-| release / tag / stable 更新 | 未获发版 Git 授权 | 尚未进入稳定通道 | 用户确认后执行 |
+| 远端 tag / stable 更新 | 本次明确不 push | 远端仍以 0.2.2 为 stable | 后续获得 push 授权后执行 |
 
 ## 7. Review 指引
 
@@ -116,11 +117,10 @@ requirement 为 `targeted`，verdict 为 `passed`；业务工作区没有产品�
 | --- | --- | --- |
 | 后续 | PowerShell 未做运行时测试 | 已明确接受为长期验证项，在 Windows / pwsh 环境持续补证据 |
 | 后续 | 业务项目已有 adapter 不会自动补字段 | 升级后按需调用 `project-adapter-maintainer(mode=migrate)` |
-| 待确认 | 0.3.0 Git 提交、release 分支、tag、push 与回灌 | 按 `git-flow-operator` 单独确认 |
+| 后续 | 0.3.0 尚未 push | 本地 tag 与回灌已完成；获得授权后推送并补远端 stable 证据 |
 
 ## 9. 后续动作
 
-- 用户审阅本次逻辑和文件差异。
-- 确认后提交功能分支；再按 Git Flow 创建 `release/0.3.0`。
+- 本地发布证据见 `docs/releases/0.3.0/evidence.md`。
 - PowerShell 证据在后续 Windows / pwsh 环境持续补齐。
-- tag / push 后回填远端 tag、stable 更新和项目升级证据。
+- 获得 push 授权后回填远端 tag 与 stable 更新证据。

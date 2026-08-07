@@ -1,21 +1,20 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: project-adapter-maintainer
 status: canonical
-phase: governance
-role: PM / CI / DS / Tech Lead
-risk_min: consulting
-inputs:
-  - project_root
-  - maintenance_mode
-  - existing_project_adapter
-  - project_evidence
-outputs:
-  - project_adapter_audit
-  - project_adapter_change
-  - unresolved_decisions
+category: governance
+activation:
+  when:
+    - 用户要求维护 adapter 或错误的 adapter 阻止当前接入与升级
+  not_when:
+    - 普通任务可以直接读取现有项目事实
+side_effects: local-reversible
+artifacts:
+  default: none
+  when_needed:
+    - 项目需要 adapter 审计、迁移或修复记录
 requires: []
-delegates_to:
+related:
   - code-investigator
 ---
 
@@ -180,6 +179,8 @@ git log --follow -- ai-harness/project-adapter.md
 - `branch_strategy`、基线、版本格式和 tag 策略与 Git 历史一致。
 - 风险边界与项目实际敏感面一致。
 - 当前文件保留了原有自定义章节、本地决策和未知扩展字段。
+- `memory_root` 指向共享、可提交的项目记忆；个人画像仍在 gitignored 的
+  `.tic/local/`，不得写入 adapter。
 - 再次执行 `audit` 不产生无意义漂移。
 
 ---
@@ -214,6 +215,7 @@ artifact_roots:
   prd_root: "docs/PRD"
   prd_draft_root: "docs/PRD/drafts"
   walkthrough_root: "docs/walkthroughs"
+  memory_root: "ai-harness/memory"
 verification:
   e2e:
     policy: risk-based

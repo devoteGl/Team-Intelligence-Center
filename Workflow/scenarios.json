@@ -1,0 +1,89 @@
+{
+  "schema": "tic_workflow_scenarios.v2",
+  "dimensions": [
+    "planning_depth",
+    "execution_authority",
+    "verification_scope",
+    "review_level",
+    "fact_persistence"
+  ],
+  "scenarios": [
+    {
+      "id": "local-bug-fix",
+      "planning_depth": "inline",
+      "execution_authority": "autonomous",
+      "verification_scope": "targeted",
+      "review_level": "self",
+      "fact_persistence": "task-context",
+      "checkpoint": false,
+      "capabilities": [],
+      "mandatory_artifacts": []
+    },
+    {
+      "id": "large-local-refactor",
+      "planning_depth": "living",
+      "execution_authority": "autonomous",
+      "verification_scope": "integration",
+      "review_level": "independent",
+      "fact_persistence": "task-context",
+      "checkpoint": false,
+      "capabilities": [],
+      "mandatory_artifacts": []
+    },
+    {
+      "id": "shared-api-change",
+      "planning_depth": "brief",
+      "execution_authority": "autonomous",
+      "verification_scope": "integration",
+      "review_level": "independent",
+      "fact_persistence": "openspec",
+      "checkpoint": false,
+      "capabilities": ["contract-handoff"],
+      "mandatory_artifacts": []
+    },
+    {
+      "id": "key-user-journey",
+      "planning_depth": "inline",
+      "execution_authority": "autonomous",
+      "verification_scope": "e2e",
+      "review_level": "self",
+      "fact_persistence": "task-context",
+      "checkpoint": false,
+      "capabilities": ["e2e-verification"],
+      "mandatory_artifacts": []
+    },
+    {
+      "id": "production-migration",
+      "planning_depth": "living",
+      "execution_authority": "confirmation-required",
+      "verification_scope": "operational",
+      "review_level": "independent",
+      "fact_persistence": "release-record",
+      "checkpoint": true,
+      "capabilities": ["release-handoff"],
+      "mandatory_artifacts": ["rollback-plan", "verification-evidence"]
+    },
+    {
+      "id": "collaboration-memory-candidate",
+      "planning_depth": "inline",
+      "execution_authority": "autonomous",
+      "verification_scope": "targeted",
+      "review_level": "self",
+      "fact_persistence": "local-candidate",
+      "checkpoint": false,
+      "capabilities": ["collaboration-memory-maintainer"],
+      "mandatory_artifacts": []
+    },
+    {
+      "id": "release-branch-push",
+      "planning_depth": "brief",
+      "execution_authority": "confirmation-required",
+      "verification_scope": "integration",
+      "review_level": "independent",
+      "fact_persistence": "release-record",
+      "checkpoint": true,
+      "capabilities": ["git-flow-operator", "release-handoff"],
+      "mandatory_artifacts": ["release-evidence"]
+    }
+  ]
+}

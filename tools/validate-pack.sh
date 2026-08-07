@@ -6,6 +6,7 @@ PACKAGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 cd "$PACKAGE_ROOT"
 
 failures=0
+warnings=0
 
 fail() {
   printf 'FAIL: %s\n' "$1" >&2
@@ -14,6 +15,11 @@ fail() {
 
 pass() {
   printf 'PASS: %s\n' "$1"
+}
+
+warn() {
+  printf 'WARN: %s\n' "$1" >&2
+  warnings=$((warnings + 1))
 }
 
 require_file() {
@@ -47,6 +53,10 @@ require_file .github/ISSUE_TEMPLATE/config.yml
 require_file Global-Rules/coding-rules.md
 require_file Prompts/ai-prd-generator.rules.md
 require_file Prompts/ai-prd-editor.rules.md
+require_dir Workflow
+require_file Workflow/core.md
+require_file Workflow/capability-schema.md
+require_file Workflow/scenarios.json
 require_dir Skills
 require_dir Design
 require_file templates/AGENTS.md
@@ -62,6 +72,9 @@ require_file docs/sdd/tic-0.2.0-codex-gpt56.md
 require_file docs/sdd/tic-0.2.1-project-adapter-preservation.md
 require_file docs/sdd/tic-0.2.2-bash32-update.md
 require_file docs/sdd/tic-0.3.0-e2e-verification-standardization.md
+require_file docs/sdd/tic-0.5.0-workflow-core-redesign.md
+require_file docs/sdd/tic-0.5.0-collaboration-intelligence-loop.md
+require_file docs/sdd/tic-0.5.1-native-workflow-convergence.md
 require_file docs/releases/0.1.0/README.md
 require_file docs/releases/0.2.0/README.md
 require_file docs/releases/0.2.1/README.md
@@ -72,17 +85,35 @@ require_file docs/releases/0.2.2/changes/bash32-update/README.md
 require_file docs/releases/0.3.0/README.md
 require_file docs/releases/0.3.0/evidence.md
 require_file docs/releases/0.3.0/changes/e2e-verification-standardization/README.md
+require_file docs/releases/0.5.0/README.md
+require_file docs/releases/0.5.0/evidence.md
+require_file docs/releases/0.5.0/changes/collaboration-intelligence-loop/README.md
+require_file docs/releases/0.5.1/README.md
+require_file docs/releases/0.5.1/evidence.md
 require_file docs/test-evidence/tic-0.2.0/README.md
 require_file docs/test-evidence/tic-0.2.1/README.md
 require_file docs/test-evidence/tic-0.2.2/README.md
 require_file docs/test-evidence/tic-0.3.0/README.md
+require_file docs/test-evidence/tic-0.5.0/README.md
+require_file docs/test-evidence/tic-0.5.1/README.md
 require_file docs/walkthroughs/tic-0.2.1-project-adapter-preservation.md
 require_file docs/walkthroughs/tic-0.2.2-bash32-update.md
 require_file docs/walkthroughs/tic-0.3.0-e2e-verification-standardization.md
+require_file docs/walkthroughs/tic-0.5.0-collaboration-intelligence-loop.md
+require_file docs/walkthroughs/tic-0.5.1-native-workflow-convergence.md
 require_file Skills/project-adapter-maintainer.md
 require_file templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md
 require_file Skills/e2e-verification.md
 require_file templates/codex-global/skills/tic-e2e-verification/SKILL.md
+require_file Skills/collaboration-memory-maintainer.md
+require_file templates/codex-global/skills/tic-collaboration-memory-maintainer/SKILL.md
+require_file templates/ai-harness/memory/README.md
+require_file templates/ai-harness/memory/project-context.md
+require_file templates/ai-harness/memory/decision-log.md
+require_file templates/ai-harness/memory/runbooks.md
+require_file templates/ai-harness/memory/team-collaboration.md
+require_file templates/tic-local/collaboration-profile.md
+require_file templates/tic-local/memory-candidates.md
 require_file tools/bootstrap-project.ps1
 require_file tools/bootstrap-project.sh
 require_file tools/codegraph-helper.ps1
@@ -104,6 +135,92 @@ if [ -n "$version_file" ] && [ "$version_file" = "$version_manifest" ]; then
   pass "VERSION matches manifest.json ($version_file)"
 else
   fail "VERSION ($version_file) does not match manifest.json ($version_manifest)"
+fi
+
+if [ -f Workflow/core.md ] &&
+   grep -q '`outcome`' Workflow/core.md &&
+   grep -q '`boundaries`' Workflow/core.md &&
+   grep -q '`done`' Workflow/core.md &&
+   grep -q '`verification`' Workflow/core.md &&
+   grep -q '`authority`' Workflow/core.md &&
+   grep -q '`planning_depth`' Workflow/core.md &&
+   grep -q '`execution_authority`' Workflow/core.md &&
+   grep -q '`verification_scope`' Workflow/core.md &&
+   grep -q '`review_level`' Workflow/core.md &&
+   grep -q '`fact_persistence`' Workflow/core.md &&
+   ! grep -Eq '三种执行模式|所有任务从 `direct` 开始' Workflow/core.md; then
+  pass "workflow core separates task contract, planning, authority, verification, review, and persistence"
+else
+  fail "workflow core must use the five independent decision dimensions"
+fi
+
+scenario_block() {
+  awk -v target="\"id\": \"$1\"" '
+    /"id"[[:space:]]*:/ {
+      if (printing) {
+        exit
+      }
+      if (index($0, target) > 0) {
+        printing = 1
+      }
+    }
+    printing {
+      print
+    }
+  ' Workflow/scenarios.json
+}
+
+scenario_matches() {
+  local scenario_content
+  local expected_pattern
+  scenario_content="$(scenario_block "$1")"
+  shift
+  for expected_pattern in "$@"; do
+    if ! printf '%s\n' "$scenario_content" | grep -q "$expected_pattern"; then
+      return 1
+    fi
+  done
+}
+
+if scenario_matches local-bug-fix \
+     '"planning_depth": "inline"' '"execution_authority": "autonomous"' \
+     '"verification_scope": "targeted"' '"review_level": "self"' \
+     '"fact_persistence": "task-context"' '"checkpoint": false' &&
+   scenario_matches large-local-refactor \
+     '"planning_depth": "living"' '"execution_authority": "autonomous"' \
+     '"verification_scope": "integration"' '"review_level": "independent"' &&
+   scenario_matches shared-api-change \
+     '"planning_depth": "brief"' '"execution_authority": "autonomous"' \
+     '"verification_scope": "integration"' '"review_level": "independent"' \
+     '"fact_persistence": "openspec"' &&
+   scenario_matches key-user-journey \
+     '"verification_scope": "e2e"' '"review_level": "self"' &&
+   scenario_matches production-migration \
+     '"planning_depth": "living"' '"execution_authority": "confirmation-required"' \
+     '"verification_scope": "operational"' '"review_level": "independent"' \
+     '"checkpoint": true' &&
+   scenario_matches collaboration-memory-candidate \
+     '"fact_persistence": "local-candidate"' '"checkpoint": false' &&
+   scenario_matches release-branch-push \
+     '"execution_authority": "confirmation-required"' \
+     '"review_level": "independent"' '"checkpoint": true' &&
+   ! grep -Eq '"mode"[[:space:]]*:' Workflow/scenarios.json; then
+  pass "workflow scenarios keep planning, authority, verification, review, and persistence independent"
+else
+  fail "workflow scenarios must exercise the five independent decision dimensions"
+fi
+
+if grep -q '`outcome`' templates/AGENTS.md &&
+   grep -q '`verification`' templates/AGENTS.md &&
+   grep -q '`authority`' templates/AGENTS.md &&
+   grep -q '普通任务直接调查、修改和验证' templates/AGENTS.md &&
+   grep -q 'Superpowers.*方法库' templates/AGENTS.md &&
+   grep -q 'OpenSpec.*长期规格' templates/AGENTS.md &&
+   ! grep -Eq 'risk_floor|Skill DAG|single adaptive workflow' templates/AGENTS.md &&
+   ! grep -Eq '新任务最多检索|Intake 最多|Closeout' templates/AGENTS.md; then
+  pass "project template is outcome-driven without a mandatory workflow controller"
+else
+  fail "project template must expose the five-dimension native workflow"
 fi
 
 if grep -q 'Apache License' LICENSE &&
@@ -135,21 +252,23 @@ else
 fi
 rm -f "$template_stack_scan"
 
-if grep -q '当前版本为 `0.3.0`' README.md &&
+if grep -q '当前版本为 `0.5.1`' README.md &&
    grep -q '0.1.0.*0.2.0.*0.2.1' README.md &&
-   grep -q '`0.2.2` 已归档，当前版本为 `0.3.0`' README.md &&
-   grep -q '"previous_version_archive"[[:space:]]*:[[:space:]]*"docs/releases/0.2.2"' manifest.json &&
+   grep -q '`0.2.2`、`0.3.0`、`0.5.0` 已归档，当前版本为 `0.5.1`' README.md &&
+   grep -q '"previous_version_archive"[[:space:]]*:[[:space:]]*"docs/releases/0.3.0"' manifest.json &&
+   [ ! -e docs/releases/0.4.0 ] &&
+   [ ! -e docs/test-evidence/tic-0.4.0 ] &&
    grep -q 'd8fe814ad633bd06d6ead7815ad8f7d6d3db5324' docs/releases/0.1.0/README.md; then
   pass "current and archived release records are declared"
 else
-  fail "README and release archive must identify 0.3.0 and archived 0.1.0/0.2.0/0.2.1/0.2.2 releases"
+  fail "README and release archive must identify 0.5.1 and preserve earlier releases"
 fi
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
-if [ "$skill_count" -ge 20 ]; then
-  pass "skill count >= 20 ($skill_count)"
+if [ "$skill_count" -ge 23 ]; then
+  pass "skill count >= 23 ($skill_count)"
 else
-  fail "expected at least 20 skill files, found $skill_count"
+  fail "expected at least 23 skill files, found $skill_count"
 fi
 
 if [ ! -e Skills/sdd-writer.md ] &&
@@ -168,49 +287,79 @@ while IFS= read -r skill_file; do
     fail "skill missing title or 技能用途 section: $skill_file"
   fi
 
-  if sed -n '1,40p' "$skill_file" | grep -q '^schema: tic_skill.v1$' &&
-     sed -n '1,40p' "$skill_file" | grep -q '^id: ' &&
-     sed -n '1,40p' "$skill_file" | grep -q '^status: ' &&
-     sed -n '1,40p' "$skill_file" | grep -q '^phase: ' &&
-     sed -n '1,40p' "$skill_file" | grep -q '^risk_min: '; then
-    pass "skill contract: $skill_file"
+  skill_header="$(sed -n '1,52p' "$skill_file")"
+  if printf '%s\n' "$skill_header" | grep -q '^schema: tic_capability.v1$' &&
+     printf '%s\n' "$skill_header" | grep -q '^id: ' &&
+     printf '%s\n' "$skill_header" | grep -q '^status: ' &&
+     printf '%s\n' "$skill_header" | grep -q '^category: ' &&
+     printf '%s\n' "$skill_header" | grep -q '^activation:$' &&
+     printf '%s\n' "$skill_header" | grep -q '^  when:$' &&
+     printf '%s\n' "$skill_header" | grep -q '^  not_when:$' &&
+     printf '%s\n' "$skill_header" | grep -q '^side_effects: ' &&
+     printf '%s\n' "$skill_header" | grep -q '^artifacts:$' &&
+     printf '%s\n' "$skill_header" | grep -q '^  default: ' &&
+     printf '%s\n' "$skill_header" | grep -q '^  when_needed:' &&
+     printf '%s\n' "$skill_header" | grep -q '^requires:' &&
+     printf '%s\n' "$skill_header" | grep -q '^related:' &&
+     ! printf '%s\n' "$skill_header" | grep -q '^risk_min: ' &&
+     ! printf '%s\n' "$skill_header" | grep -q '^delegates_to:'; then
+    pass "capability contract: $skill_file"
   else
-    fail "skill missing tic_skill.v1 contract fields: $skill_file"
+    fail "skill missing tic_capability.v1 contract fields or retains workflow routing: $skill_file"
   fi
 done < <(find Skills -maxdepth 1 -type f -name '*.md' | sort)
 
 orchestrator_lines="$(wc -l < Skills/tic-workflow-orchestrator.md | tr -d '[:space:]')"
-orchestrator_max_lines=280
+orchestrator_max_lines=240
 if [ "$orchestrator_lines" -le "$orchestrator_max_lines" ] &&
-   grep -q '只做路由' Skills/tic-workflow-orchestrator.md &&
-   grep -q 'risk_floor' Skills/tic-workflow-orchestrator.md &&
-   grep -q 'Capability First, Governance on Risk' Skills/tic-workflow-orchestrator.md &&
-   ! grep -q '任务拆解自检清单' Skills/tic-workflow-orchestrator.md; then
-  pass "workflow orchestrator is clarity-bounded router ($orchestrator_lines/$orchestrator_max_lines lines)"
+   grep -q '^status: compatibility$' Skills/tic-workflow-orchestrator.md &&
+   grep -q '不是普通任务入口' Skills/tic-workflow-orchestrator.md &&
+   grep -q 'Workflow/core.md' Skills/tic-workflow-orchestrator.md &&
+   grep -q '能力不得自动级联另一个能力' Workflow/core.md &&
+   ! sed -n '1,45p' Skills/tic-workflow-orchestrator.md | grep -q '^delegates_to:'; then
+  pass "workflow orchestrator is a bounded explicit planning and compatibility capability ($orchestrator_lines/$orchestrator_max_lines lines)"
 else
-  fail "workflow orchestrator must stay clarity-bounded, route-only, and risk_floor aware"
+  fail "workflow orchestrator must remain optional, bounded, and free of routing metadata"
 fi
 
-if grep -q 'CP-1 范围决策' Global-Rules/coding-rules.md &&
-   grep -q 'CP-4 高危动作' Global-Rules/coding-rules.md &&
-   grep -q 'CP-5 发布动作' Global-Rules/coding-rules.md &&
+if grep -q '以下动作必须暂停确认' Global-Rules/coding-rules.md &&
+   grep -q '确认只保护具体动作' Workflow/core.md &&
+   grep -q 'execution_authority' Workflow/core.md &&
    grep -q 'checkpoint_policy' manifest.json &&
-   grep -q '检查点不再按阶段机械暂停' README.md; then
+   grep -q '风险只保护产生风险的具体动作和必要范围' Global-Rules/coding-rules.md; then
   pass "checkpoints are action-triggered rather than stage-triggered"
 else
   fail "checkpoint policy must pause on material decisions and high-risk actions, not every phase"
 fi
 
-if grep -q 'Intake → Planning → Discovery(按需)' Global-Rules/coding-rules.md &&
-   grep -q 'Intake -> Planning -> Discovery(按需)' Skills/tic-workflow-orchestrator.md &&
-   grep -q 'Intake -> Planning -> Discovery(按需)' USAGE.md &&
-   ! grep -q 'Intake → Discovery → Planning' Global-Rules/coding-rules.md; then
-  pass "standard workflow phase order matches orchestrator"
+if grep -q 'Capability 是按事实选择的方法库' Workflow/core.md &&
+   grep -q 'Capability 之间没有默认' Skills/tic-workflow-orchestrator.md &&
+   ! grep -q 'Intake -> Planning -> Discovery' Skills/tic-workflow-orchestrator.md; then
+  pass "workflow capabilities have no mandatory phase pipeline"
 else
-  fail "standard workflow phase order must match tic-workflow-orchestrator"
+  fail "workflow must not restore a mandatory phase pipeline"
 fi
 
-if grep -q '切换 Codex 任务或工具、跨人接力、长时异步执行' Global-Rules/coding-rules.md &&
+if grep -q '只接入 TIC 轻量入口' Skills/project-governance-bootstrap.md &&
+   grep -q '不安装 OpenSpec、Superpowers' Skills/project-governance-bootstrap.md &&
+   grep -q 'tools/bootstrap-project' Skills/project-governance-bootstrap.md &&
+   ! grep -Eq '自动检测并尽力安装|npm install -g|git submodule add' \
+     Skills/project-governance-bootstrap.md; then
+  pass "project bootstrap stays cohesive and does not install external workflow systems"
+else
+  fail "project bootstrap must only install TIC entrypoints and leave external tools explicit"
+fi
+
+if grep -q '只有共享契约跨越实现边界' Skills/contract-handoff.md &&
+   grep -q '单个内部实现' Skills/contract-handoff.md &&
+   ! grep -q '满足任一条件即触发' Skills/contract-handoff.md &&
+   ! grep -q '任务需要 FE/BE 并行。' Skills/contract-handoff.md; then
+  pass "contract handoff is triggered by shared-contract coordination, not API keywords"
+else
+  fail "contract handoff must not become an automatic gate for every API or parallel task"
+fi
+
+if grep -q '切换任务或' Global-Rules/coding-rules.md &&
    grep -q '跨独立任务、跨工具、长时异步' Skills/agent-session-protocol.md &&
    grep -q '同一 Codex 任务内的原生 subagent' templates/ai-harness/agent-session-protocol.md &&
    ! grep -R -nE '每次 AI 响应结束.*强制|每次响应结束.*强制|每次响应结束时自动执行' Global-Rules Skills README.md USAGE.md templates docs >/dev/null 2>&1; then
@@ -255,6 +404,32 @@ else
   pass "PowerShell command invocation avoids brittle array indexing"
 fi
 
+if command -v pwsh >/dev/null 2>&1; then
+  powershell_tmp="$(mktemp -d)"
+  powershell_project="$powershell_tmp/sample-project"
+  mkdir -p "$powershell_project"
+  if pwsh -NoProfile -File tools/bootstrap-project.ps1 -Yes -Force \
+       -ProjectRoot "$powershell_project" >/dev/null &&
+     grep -q 'memory_root: "ai-harness/memory"' \
+       "$powershell_project/ai-harness/project-adapter.md" &&
+     grep -Fxq '.tic/local/' "$powershell_project/.gitignore" &&
+     [ -f "$powershell_project/ai-harness/memory/team-collaboration.md" ] &&
+     printf '\nSENTINEL_POWERSHELL_MEMORY\n' >> \
+       "$powershell_project/ai-harness/memory/team-collaboration.md" &&
+     powershell_memory_before="$(cksum "$powershell_project/ai-harness/memory/team-collaboration.md")" &&
+     pwsh -NoProfile -File tools/bootstrap-project.ps1 -Yes -Force \
+       -ProjectRoot "$powershell_project" >/dev/null &&
+     [ "$powershell_memory_before" = \
+       "$(cksum "$powershell_project/ai-harness/memory/team-collaboration.md")" ]; then
+    pass "PowerShell bootstrap creates and preserves shared memory"
+  else
+    fail "PowerShell bootstrap must create and preserve shared memory"
+  fi
+  rm -rf "$powershell_tmp"
+else
+  warn "pwsh unavailable; PowerShell runtime fixture is partial and remains a long-term validation item"
+fi
+
 if grep -q 'rules_path=' tools/bootstrap-project.sh &&
    grep -q 'local_config=.tic-rules.local' tools/bootstrap-project.sh &&
    grep -q '.tic-rules.local' tools/bootstrap-project.sh &&
@@ -284,6 +459,7 @@ if bash tools/bootstrap-project.sh --yes --force "$bootstrap_project" >/dev/null
    grep -q 'sdd_root:' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q 'prd_draft_root:' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q 'release_registry_root:' "$bootstrap_project/ai-harness/project-adapter.md" &&
+   grep -q 'memory_root: "ai-harness/memory"' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q '^verification:$' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q '^  e2e:$' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q 'test_command:' "$bootstrap_project/ai-harness/project-adapter.md" &&
@@ -292,20 +468,33 @@ if bash tools/bootstrap-project.sh --yes --force "$bootstrap_project" >/dev/null
    grep -q 'data_strategy: "待确认"' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q 'cleanup_command:' "$bootstrap_project/ai-harness/project-adapter.md" &&
    grep -q 'Agent Session Protocol' "$bootstrap_project/ai-harness/agent-session-protocol.md" &&
-   grep -q '主线边界' "$bootstrap_project/.cursorrules" &&
-   grep -q '主线边界' "$bootstrap_project/.windsurfrules" &&
-   grep -q '主线边界' "$bootstrap_project/.rules/team-intelligence-center.md" &&
+   [ -f "$bootstrap_project/ai-harness/memory/README.md" ] &&
+   [ -f "$bootstrap_project/ai-harness/memory/project-context.md" ] &&
+   [ -f "$bootstrap_project/ai-harness/memory/decision-log.md" ] &&
+   [ -f "$bootstrap_project/ai-harness/memory/runbooks.md" ] &&
+   [ -f "$bootstrap_project/ai-harness/memory/team-collaboration.md" ] &&
+   grep -Fxq '.tic/local/' "$bootstrap_project/.gitignore" &&
+   [ ! -e "$bootstrap_project/.tic/local/collaboration-profile.md" ] &&
+   [ ! -e "$bootstrap_project/.tic/local/memory-candidates.md" ] &&
+   grep -q '普通任务直接调查、修改和验证' "$bootstrap_project/.cursorrules" &&
+   grep -q '普通任务直接调查、修改和验证' "$bootstrap_project/.windsurfrules" &&
+   grep -q '普通任务直接调查、修改和验证' "$bootstrap_project/.rules/team-intelligence-center.md" &&
    grep -q '^risk_floor=critical$' "$bootstrap_project/.tic-rules.lock" &&
    grep -q '^custom_policy=keep-me$' "$bootstrap_project/.tic-rules.lock" &&
    cp "$bootstrap_project/AGENTS.md" "$bootstrap_tmp/AGENTS.first" &&
+   printf '\nSENTINEL_TEAM_MEMORY\n' >> "$bootstrap_project/ai-harness/memory/team-collaboration.md" &&
+   team_memory_before="$(cksum "$bootstrap_project/ai-harness/memory/team-collaboration.md")" &&
    printf '\n' >> "$bootstrap_project/AGENTS.md" &&
    bash tools/bootstrap-project.sh --yes --force "$bootstrap_project" >/dev/null &&
    cmp -s "$bootstrap_tmp/AGENTS.first" "$bootstrap_project/AGENTS.md" &&
+   [ "$team_memory_before" = "$(cksum "$bootstrap_project/ai-harness/memory/team-collaboration.md")" ] &&
+   grep -q 'SENTINEL_TEAM_MEMORY' "$bootstrap_project/ai-harness/memory/team-collaboration.md" &&
    bash tools/bootstrap-project.sh --yes --force "$bootstrap_project" >/dev/null &&
-   cmp -s "$bootstrap_tmp/AGENTS.first" "$bootstrap_project/AGENTS.md"; then
-  pass "bootstrap output is commit-safe, idempotent, and preserves lock custom fields"
+   cmp -s "$bootstrap_tmp/AGENTS.first" "$bootstrap_project/AGENTS.md" &&
+   [ "$team_memory_before" = "$(cksum "$bootstrap_project/ai-harness/memory/team-collaboration.md")" ]; then
+  pass "bootstrap is idempotent and preserves lock, adapter, and shared memory"
 else
-  fail "bootstrap must be idempotent, avoid absolute project paths, and preserve lock custom fields"
+  fail "bootstrap must be commit-safe, idempotent, and preserve lock and shared memory"
 fi
 rm -rf "$bootstrap_tmp"
 
@@ -421,8 +610,8 @@ if grep -q 'git fetch --all --prune --tags' Skills/git-flow-operator.md &&
    grep -q 'refs/remotes/\*/<branch>' Skills/git-flow-operator.md &&
    grep -q '基线新鲜度' Skills/git-flow-operator.md &&
    grep -q 'git fetch --all --prune --tags' Global-Rules/coding-rules.md &&
-   grep -q '本地/远端同名分支' templates/AGENTS.md &&
-   grep -q '基线同步状态' templates/codex-global/AGENTS.md &&
+   grep -q '检查基线与同名分支' templates/AGENTS.md &&
+   grep -q '不默认执行分支、提交、推送、合并、tag、发布' templates/codex-global/AGENTS.md &&
    grep -q 'remote_fetch_status' tools/git-advice.sh &&
    grep -q 'remote_fetch_status' tools/git-advice.ps1 &&
    grep -q 'base_branch_sync_status' tools/git-advice.sh &&
@@ -445,10 +634,9 @@ if grep -q 'Tag 后回灌门禁' Skills/git-flow-operator.md &&
    grep -q '项目集成分支回灌状态' Skills/git-flow-operator.md &&
    grep -q '发版目录证据' Skills/git-flow-operator.md &&
    grep -q '回灌未完成' Skills/git-flow-operator.md &&
-   grep -q '回灌或收尾状态' templates/AGENTS.md &&
-   grep -q '回灌或收尾状态' templates/codex-global/AGENTS.md &&
+   grep -q 'release/hotfix tag 后继续记录' Global-Rules/coding-rules.md &&
    grep -q 'project-required back-merge or closeout evidence' templates/codex-global/skills/tic-git-flow-operator/SKILL.md &&
-   grep -q 'release/hotfix 创建 tag 后不得把 Git Flow 任务标记为完成' Global-Rules/coding-rules.md; then
+   grep -q 'release/hotfix 创建 tag 后.*继续处理回灌状态' Skills/git-flow-operator.md; then
   pass "Git tag closeout requires project-defined back-merge or closeout evidence"
 else
   fail "Git tag closeout must keep project-defined back-merge or closeout as a completion gate"
@@ -476,30 +664,31 @@ fi
 if grep -q 'artifact_ownership' templates/ai-harness/project-adapter.md &&
    grep -q 'tdd_evidence_root' templates/ai-harness/project-adapter.md &&
    grep -q 'prd_draft_root' Skills/post-dev-prd-sync.md &&
-   grep -q 'Artifact / release roots' Skills/tic-workflow-orchestrator.md &&
-   grep -q 'project_adapter_declares_owner_and_roots' manifest.json; then
-  pass "SDD/TDD/PRD artifact ownership and landing roots are declared"
+   grep -q '创建额外 artifact 前必须能回答' Workflow/core.md &&
+   grep -q 'artifact_policy' manifest.json; then
+  pass "artifact roots are preserved and additional artifacts are consumer-driven"
 else
-  fail "SDD/TDD/PRD artifact ownership and landing roots must be declared"
+  fail "artifact roots and consumer-driven creation policy must both be declared"
 fi
 
-if grep -q 'adaptive workflow' templates/AGENTS.md && grep -q 'workflow_orchestrator' manifest.json && grep -q 'single_adaptive_with_risk_floor' manifest.json && grep -q 'risk_floor' manifest.json && grep -q 'tic-workflow-orchestrator.md' README.md && grep -q 'tic-workflow-orchestrator.md' USAGE.md; then
-  pass "adaptive workflow orchestrator and risk_floor are declared"
+if grep -q 'workflow_core' manifest.json &&
+   grep -q 'native_outcome_driven_five_dimensions' manifest.json &&
+   grep -q '普通任务直接调查、修改和验证' templates/AGENTS.md &&
+   grep -q '总控型外部 Skill 不得成为项目默认入口' Workflow/core.md; then
+  pass "native outcome-driven workflow core is declared"
 else
-  fail "missing adaptive workflow orchestrator or risk_floor declaration"
+  fail "missing native outcome-driven five-dimension workflow declaration"
 fi
 
-if grep -q '规格驱动与验收驱动流程' templates/AGENTS.md &&
+if grep -q '规划、授权、验证、Review 和持久化分别判断' templates/docs/ai-rules-usage.md &&
    grep -q 'openspec_integration' manifest.json &&
-   grep -q 'specification_and_verification_required_for_standard_and_critical' manifest.json &&
-   grep -q 'sdd_tdd_as_workflow_semantics' manifest.json &&
-   grep -q 'OpenSpec 是规格事实源；Superpowers 是执行方法层' templates/AGENTS.md &&
-   grep -q 'OpenSpec 是规格事实源，Superpowers 是执行方法层' Skills/tic-workflow-orchestrator.md &&
-   grep -q '不是独立 Skill 链' USAGE.md &&
-   grep -q '不是独立 Skill 链' docs/automation.md; then
-  pass "specification and verification semantics preserve the OpenSpec mainline"
+   grep -q 'verification_policy' manifest.json &&
+   grep -q '验证不是收尾阶段' Workflow/core.md &&
+   grep -q 'Review 不是固定关卡' Workflow/core.md &&
+   grep -q '普通任务不因 OpenSpec 存在而强制创建 change' Global-Rules/coding-rules.md; then
+  pass "planning, authority, verification, review, and specification persistence are independent"
 else
-  fail "specification and verification must remain workflow semantics with OpenSpec as source"
+  fail "workflow dimensions and specification persistence must remain independently triggered"
 fi
 
 if grep -q 'project_tool_rule_entries' manifest.json &&
@@ -520,13 +709,20 @@ else
   fail "project-level tool rule entries must be installed and point back to AGENTS.md"
 fi
 
-if grep -q 'post_dev_prd_sync' manifest.json && grep -q '开发后 PRD 同步' Skills/post-dev-prd-sync.md && grep -q '交付同步模式' Prompts/ai-prd-editor.rules.md && grep -q 'post-dev-prd-sync.md' templates/AGENTS.md; then
+if grep -q 'post_dev_prd_sync' manifest.json &&
+   grep -q '开发后 PRD 同步' Skills/post-dev-prd-sync.md &&
+   grep -q '本能力不因任务完成自动触发' Skills/post-dev-prd-sync.md &&
+   grep -q 'post-dev-prd-sync' templates/AGENTS.md; then
   pass "post-development PRD sync is declared"
 else
   fail "missing post-development PRD sync policy"
 fi
 
-if grep -q 'delivery_walkthrough' manifest.json && grep -q '交付走查' Skills/delivery-walkthrough.md && grep -q 'delivery-walkthrough.md' templates/AGENTS.md && grep -q 'delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md; then
+if grep -q 'delivery_walkthrough' manifest.json &&
+   grep -q '交付走查' Skills/delivery-walkthrough.md &&
+   grep -q '明确消费者需要异步' Skills/delivery-walkthrough.md &&
+   grep -q 'delivery-walkthrough' templates/AGENTS.md &&
+   grep -q 'delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md; then
   pass "delivery walkthrough is declared"
 else
   fail "missing delivery walkthrough policy"
@@ -544,7 +740,11 @@ else
   fail "bootstrap must scaffold adapter profiles, detect workspaces, and route later maintenance safely"
 fi
 
-if grep -q 'skills_reference_only_by_default' manifest.json && grep -q 'skill_contract_schema' manifest.json && grep -q 'skill_lifecycle' manifest.json && grep -q 'Skills 默认从解析出的规则源读取' templates/docs/ai-rules-usage.md && grep -q '不自动差量复制到项目本地 skills 或开发者全局 skills' templates/docs/ai-rules-usage.md; then
+if grep -q 'skills_reference_only_by_default' manifest.json &&
+   grep -q 'skill_contract_schema' manifest.json &&
+   grep -q 'skill_lifecycle' manifest.json &&
+   grep -q 'Skills 默认从解析出的规则源读取' templates/docs/ai-rules-usage.md &&
+   grep -q '不自动差量复制到项目本地 skills' templates/docs/ai-rules-usage.md; then
   pass "skills distribution is reference-only by default"
 else
   fail "skills distribution policy must avoid automatic local/global copying and declare lifecycle contracts"
@@ -568,8 +768,8 @@ if grep -q 'one_command_user_update' manifest.json &&
    grep -q 'latest_semver_tag' tools/update.sh &&
    grep -q 'TargetRef' tools/update.ps1 &&
    grep -q -- '--channel current' USAGE.md &&
-   grep -q -- '--ref 0.3.0' USAGE.md &&
-   grep -q -- '--ref 0.3.0' docs/automation.md &&
+   grep -q -- '--ref 0.5.1' USAGE.md &&
+   grep -q -- '--ref 0.5.1' docs/automation.md &&
    grep -q 'install-codex-global.sh' tools/update.sh &&
    grep -q 'install.sh' tools/update.sh; then
   pass "stable, current, and explicit-ref update paths are declared"
@@ -578,16 +778,31 @@ else
 fi
 
 codex_wrapper_count="$(find templates/codex-global/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"
-if [ "$codex_wrapper_count" -ge 14 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先读取并遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'tic-workflow-orchestrator' templates/codex-global/skills/tic-workflow-orchestrator/SKILL.md && grep -q 'tic-contract-handoff' templates/codex-global/skills/tic-contract-handoff/SKILL.md && grep -q 'tic-release-handoff' templates/codex-global/skills/tic-release-handoff/SKILL.md && grep -q 'tic-shared-domain-arbiter' templates/codex-global/skills/tic-shared-domain-arbiter/SKILL.md && grep -q 'project-adapter-maintainer' templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md && grep -q '<rules_dir>/Skills/e2e-verification.md' templates/codex-global/skills/tic-e2e-verification/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
+if [ "$codex_wrapper_count" -ge 15 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'tic-workflow-orchestrator' templates/codex-global/skills/tic-workflow-orchestrator/SKILL.md && grep -q 'tic-contract-handoff' templates/codex-global/skills/tic-contract-handoff/SKILL.md && grep -q 'tic-release-handoff' templates/codex-global/skills/tic-release-handoff/SKILL.md && grep -q 'tic-shared-domain-arbiter' templates/codex-global/skills/tic-shared-domain-arbiter/SKILL.md && grep -q 'project-adapter-maintainer' templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md && grep -q '<rules_dir>/Skills/e2e-verification.md' templates/codex-global/skills/tic-e2e-verification/SKILL.md && grep -q '<rules_dir>/Skills/collaboration-memory-maintainer.md' templates/codex-global/skills/tic-collaboration-memory-maintainer/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
   pass "Codex global loader is wrapper-only and project-first"
 else
   fail "Codex global loader must stay wrapper-only and project-first"
 fi
 
+codex_install_tmp="$(mktemp -d)"
+if bash tools/install-codex-global.sh --yes --rules-dir "$PACKAGE_ROOT" \
+     --codex-home "$codex_install_tmp" >/dev/null &&
+   grep -q '规则版本：`0.5.1`' "$codex_install_tmp/AGENTS.md" &&
+   grep -q 'TIC_CODEX_GLOBAL_BEGIN' "$codex_install_tmp/AGENTS.md" &&
+   grep -q '<rules_dir>/Skills/collaboration-memory-maintainer.md' \
+     "$codex_install_tmp/skills/tic-collaboration-memory-maintainer/SKILL.md" &&
+   ! grep -q '{{TIC_RULES_DIR}}' \
+     "$codex_install_tmp/skills/tic-collaboration-memory-maintainer/SKILL.md"; then
+  pass "Codex global install renders the collaboration memory wrapper"
+else
+  fail "Codex global install must render the current loader and collaboration memory wrapper"
+fi
+rm -rf "$codex_install_tmp"
+
 if grep -q 'e2e_verification' manifest.json &&
    grep -q 'e2e-verification' manifest.json &&
-   grep -q 'e2e-verification' Skills/tic-workflow-orchestrator.md &&
-   grep -q 'E2E Verification Gate' Global-Rules/coding-rules.md &&
+   grep -q 'e2e-verification' templates/AGENTS.md &&
+   grep -q '局部测试不足以证明关键旅程' Global-Rules/coding-rules.md &&
    grep -q '^verification:$' templates/ai-harness/project-adapter.md &&
    grep -q '^  e2e:$' templates/ai-harness/project-adapter.md &&
    grep -q 'auth_state_path:' templates/ai-harness/project-adapter.md &&
@@ -596,12 +811,27 @@ if grep -q 'e2e_verification' manifest.json &&
    grep -q 'cleanup_command:' tools/bootstrap-project.ps1 &&
    grep -q '项目原生优先' Skills/e2e-verification.md &&
    grep -q 'partial.*blocked.*waived' Skills/e2e-verification.md &&
-   grep -q 'policy=disabled.*不等于通过' Global-Rules/coding-rules.md &&
    grep -q 'E2E gate' Skills/release-handoff.md &&
-   grep -q '不要求所有 UI micro 任务跑完整端到端流程' docs/automation.md; then
+   grep -q 'UI 改动在环境可运行时核对真实界面' templates/AGENTS.md; then
   pass "risk-based E2E verification gate is tool-neutral, adapter-driven, and evidence-aware"
 else
   fail "E2E verification policy, routing, adapter schema, wrapper, or safety evidence contract is incomplete"
+fi
+
+if grep -q 'Memory 不默认参与每个任务' templates/AGENTS.md &&
+   grep -q 'mode=extract' Skills/collaboration-memory-maintainer.md &&
+   grep -q '提取 0～5 条候选' Skills/collaboration-memory-maintainer.md &&
+   ! grep -q '3～5 条候选' Skills/collaboration-memory-maintainer.md &&
+   grep -q 'mode=reconcile' Skills/collaboration-memory-maintainer.md &&
+   grep -q 'review_after' Skills/collaboration-memory-maintainer.md &&
+   grep -q '原始聊天' Skills/collaboration-memory-maintainer.md &&
+   grep -q '明确授权' Skills/collaboration-memory-maintainer.md &&
+   grep -q 'memory_root:' templates/ai-harness/project-adapter.md &&
+   grep -q '.tic/local/' tools/bootstrap-project.sh &&
+   grep -q '.tic/local/' tools/bootstrap-project.ps1; then
+  pass "collaboration memory lifecycle is explicit, scoped, expiring, and preserved"
+else
+  fail "collaboration memory skill, privacy boundary, lifecycle, adapter root, or explicit activation is incomplete"
 fi
 
 if grep -q 'codegraph_optional' manifest.json &&
@@ -618,11 +848,8 @@ fi
 
 if grep -q 'ui_visual_verification' manifest.json &&
    grep -q 'ui_design_skill_routing' manifest.json &&
-   grep -q 'UI 验证规则' templates/AGENTS.md &&
-   grep -q '当前环境可用的设计与 UI/UX 专业能力' templates/AGENTS.md &&
-   grep -q 'design-taste-frontend' templates/AGENTS.md &&
-   grep -q '同一 Codex 任务内的原生 subagent' templates/AGENTS.md &&
-   grep -q 'UI 变更验证' docs/automation.md; then
+   grep -q 'UI 改动在环境可运行时核对真实界面' templates/AGENTS.md &&
+   grep -q 'UI 改动在本地应用可运行时核对真实界面' Global-Rules/coding-rules.md; then
   pass "UI changes require real interface verification when risk warrants"
 else
   fail "missing capability-based UI design routing or real interface verification policy"
@@ -634,20 +861,29 @@ else
   fail "generated Markdown templates must be Chinese-first"
 fi
 
-if grep -q 'no_git_hooks_by_default' manifest.json && grep -q 'no_forced_full_flow_for_readonly_or_micro_tasks' manifest.json; then
+if grep -q 'no_git_hooks_by_default' manifest.json &&
+   grep -q 'task_context_has_no_mandatory_artifacts' manifest.json &&
+   grep -q 'external_method_skills' manifest.json &&
+   grep -q 'umbrella_workflow_skills_are_not_default_entrypoints' manifest.json; then
   pass "manifest records lightweight exclusions"
 else
   fail "manifest does not record lightweight exclusions"
 fi
 
-if grep -q '^.omx/$' .gitignore && grep -q '^.superpowers/$' .gitignore && grep -q '^.tic/agent-runs/$' .gitignore; then
-  pass "agent runtime directories are gitignored"
+if grep -Fxq '.omx/' .gitignore &&
+   grep -Fxq '.superpowers/' .gitignore &&
+   grep -Fxq '.tic/agent-runs/' .gitignore &&
+   grep -Fxq '.tic/local/' .gitignore; then
+  pass "agent runtime and personal collaboration memory are gitignored"
 else
-  fail ".omx, .superpowers, and .tic/agent-runs runtime directories must remain local-only"
+  fail ".omx, .superpowers, .tic/agent-runs, and .tic/local must remain local-only"
 fi
 
 if [ "$failures" -eq 0 ]; then
   printf '\nValidation passed.\n'
+  if [ "$warnings" -gt 0 ]; then
+    printf 'Validation warnings: %s.\n' "$warnings"
+  fi
 else
   printf '\nValidation failed with %s issue(s).\n' "$failures" >&2
   exit 1

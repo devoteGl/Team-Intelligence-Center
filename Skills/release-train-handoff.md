@@ -1,19 +1,20 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: release-train-handoff
 status: alias
-canonical: release-handoff
-phase: release
-role: PM / Tech Lead / Release Manager / DS
-risk_min: critical
-inputs:
-  - delivery_evidence
-  - release_train_scope
-outputs:
-  - release_train_handoff
-requires:
-  - delivery-walkthrough
-delegates_to:
+category: compatibility
+activation:
+  when:
+    - 用户或旧提示词显式调用 release-train-handoff
+  not_when:
+    - 新任务可以直接调用 release-handoff
+side_effects: local-reversible
+artifacts:
+  default: none
+  when_needed:
+    - canonical capability 需要输出发布批次交接
+requires: []
+related:
   - release-handoff
 ---
 
