@@ -1,18 +1,21 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: git-flow-operator
 status: canonical
-phase: execution
-role: PM / Tech Lead / Release Manager
-risk_min: standard
-inputs:
-  - git_operation_request
-  - branch_context
-outputs:
-  - git_flow_confirmation_card
-  - git_operation_evidence
+category: git
+activation:
+  when:
+    - 用户明确要求分支、提交、推送、合并、tag 或回灌操作
+  not_when:
+    - 普通研发任务没有明确 Git 生命周期授权
+side_effects: external-write
+artifacts:
+  default: git-operation-evidence
+  when_needed:
+    - Git 或发布操作需要审计和回灌记录
 requires: []
-delegates_to: []
+related:
+  - release-handoff
 ---
 
 # Git Flow Operator（分支与发版合并操作技能）
@@ -20,7 +23,7 @@ delegates_to: []
 ## 技能用途
 
 - 服务角色：**PM / Tech Lead / Release Manager**
-- 触发时机：新需求开始、创建 feature/release/hotfix 分支、功能收尾、发版合并、tag、push、hotfix 回灌
+- 触发时机：用户明确要求创建分支、提交、推送、合并、tag 或回灌操作
 - 输出物：分支操作计划、分支映射、合并/tag 门禁、执行证据、回灌记录
 - 适用场景：单仓库 Git Flow、多项目联动 Git Flow、子模块/独立目录版本冻结、release/hotfix 收尾
 

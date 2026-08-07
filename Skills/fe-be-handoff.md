@@ -1,20 +1,20 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: fe-be-handoff
 status: alias
-canonical: contract-handoff
-phase: planning
-role: FE / BE
-risk_min: standard
-inputs:
-  - frozen_contract
-  - prd_or_openspec_change
-outputs:
-  - fe_handoff
-  - be_handoff
-requires:
-  - contract-handoff
-delegates_to:
+category: compatibility
+activation:
+  when:
+    - 用户或旧提示词显式调用 fe-be-handoff
+  not_when:
+    - 新任务可以直接调用 contract-handoff
+side_effects: local-reversible
+artifacts:
+  default: none
+  when_needed:
+    - canonical capability 需要输出交接记录
+requires: []
+related:
   - contract-handoff
 ---
 

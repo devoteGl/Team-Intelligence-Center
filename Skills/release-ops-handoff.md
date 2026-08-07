@@ -1,19 +1,20 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: release-ops-handoff
 status: alias
-canonical: release-handoff
-phase: release
-role: PM / Tech Lead / Release Manager / DS
-risk_min: standard
-inputs:
-  - delivery_evidence
-  - single_change_scope
-outputs:
-  - single_release_handoff
-requires:
-  - delivery-walkthrough
-delegates_to:
+category: compatibility
+activation:
+  when:
+    - 用户或旧提示词显式调用 release-ops-handoff
+  not_when:
+    - 新任务可以直接调用 release-handoff
+side_effects: local-reversible
+artifacts:
+  default: none
+  when_needed:
+    - canonical capability 需要输出发布交接
+requires: []
+related:
   - release-handoff
 ---
 

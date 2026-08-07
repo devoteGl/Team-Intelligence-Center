@@ -1,6 +1,6 @@
 ---
 name: tic-e2e-verification
-description: Use for Team-Intelligence-Center risk-based end-to-end verification of user journeys, cross-layer flows, critical authentication, permission, payment, privacy, or cross-service behavior, including runner selection, safe test data, evidence, cleanup, and verdicts.
+description: Use when local checks cannot prove an important user journey, cross-layer flow, authentication, permission, payment, privacy, migration, or cross-service behavior, including runner selection, safe test data, evidence, cleanup, and verdicts.
 ---
 
 # TIC E2E Verification Wrapper

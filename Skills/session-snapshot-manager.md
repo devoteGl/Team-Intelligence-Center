@@ -1,25 +1,28 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: session-snapshot-manager
 status: rule-template
-canonical: tic-workflow-orchestrator
-phase: closeout
-role: PM
-risk_min: standard
-inputs:
-  - workflow_state
-outputs:
-  - session_snapshot
+category: coordination
+activation:
+  when:
+    - 工作跨任务、跨工具、跨人接力或上下文即将不可用
+  not_when:
+    - 同一任务上下文仍可可靠恢复
+side_effects: local-reversible
+artifacts:
+  default: session-snapshot
+  when_needed:
+    - 后续接力者需要恢复冻结契约、决策和待办
 requires: []
-delegates_to:
-  - tic-workflow-orchestrator
+related:
+  - agent-session-protocol
 ---
 
 # Session Snapshot Manager（会话状态快照管理技能）
 
 ## 技能用途
 - 服务角色：**PM (Tech Lead / PM)**
-- 触发时机：跨独立任务、跨工具、长时异步、显式交接或需要审计时生成快照；新任务收到快照后执行恢复
+- 触发时机：工作跨任务、跨工具、跨人接力、长时异步或上下文即将不可用
 - 输出物：标准化 SESSION SNAPSHOT
 - 适用场景：宿主线程无法可靠承载全部状态，需要保留检查点、冻结契约、待决策项或任务证据的场景
 
@@ -52,7 +55,7 @@ delegates_to:
 |------|------|------|------|
 | 当前层 | 枚举 | 当前工作所在层 | `implementation` |
 | 当前负责人 | 字符串 | 当前 owner 或主 Agent | `主 Agent` |
-| 上次检查点 | 字符串 | 最近通过的检查点及描述 | `CP-1 已通过（用户已批准任务清单）` |
+| 最近决策 | 字符串 | 最近确认的受保护动作或产品决定 | `用户已确认迁移范围` |
 | 任务状态 | 列表 | 所有任务的当前状态 | 见模板 |
 | 待决策项 | 字符串 | 当前需要人工决策的事项 | `是否将 JWT 迁移至 httpOnly cookie？` |
 | 冻结契约 | 字符串 | 当前已冻结的接口契约信息 | `types/auth.ts（已冻结，版本: v1.0）` |
@@ -75,7 +78,7 @@ external-coordination
 |------|------|---------|
 | ✅ | 已完成 | 任务已交付并通过验收 |
 | 🔄 | 进行中 | 当前正在执行的任务 |
-| ⏸️ | 等待中 | 被依赖关系阻塞或等待检查点 |
+| ⏸️ | 等待中 | 被依赖关系阻塞或等待授权 |
 | ❌ | 已驳回 | QA 驳回，需回退修复 |
 | 🔁 | 返工中 | 被 QA 驳回后正在修复 |
 
@@ -107,7 +110,7 @@ external-coordination
 | 长时异步、上下文即将不可用 | 应生成 | 防止关键状态丢失 |
 | 用户明确要求接力或审计快照 | 必须生成 | 满足显式交付要求 |
 | 仅存在普通任务状态变化 | 默认不生成 | 避免每轮重复噪声 |
-| consulting / micro 且无未完成状态 | 不生成 | 保持轻量 |
+| 没有跨上下文恢复需求 | 不生成 | 保持轻量 |
 
 ---
 
@@ -181,7 +184,7 @@ PM 在生成快照前，必须执行以下自检：
 - [ ] 任务状态列表是否包含了本次会话中提到的所有任务？
 - [ ] 已完成的任务是否标记为 ✅？
 - [ ] 进行中的任务是否标记为 🔄？
-- [ ] 等待中的任务是否说明了等待原因（依赖/检查点）？
+- [ ] 等待中的任务是否说明了等待原因（依赖/授权）？
 - [ ] 待决策项是否准确反映了需要人工决策的内容？
 - [ ] 冻结契约信息是否包含了版本号？
 - [ ] 快照是否放置在响应的最末尾？

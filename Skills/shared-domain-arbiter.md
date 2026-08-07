@@ -1,19 +1,22 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: shared-domain-arbiter
 status: canonical
-phase: execution
-role: PM / Tech Lead
-risk_min: standard
-inputs:
-  - shared_file_change_request
-  - contract_or_task_scope
-outputs:
-  - arbitration_decision
-  - affected_owner_notice
-requires:
+category: coordination
+activation:
+  when:
+    - 多个执行者存在并发 ownership 或互斥修改冲突
+  not_when:
+    - 单个执行者在已授权范围内修改共享文件
+side_effects: local-reversible
+artifacts:
+  default: none
+  when_needed:
+    - 并行执行者需要可引用的 ownership 仲裁
+requires: []
+related:
   - task-decomposer
-delegates_to: []
+  - contract-handoff
 legacy_sources:
   - conflict-arbiter
 ---
@@ -23,7 +26,7 @@ legacy_sources:
 ## 技能用途
 
 - 服务角色：**PM / Tech Lead**
-- 触发时机：实现中需要修改共享文件域，例如 `router/`、`types/`、`constants/`、全局配置、公共工具、跨端契约文件
+- 触发时机：多个执行者对共享文件域存在并发 ownership 或互斥修改冲突
 - 输出物：共享文件修改仲裁结论、影响范围、授权条件、通知对象、记录位置
 - 适用场景：FE/BE 并行、跨模块开发、共享类型/路由/常量变更、避免职责边界被隐式破坏
 
@@ -33,7 +36,8 @@ legacy_sources:
 
 共享文件域是协作边界，不是任何一方的临时便利区。
 
-本技能是多 agent 并行、社区 agent 适配和工具原生 subagent 写入共享域前的授权闸门。未获仲裁授权的 agent 不得修改共享类型、路由、常量、全局配置、公共工具或契约文件。
+本技能解决多 agent 并行、社区 agent 适配和工具原生 subagent 的共享域
+ownership 冲突。单个执行者在已授权范围内修改共享文件不需要额外仲裁。
 
 绝对禁止：
 - 未经说明直接修改共享文件。

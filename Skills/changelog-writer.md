@@ -1,26 +1,30 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: changelog-writer
 status: canonical
-phase: closeout
-role: DS
-risk_min: standard
-inputs:
-  - delivery_evidence
-  - version_scope
-outputs:
-  - changelog
+category: delivery
+activation:
+  when:
+    - 准备形成版本发布记录
+  not_when:
+    - 普通任务完成但没有版本记录消费者
+side_effects: local-reversible
+artifacts:
+  default: changelog
+  when_needed:
+    - 发布维护者需要版本历史
 requires: []
-delegates_to: []
+related:
+  - release-handoff
 ---
 
 # Changelog Writer（双层变更日志编写技能）
 
 ## 技能用途
 - 服务角色：**DS (Doc Specialist)**
-- 触发时机：QA 验收通过后，DS 进入文档归档阶段
+- 触发时机：准备形成版本发布记录，或用户明确要求更新 Changelog
 - 输出物：符合 `ai-prd-editor.rules.md` 强制模板的双层 Changelog
-- 适用场景：任何版本发布、功能交付后的变更记录归档
+- 适用场景：存在版本记录消费者的发布或交付归档
 
 > 对应 `ai-prd-editor.rules.md` 第 11 节：
 > "全局和局部的 Changelog 都必须 100% 遵守以下结构模板，严禁擅自增删一级/二级标题。"

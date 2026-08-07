@@ -1,26 +1,28 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: candidate-rule-extractor
 status: subflow
-canonical: code-investigator
-phase: discovery
-role: CI / BE
-risk_min: standard
-inputs:
-  - source_files
-  - module_scope
-outputs:
-  - candidate_rules
-requires:
+category: discovery
+activation:
+  when:
+    - 用户要求抽取候选规则或调查发现有证据的隐含行为
+  not_when:
+    - 没有可追溯证据或用户要求直接修改正式业务规则
+side_effects: local-reversible
+artifacts:
+  default: none
+  when_needed:
+    - 后续确认需要候选规则清单
+requires: []
+related:
   - code-investigator
-delegates_to: []
 ---
 
 # Candidate Rule Extractor（候选业务规则抽取技能）
 
 ## 技能用途
 - 服务角色：**CI (Codebase Investigator) / BE (Backend Engineer)**
-- 触发时机：CI 调研阶段的 Phase 4（业务规则识别）或 BE 在开发中发现隐含规则时
+- 触发时机：用户要求抽取候选规则，或调查发现有证据支持的隐含行为时
 - 输出物：符合 `ai-prd-editor.rules.md` 第 4.1 节格式的 `candidate-rules.yaml`
 - 适用场景：老项目业务规则挖掘、代码逆向工程、接口行为分析
 

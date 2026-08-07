@@ -1,31 +1,34 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: post-dev-prd-sync
 status: canonical
-phase: closeout
-role: DS / PM
-risk_min: standard
-inputs:
-  - delivery_evidence
-  - behavior_changes
-  - candidate_rules
-outputs:
-  - prd_update_draft
-  - pending_confirmations
+category: delivery
+activation:
+  when:
+    - 产品事实发生变化且存在维护中的 PRD
+  not_when:
+    - 变更不影响产品事实或项目没有对应 PRD 消费者
+side_effects: local-reversible
+artifacts:
+  default: prd-update-draft
+  when_needed:
+    - 产品维护者需要将交付证据同步到 PRD
 requires: []
-delegates_to: []
+related:
+  - prd-review-checklist
+  - changelog-writer
 ---
 
 # Post Dev PRD Sync（开发后 PRD 同步技能）
 
 ## 技能用途
 - 服务角色：**DS (Doc Specialist) / PM**
-- 触发时机：standard / critical 任务开发完成、验收通过、发版前整理、用户要求“补 PRD / 归档 / 同步文档”时
+- 触发时机：产品事实发生变化且存在维护中的 PRD，或用户明确要求同步 PRD 时
 - 输出物：PRD 更新草稿、证据清单、待确认事项、可选 Changelog 输入
 - 适用场景：用户可见行为、UI/交互、API 契约、数据模型、状态流转、业务规则或运营流程发生变化后的文档同步
 
 > 本技能不替代 `ai-prd-generator.rules.md` 和 `ai-prd-editor.rules.md`。
-> 它是开发完成后的编排层：用证据生成 PRD 更新草稿，再由人工确认后转正。
+> 它是按需选择的交付能力：用证据生成 PRD 更新草稿，再由人工确认后转正。
 
 ---
 
@@ -42,9 +45,10 @@ delegates_to: []
 
 ---
 
-## 1. 自动触发条件
+## 1. 激活条件
 
-standard / critical 任务完成后，AI 应自动判断是否需要执行本技能。
+本能力不因任务完成自动触发。只有产品事实发生变化且存在维护中的 PRD，
+或者用户明确要求同步 PRD 时才执行。
 
 需要执行：
 - 用户可见行为变化。
@@ -58,7 +62,7 @@ standard / critical 任务完成后，AI 应自动判断是否需要执行本技
 - 纯格式化、lint、注释调整。
 - 测试补充但不改变产品行为。
 - 内部重构且无外部行为、接口、数据或流程变化。
-- 只读咨询、代码解释和 micro 级非行为改动。
+- 只读咨询、代码解释和非行为改动。
 
 ---
 

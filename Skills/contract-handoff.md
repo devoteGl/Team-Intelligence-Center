@@ -1,21 +1,21 @@
 ---
-schema: tic_skill.v1
+schema: tic_capability.v1
 id: contract-handoff
 status: canonical
-phase: planning
-role: PM / FE / BE
-risk_min: standard
-inputs:
-  - task_list
-  - ci_report
-  - prd_or_openspec_change
-outputs:
-  - frozen_contract
-  - fe_handoff
-  - be_handoff
-requires:
+category: coordination
+activation:
+  when:
+    - 公共接口或多个消费者需要共享同一契约
+  not_when:
+    - 变更只影响单个内部实现且不存在共享消费者
+side_effects: local-reversible
+artifacts:
+  default: none
+  when_needed:
+    - 实现方需要可引用的契约和交接记录
+requires: []
+related:
   - task-decomposer
-delegates_to: []
 legacy_sources:
   - api-contract-freezer
   - fe-be-handoff
@@ -26,20 +26,23 @@ legacy_sources:
 ## 技能用途
 
 - 服务角色：**PM / Tech Lead / FE / BE**
-- 触发时机：涉及 API、共享类型、数据结构、错误码、权限点、前后端并行实现或跨端字段消费前
+- 触发时机：公共接口、共享类型、字段、错误码或权限点会跨实现边界变化，
+  且多个消费者需要同一约定时
 - 输出物：冻结契约、FE 交接清单、BE 交接清单、Mock/fixture 方案、自测对照表
-- 适用场景：需要把“接口协议”和“实现交接”绑定成同一证据链的 standard / critical 任务
+- 适用场景：需要把“接口协议”和“实现交接”绑定成同一证据链的协作任务
 
 ---
 
 ## 0. 核心原则
 
-契约冻结和 FE/BE 交接必须是同一个连续动作：**先冻结，再交接，再并行实现**。
+只有共享契约跨越实现边界，且不先对齐会让多个消费者产生不兼容结果时，
+才需要本能力。
 
-`contract-handoff` 是跨端、FE/BE 或多 agent 并行实现的前置闸门。未冻结契约时，不得把相关实现任务派发给社区 agent、工具原生 subagent 或外部编排器。
+此时契约冻结和实现交接是同一个连续动作：**先对齐，再交接，再并行修改
+共享边界**。契约已经稳定且本次不改变时，各实现方可以直接按现有契约工作。
 
 绝对禁止：
-- 未冻结契约就开始跨端并行开发。
+- 共享契约仍有歧义时开始互相依赖的跨端并行开发。
 - 冻结契约后另写一份不一致的交接清单。
 - FE/BE 在并行期间私自修改共享类型、字段、错误码或状态枚举。
 - 用“返回相关数据”“按需处理”等模糊描述代替字段级定义。
@@ -48,12 +51,20 @@ legacy_sources:
 
 ## 1. 触发条件
 
-满足任一条件即触发：
-- 新增或修改 API 请求/响应。
-- 新增或修改 `types/`、`constants/`、状态枚举、错误码。
-- FE 需要 Mock 数据或 BE 需要按 UI 场景实现接口。
-- 任务需要 FE/BE 并行。
-- OpenSpec / PRD 中出现数据需求、业务规则或权限点变化。
+出现以下事实时可以触发：
+
+- API 请求/响应会变化，并且存在两个或以上实现方或消费者。
+- `types/`、`constants/`、状态枚举、错误码会跨模块共享。
+- FE Mock、BE 实现和 QA 断言依赖同一组尚未对齐的字段或场景。
+- 多个执行者会并行修改或消费同一个权限、事件或数据契约。
+- 当前代码、规格和消费者对同一契约存在冲突。
+
+以下情况不触发：
+
+- 变更只影响单个内部实现，没有共享消费者。
+- FE/BE 并行但公共契约已经稳定，且本次不修改契约。
+- 只是出现 API、字段、类型、权限等关键词。
+- 当前任务只需调查契约，不需要冻结或交接。
 
 ---
 

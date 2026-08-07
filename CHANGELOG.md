@@ -2,6 +2,52 @@
 
 本文件记录 Team-Intelligence-Center 公开版本。版本详情见 `docs/releases/<version>/README.md`。
 
+## 0.5.1 - 2026-08-07
+
+### Changed
+
+- 用规划深度、执行授权、验证范围、Review 和事实持久化五个独立维度替代
+  `direct`、`structured`、`guarded` 综合模式。
+- 任务契约扩展为 outcome、boundaries、done、verification、authority。
+- Superpowers 等外部 Skills 降为按需方法库，总控型 Skill 不再是项目入口。
+- OpenSpec 明确为长期规格事实源；普通任务不自动创建 change，同一事实只
+  保留一个主事实源。
+- 验证改为贯穿执行的证据线；每次交付做 diff 自审，高影响变更按需独立
+  Review。
+- 清理 canonical 与兼容 Skills 中遗留的 CP 检查点和旧任务档位语义。
+
+[版本详情](docs/releases/0.5.1/README.md)
+
+## 0.5.0 - 2026-08-07
+
+### Added
+
+- 新增 `Workflow/core.md`、`Workflow/capability-schema.md` 和行为场景，
+  建立 `direct`、`structured`、`guarded` 三模式的动作级决策。
+- 新增 canonical `collaboration-memory-maintainer` Skill 和 Codex 全局
+  `tic-collaboration-memory-maintainer` wrapper。
+- 新增 `ai-harness/memory/` 共享项目记忆骨架，以及 gitignored 的
+  `.tic/local/` 个人画像和候选模板。
+- 新增有授权、有证据、分范围、可过期、可冲突处理的 Collaboration
+  Intelligence Loop。
+
+### Changed
+
+- 全部 Skills 迁移到 `tic_capability.v1`，移除 metadata 级流程路由和
+  默认调用链。
+- `tic-workflow-orchestrator` 降为显式复杂规划和旧版迁移的兼容能力，
+  普通任务不再经过统一入口。
+- 产物改为消费者驱动；验证强度与执行模式分别判断；只有受保护动作暂停
+  确认。
+- 协作记忆改为显式 Capability，不再自动参与每个任务；检索和提取必须由
+  用户要求或已确认的项目约定触发。
+- Shell / PowerShell bootstrap 首次创建共享 memory，普通安装、刷新和
+  升级逐文件保留已有内容，并将 `.tic/local/` 加入 `.gitignore`。
+- Project Adapter 新增 `artifact_roots.memory_root`；历史对话分析必须得到
+  明确授权，原始聊天、秘密、认证状态和个人敏感信息禁止落盘。
+
+[版本详情](docs/releases/0.5.0/README.md)
+
 ## 0.3.0 - 2026-07-31
 
 ### Added
