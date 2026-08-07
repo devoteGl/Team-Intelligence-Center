@@ -5,6 +5,7 @@
 
 ## 发布信息
 
+- 状态：已发布至 `origin` 并完成 `develop` 回灌
 - release owner：Team-Intelligence-Center
 - release 分支：`release/0.5.1`
 - release tag：`0.5.1`
