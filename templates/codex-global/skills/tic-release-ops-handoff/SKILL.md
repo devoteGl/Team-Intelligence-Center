@@ -1,6 +1,6 @@
 ---
 name: tic-release-ops-handoff
-description: Compatibility wrapper. Prefer tic-release-handoff for single-change or release-train operations, QA, rollout, rollback, monitoring, and usage handoff.
+description: Use when the user explicitly invokes the legacy tic-release-ops-handoff name; re-evaluate the canonical release-handoff activation boundary.
 ---
 
 # TIC Release Ops Handoff Wrapper
@@ -15,4 +15,4 @@ When invoked:
 5. If missing, read and follow `<rules_dir>/Skills/release-ops-handoff.md`.
 6. Do not copy TIC Skills into project-local or global skills.
 
-If the target TIC Skill is missing, produce a concise release handoff with scope, deploy steps, validation, rollback, known risks, and owner follow-ups.
+If the canonical Skill is missing, report the missing rule; do not restore the legacy release template.

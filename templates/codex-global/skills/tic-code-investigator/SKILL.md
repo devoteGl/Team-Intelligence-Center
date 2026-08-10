@@ -1,6 +1,6 @@
 ---
 name: tic-code-investigator
-description: Use for TIC-style codebase investigation, module mapping, business rule discovery, and risk scanning before non-trivial changes.
+description: Use when the user asks to map, explain, or trace existing code behavior, or when an unknown implementation fact blocks a current decision.
 ---
 
 # TIC Code Investigator Wrapper

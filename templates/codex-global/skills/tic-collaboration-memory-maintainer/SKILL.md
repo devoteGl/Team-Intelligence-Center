@@ -1,6 +1,6 @@
 ---
 name: tic-collaboration-memory-maintainer
-description: Extract, review, promote, reconcile, audit, or deprecate Team-Intelligence-Center collaboration memory when the user explicitly requests it or confirms that an observed pattern has long-term reuse value.
+description: Use when the user explicitly requests collaboration-memory extraction, review, promotion, reconciliation, audit, or deprecation, or confirms long-term reuse value.
 ---
 
 # TIC Collaboration Memory Maintainer Wrapper

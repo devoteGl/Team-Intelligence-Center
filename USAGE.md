@@ -1,6 +1,6 @@
 # Team-Intelligence-Center 使用指南
 
-本指南面向规则包维护者和接入业务项目的团队。0.5.1 的默认模型是
+本指南面向规则包维护者和接入业务项目的团队。0.5.2 的默认模型是
 “结果优先、原生执行、五个维度独立判断”。
 
 ## 1. 先理解三个对象
@@ -53,8 +53,9 @@
 - PRD、候选规则或 Collaboration Memory 的正式晋升；
 - 明显超出用户原始目标的范围扩张。
 
-“全自动”“你决定”“不用问我”允许在原目标内自主完成可逆本地工作，不
-自动包含上述动作。
+“全自动”“你决定”“不用问我”本身不自动包含上述动作；但用户在当前任务
+明确要求某个 Git、发布或外部结果时，这就是该结果的授权。目标可唯一解析
+时不重复确认，只有歧义、覆盖风险或范围扩张时再询问。
 
 ## 4. 安装到项目
 
@@ -164,11 +165,11 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh \
   --project /path/to/project
 ```
 
-固定到 0.5.1：
+固定到 0.5.2：
 
 ```bash
 bash /path/to/Team-Intelligence-Center/tools/update.sh \
-  --ref 0.5.1 \
+  --ref 0.5.2 \
   --project /path/to/project
 ```
 
@@ -208,15 +209,15 @@ Loader 只做规则发现和 wrapper 路由：
 
 | 需要解决的问题 | 选择的 Capability |
 | --- | --- |
-| 不清楚代码路径、业务规则或影响面 | `code-investigator` |
+| 用户要求追踪现有行为，或关键实现事实阻塞决策 | `code-investigator` |
 | 需要把复杂目标拆成独立结果和 ownership | `task-decomposer` |
-| API、字段、枚举、错误码或权限需要跨边界对齐 | `contract-handoff` |
-| 多执行方并发修改同一共享域 | `shared-domain-arbiter` |
+| 共享契约跨实现边界，独立消费者需要兼容语义 | `contract-handoff` |
+| 并发 owner 修改同一共享域且发生 ownership 冲突 | `shared-domain-arbiter` |
 | 当前验证不足以证明关键用户旅程 | `e2e-verification` |
 | 跨任务、跨工具、长时异步或审计交接 | `agent-session-protocol` |
 | 明确消费者需要异步交付说明 | `delivery-walkthrough` |
 | 产品维护者需要同步已变更行为 | `post-dev-prd-sync` |
-| 发布方需要部署、回滚、tag 和证据交接 | `release-handoff` |
+| 独立发布消费者需要部署、验证、监控或回滚信息 | `release-handoff` |
 | 用户明确要求 Git Flow 建议或操作 | `git-flow-operator` |
 | 用户要求维护可复用协作事实 | `collaboration-memory-maintainer` |
 | 需要显式生成复杂工作计划或迁移旧路由 | `tic-workflow-orchestrator` |
@@ -295,13 +296,14 @@ ai-harness/memory/team-collaboration.md
 
 ## 11. Git 与发布
 
-TIC 默认只提供建议，不执行 Git 写操作。用户明确要求 Git Flow 时：
+TIC 不默认执行 Git 写操作。用户明确要求具体 Git 结果时：
 
 1. 解析项目声明的分支、版本和 tag 策略；
-2. 运行或要求运行 `git fetch --all --prune --tags`；
+2. 对权威远端运行 `git fetch <authoritative-remote> --prune --tags`；
 3. 检查基线同步和本地/远端同名分支；
-4. 输出候选命令和证据；
-5. 在执行分支、提交、push、merge、tag 或发布前等待确认。
+4. 核对候选命令、目标和证据；
+5. 当前任务已经明确授权且目标唯一时直接执行；歧义、覆盖风险或范围扩大时
+   再等待确认。
 
 已 push 的发布 tag 默认不可移动。release/hotfix tag 也不是自动完成态，
 仍需记录项目要求的回灌或收尾状态。
@@ -325,7 +327,7 @@ artifact 不是跨任务协作本身；它只在接手者确实需要时存在�
 
 ## 13. 从旧配置迁移
 
-旧版任务档位和流程下限不再控制 0.5.1 的执行。迁移时：
+旧版任务档位和流程下限不再控制 0.5.2 的执行。迁移时：
 
 1. 把旧档位拆成规划、授权、验证、Review 和事实持久化五个独立判断；
 2. 把原来的全局最小流程约束改写成具体受保护动作；

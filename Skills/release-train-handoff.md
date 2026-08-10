@@ -7,62 +7,22 @@ activation:
   when:
     - 用户或旧提示词显式调用 release-train-handoff
   not_when:
-    - 新任务可以直接调用 release-handoff
+    - 新任务可按事实判断 release-handoff
 side_effects: local-reversible
 artifacts:
   default: none
-  when_needed:
-    - canonical capability 需要输出发布批次交接
+  when_needed: []
 requires: []
 related:
   - release-handoff
 ---
 
-# Release Train Handoff（发版批次交付包兼容入口）
+# Release Train Handoff（兼容入口）
 
 ## 技能用途
 
-- 服务角色：**PM / Tech Lead / Release Manager / DS**
-- 触发时机：旧流程或旧提示词仍调用 `release-train-handoff` 时
-- 输出物：发版批次交付包
-- 适用场景：全量发版、多项目/多服务发版、SQL/脚本/配置变更、需要统一冒烟和回滚的 release train
+本文件是兼容入口，不再维护独立正文模板。canonical Skill：
+`Skills/release-handoff.md`。
 
----
-
-## 兼容策略
-
-本文件是兼容入口，不再维护独立正文模板。新任务必须路由到 canonical Skill：
-
-```text
-Skills/release-handoff.md
-```
-
-执行时：
-
-1. 读取并遵守 `Skills/release-handoff.md`。
-2. 使用 `mode=train`。
-3. 输出发版总控、release owner、release registry root、tag 映射、服务卡、业务联动卡、数据库/脚本 manifest、总冒烟、监控、回滚和证据归档。
-4. 分支创建、merge、tag、push 或回灌仍必须交给 `git-flow-operator`，不得由发版交接技能直接执行。
-
-## 兜底输出
-
-如果 canonical Skill 缺失，输出最小发版批次交付包：
-
-```markdown
-# 发版批次交付包
-
-- Release ID：
-- Release Owner：
-- Release Registry Root：
-- Release Tag：
-- Tag 映射：
-- 发版范围：
-- 服务 / 项目清单：
-- SDD / TDD / PRD 落盘状态：
-- 数据库 / 脚本：
-- 发版顺序：
-- 总体验证：
-- 监控与上线观察：
-- 回滚方案：
-- 待确认项：
-```
+仅在旧名称被显式调用时读取 canonical Skill；多服务或批次发布的字段由真实
+发布消费者决定，不恢复旧的统一发版模板。

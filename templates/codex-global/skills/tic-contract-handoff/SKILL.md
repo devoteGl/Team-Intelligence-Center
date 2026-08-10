@@ -1,6 +1,6 @@
 ---
 name: tic-contract-handoff
-description: Use before API, FE/BE, shared type, field, enum, error code, permission, or cross-end implementation work to freeze the contract and produce FE/BE handoff artifacts.
+description: Use when a shared contract crosses implementation boundaries and independent consumers need compatible semantics, versioning, or migration decisions.
 ---
 
 # TIC Contract Handoff Wrapper
@@ -15,4 +15,4 @@ When invoked:
 5. If missing, fall back to `<rules_dir>/Skills/api-contract-freezer.md` and `<rules_dir>/Skills/fe-be-handoff.md`.
 6. Do not copy TIC Skills into project-local or global skills.
 
-If the target TIC Skill is missing, produce a lightweight frozen contract and FE/BE handoff checklist with fields, errors, rules, Mock data, self-test items, integration scenarios, and pending confirmations.
+If the target TIC Skill is missing, report the missing rule and return only the contract facts already known; do not infer a mandatory handoff.

@@ -1,6 +1,6 @@
 ---
 name: tic-release-handoff
-description: Use when a feature, service, release train, SQL/script, or cross-project change needs deployment, operations, QA, rollback, monitoring, usage, and feedback-loop handoff.
+description: Use when an independent release, operations, QA, or usage consumer needs deployment, verification, monitoring, rollback, or takeover information.
 ---
 
 # TIC Release Handoff Wrapper
@@ -15,4 +15,4 @@ When invoked:
 5. If missing, fall back to `<rules_dir>/Skills/release-ops-handoff.md` for single-change handoff or `<rules_dir>/Skills/release-train-handoff.md` for release-train handoff.
 6. Do not copy TIC Skills into project-local or global skills.
 
-If the target TIC Skill is missing, produce a release handoff with mode single/train, release owner, release registry root, release tag, tag target commit, remote tag status, SDD/TDD/PRD landing status, scope, deploy steps, validation, operations/usage notes, monitoring, rollback, evidence, risks, and pending confirmations.
+If the target TIC Skill is missing, report the missing rule and provide only consumer-requested release facts backed by current evidence.
