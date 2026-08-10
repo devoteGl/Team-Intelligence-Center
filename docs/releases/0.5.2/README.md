@@ -4,7 +4,7 @@
 
 ## 发布信息
 
-- 状态：待发布验证完成后更新
+- 状态：发布候选；tag、push 与回灌状态在发布后证据中回填
 - release owner：Team-Intelligence-Center
 - release 分支：`release/0.5.2`
 - release tag：`0.5.2`
