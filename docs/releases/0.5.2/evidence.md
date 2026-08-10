@@ -15,7 +15,7 @@
 - `0.5.2` tag 落点：`2c470bea357d8d76d2fd0f41cca9e8da677d62a9`
 - `origin/master`：`2c470bea357d8d76d2fd0f41cca9e8da677d62a9`
 - `develop` 回灌提交：`515e6b4ab79360de3cd9175e3b45ed7dd9b9ef94`
-- `origin/develop`：`515e6b4ab79360de3cd9175e3b45ed7dd9b9ef94`
+- `origin/develop`：包含上述回灌提交及发布后证据提交
 - `origin` annotated tag 对象：`20f632abb8a820f573d62fc1df2410883fc79c97`
 - `origin` tag 解引用：`2c470bea357d8d76d2fd0f41cca9e8da677d62a9`
 - `git merge-base --is-ancestor 0.5.2^{commit} develop`：退出码 `0`
