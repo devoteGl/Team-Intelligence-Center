@@ -2,6 +2,25 @@
 
 本文件记录 Team-Intelligence-Center 公开版本。版本详情见 `docs/releases/<version>/README.md`。
 
+## 0.5.2 - 2026-08-10
+
+### Changed
+
+- 将 14 个 canonical Skills 收敛为独立、短小、按事实激活的方法能力，移除
+  固定角色、阶段、报告模板和跨能力推荐链路。
+- 收紧 15 个 Codex 全局 wrapper 的 `description`，先应用 `not_when`，不再因
+  API、共享文件、开发完成或改动规模等关键词误触发。
+- Git 授权改为复用当前任务中的明确授权；只有目标、远端、版本或影响不唯一，
+  或动作扩大范围时才再次询问。
+- Git 新鲜度检查聚焦权威远端，不再把 `fetch --all` 固化为通用要求。
+- PRD、Changelog、Walkthrough、Release Handoff 与 session artifact 均改为
+  消费者驱动，不再绑定固定目录或 SDD/TDD/PRD 套件。
+- 兼容 alias 保持薄跳转，并声明在 `0.6.0` 移除；checklist、rule template 与
+  subflow 在 manifest 中分开登记。
+- 新增关键词形状的 non-trigger 场景、wrapper 触发面检查和 Skill 体积预算。
+
+[版本详情](docs/releases/0.5.2/README.md)
+
 ## 0.5.1 - 2026-08-07
 
 ### Changed

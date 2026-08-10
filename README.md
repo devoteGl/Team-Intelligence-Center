@@ -3,9 +3,9 @@
 面向软件项目的轻量 AI 协作规则包：用一个小型 Workflow Core 约束动作边界，
 用可独立选择的 Capability 承载调查、契约、验证、交接和项目记忆。
 
-> Public preview：当前版本为 `0.5.1`。
+> Public preview：当前版本为 `0.5.2`。
 
-## 0.5.1 的核心变化
+## 0.5.2 的核心变化
 
 TIC 不再用一个综合模式同时决定计划、风险和验证。默认行为变成：
 
@@ -13,9 +13,13 @@ TIC 不再用一个综合模式同时决定计划、风险和验证。默认行�
 2. 规划、授权、验证、Review 和事实持久化分别判断；
 3. Superpowers 等外部 Skills 只作为按需方法库；
 4. OpenSpec 只承载需要长期维护的规格事实；
-5. Skill 是独立能力，不是固定流水线节点；
+5. Skill 是独立能力，不是固定流水线节点，wrapper 只按精确事实触发；
 6. 没有新鲜验证证据不得声称完成；
 7. 每次交付做 diff 自审，高影响变更按需独立 Review。
+
+0.5.2 进一步删除 Skills 正文中的固定角色、阶段、全量报告和能力自动级联。出现
+API、共享文件、开发完成或大改动等关键词，不足以触发契约、仲裁、走查或
+代码调查。明确授权过的 Git 结果也不再要求第二次确认。
 
 权威定义见：
 
@@ -24,7 +28,7 @@ TIC 不再用一个综合模式同时决定计划、风险和验证。默认行�
 - [`Workflow/scenarios.json`](Workflow/scenarios.json)
 
 设计说明见
-[`docs/sdd/tic-0.5.1-native-workflow-convergence.md`](docs/sdd/tic-0.5.1-native-workflow-convergence.md)。
+[`docs/sdd/tic-0.5.2-skill-capability-convergence.md`](docs/sdd/tic-0.5.2-skill-capability-convergence.md)。
 
 ## 五个独立维度
 
@@ -50,13 +54,13 @@ TIC 不再用一个综合模式同时决定计划、风险和验证。默认行�
 
 | 能力 | 用途 |
 | --- | --- |
-| `code-investigator` | 调查代码路径、业务规则和影响面 |
-| `contract-handoff` | 冻结 API、字段、枚举、错误码或权限契约 |
-| `shared-domain-arbiter` | 多执行方并发修改同一共享域时裁决 ownership |
+| `code-investigator` | 用户要求追踪现有行为，或关键未知事实阻塞当前决策时调查 |
+| `contract-handoff` | 共享契约跨实现边界且存在独立消费者时对齐语义 |
+| `shared-domain-arbiter` | 并发 owner 在同一共享域发生真实冲突时裁决 ownership |
 | `e2e-verification` | 局部检查不足以证明关键旅程时补充端到端证据 |
 | `delivery-walkthrough` | 为明确的异步 review、QA 或使用者生成走查材料 |
 | `post-dev-prd-sync` | 产品维护者需要时生成有证据的 PRD 更新草稿 |
-| `release-handoff` | 发布方需要部署、回滚、tag 和证据交接时使用 |
+| `release-handoff` | 独立发布消费者需要部署、验证、监控或回滚信息时使用 |
 | `collaboration-memory-maintainer` | 显式维护可确认、可过期、可审计的协作记忆 |
 
 `tic-workflow-orchestrator` 仅保留为复杂规划和旧版迁移的兼容能力，不是普通
@@ -119,14 +123,14 @@ Loader 只负责发现项目规则和提供 `tic-*` wrapper，不复制规则本
 `0.1.0`、`0.2.0`、`0.2.1` 的历史记录均保存在
 [`docs/releases`](docs/releases)。
 
-`0.2.2`、`0.3.0`、`0.5.0` 已归档，当前版本为 `0.5.1`。
+`0.2.2`、`0.3.0`、`0.5.0`、`0.5.1` 已归档，当前版本为 `0.5.2`。
 
 0.4.0 从未作为公开版本发布；其开发中的 Collaboration Memory 工作已合并
 到 0.5.0，不保留虚构的发布记录。
 
 当前开发证据见
-[`docs/releases/0.5.1`](docs/releases/0.5.1) 和
-[`docs/test-evidence/tic-0.5.1`](docs/test-evidence/tic-0.5.1)。
+[`docs/releases/0.5.2`](docs/releases/0.5.2) 和
+[`docs/test-evidence/tic-0.5.2`](docs/test-evidence/tic-0.5.2)。
 
 ## 验证
 

@@ -8,7 +8,18 @@
 - tag 来源：`release/0.5.1` 合入 `master` 后的发布提交
 - 权威远端：`origin`
 - 部署触发：tag push 后进入 stable 更新通道
-- tag 落点、远端状态与 `develop` 回灌结果：发布后回填
+
+## Git 与回灌证据
+
+- `master` 发布提交：`34f2b5c76407bacd9f40c4eadae30f0f39b40efd`
+- `0.5.1` tag 落点：`34f2b5c76407bacd9f40c4eadae30f0f39b40efd`
+- `origin/master`：`34f2b5c76407bacd9f40c4eadae30f0f39b40efd`
+- `develop` 回灌提交：`1474711eca1fd461413e63bbf53fd5df6398b7e3`
+- `origin` annotated tag 对象：`eb0f84304dcbcdb78ffdae5bdb64906e61206a40`
+- `origin` tag 解引用：`34f2b5c76407bacd9f40c4eadae30f0f39b40efd`
+- `git merge-base --is-ancestor 0.5.1^{commit} develop`：退出码 `0`
+- 远端 `release/*`：无；`release/0.5.1` 未推送
+- push：`master`、`develop` 和 `0.5.1` 通过一次 atomic push 完成
 
 ## 功能验证
 

@@ -1,14 +1,15 @@
-# Team-Intelligence-Center 0.5.1 轻量自动化设计
+# Team-Intelligence-Center 0.5.2 轻量自动化设计
 
 ## 目标
 
 自动化层只负责安装、更新、发现规则源和验证规则包，不把研发方法固化成
 一条强制流水线。
 
-0.5.1 的边界是：
+0.5.2 的边界是：
 
 - `Workflow/core.md` 提供 outcome-driven 的五维独立决策；
 - `Skills/*.md` 提供可独立选择的 Capability；
+- Codex wrapper 的 description 只镜像精确激活事实，不编码前后阶段；
 - `ai-harness/project-adapter.md` 保存项目事实和治理配置；
 - 脚本保证生成、刷新和保留行为可重复；
 - Git、发布、生产写入和正式晋升仍需要显式授权。
@@ -107,7 +108,7 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh \
 
 ```bash
 bash /path/to/Team-Intelligence-Center/tools/update.sh \
-  --ref 0.5.1 \
+  --ref 0.5.2 \
   --project /path/to/project
 ```
 
