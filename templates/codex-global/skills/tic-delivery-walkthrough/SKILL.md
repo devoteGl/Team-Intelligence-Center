@@ -1,6 +1,6 @@
 ---
 name: tic-delivery-walkthrough
-description: Use after implementation to create a concise, evidence-based delivery walkthrough artifact with change summary, verification evidence, review guidance, screenshots or recordings when relevant, risks, and follow-up actions.
+description: Use when an identified consumer needs an asynchronous review, QA, demo, usage, or takeover walkthrough backed by existing delivery evidence.
 ---
 
 # TIC Delivery Walkthrough Wrapper

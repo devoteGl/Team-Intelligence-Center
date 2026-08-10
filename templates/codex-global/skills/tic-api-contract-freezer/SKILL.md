@@ -1,6 +1,6 @@
 ---
 name: tic-api-contract-freezer
-description: Compatibility wrapper. Prefer tic-contract-handoff for API, FE/BE, shared type, field, error, permission, and version contracts.
+description: Use when the user explicitly invokes the legacy tic-api-contract-freezer name; re-evaluate the canonical contract-handoff activation boundary.
 ---
 
 # TIC API Contract Freezer Wrapper
@@ -15,4 +15,4 @@ When invoked:
 5. If missing, read and follow `<rules_dir>/Skills/api-contract-freezer.md`.
 6. Do not copy TIC Skills into project-local or global skills.
 
-If the target TIC Skill is missing, produce a lightweight API contract draft and list all fields, behaviors, and decisions needing confirmation.
+If the canonical Skill is missing, report the missing rule; do not restore the legacy workflow.

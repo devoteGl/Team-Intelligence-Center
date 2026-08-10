@@ -1,6 +1,6 @@
 ---
 name: tic-shared-domain-arbiter
-description: Use when a change needs to modify shared domains such as router, types, constants, global config, public utilities, or contract files during parallel or cross-module work.
+description: Use when concurrent owners have a real ownership or solution conflict while modifying the same shared domain.
 ---
 
 # TIC Shared Domain Arbiter Wrapper
@@ -15,4 +15,4 @@ When invoked:
 5. If missing, fall back to `<rules_dir>/Skills/conflict-arbiter.md`.
 6. Do not copy TIC Skills into project-local or global skills.
 
-If the target TIC Skill is missing, produce a lightweight shared-domain arbitration card with requested file/domain, change type, scope, FE/BE/QA impact, decision, conditions, owners to notify, and pending confirmations.
+If the target TIC Skill is missing, report the missing rule and unresolved ownership conflict; do not infer an arbitration decision.

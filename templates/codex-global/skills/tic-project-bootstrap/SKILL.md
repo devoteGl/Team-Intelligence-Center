@@ -1,6 +1,6 @@
 ---
 name: tic-project-bootstrap
-description: Use to connect a business project to Team-Intelligence-Center rules, project AGENTS, lightweight lock, usage docs, and project adapter files.
+description: Use when the user requests connecting, repairing, or updating a project's lightweight Team-Intelligence-Center entrypoints.
 ---
 
 # TIC Project Bootstrap Wrapper

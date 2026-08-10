@@ -75,6 +75,7 @@ require_file docs/sdd/tic-0.3.0-e2e-verification-standardization.md
 require_file docs/sdd/tic-0.5.0-workflow-core-redesign.md
 require_file docs/sdd/tic-0.5.0-collaboration-intelligence-loop.md
 require_file docs/sdd/tic-0.5.1-native-workflow-convergence.md
+require_file docs/sdd/tic-0.5.2-skill-capability-convergence.md
 require_file docs/releases/0.1.0/README.md
 require_file docs/releases/0.2.0/README.md
 require_file docs/releases/0.2.1/README.md
@@ -90,17 +91,21 @@ require_file docs/releases/0.5.0/evidence.md
 require_file docs/releases/0.5.0/changes/collaboration-intelligence-loop/README.md
 require_file docs/releases/0.5.1/README.md
 require_file docs/releases/0.5.1/evidence.md
+require_file docs/releases/0.5.2/README.md
+require_file docs/releases/0.5.2/evidence.md
 require_file docs/test-evidence/tic-0.2.0/README.md
 require_file docs/test-evidence/tic-0.2.1/README.md
 require_file docs/test-evidence/tic-0.2.2/README.md
 require_file docs/test-evidence/tic-0.3.0/README.md
 require_file docs/test-evidence/tic-0.5.0/README.md
 require_file docs/test-evidence/tic-0.5.1/README.md
+require_file docs/test-evidence/tic-0.5.2/README.md
 require_file docs/walkthroughs/tic-0.2.1-project-adapter-preservation.md
 require_file docs/walkthroughs/tic-0.2.2-bash32-update.md
 require_file docs/walkthroughs/tic-0.3.0-e2e-verification-standardization.md
 require_file docs/walkthroughs/tic-0.5.0-collaboration-intelligence-loop.md
 require_file docs/walkthroughs/tic-0.5.1-native-workflow-convergence.md
+require_file docs/walkthroughs/tic-0.5.2-skill-capability-convergence.md
 require_file Skills/project-adapter-maintainer.md
 require_file templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md
 require_file Skills/e2e-verification.md
@@ -252,16 +257,16 @@ else
 fi
 rm -f "$template_stack_scan"
 
-if grep -q '当前版本为 `0.5.1`' README.md &&
+if grep -q '当前版本为 `0.5.2`' README.md &&
    grep -q '0.1.0.*0.2.0.*0.2.1' README.md &&
-   grep -q '`0.2.2`、`0.3.0`、`0.5.0` 已归档，当前版本为 `0.5.1`' README.md &&
-   grep -q '"previous_version_archive"[[:space:]]*:[[:space:]]*"docs/releases/0.3.0"' manifest.json &&
+   grep -q '`0.2.2`、`0.3.0`、`0.5.0`、`0.5.1` 已归档，当前版本为 `0.5.2`' README.md &&
+   grep -q '"previous_version_archive"[[:space:]]*:[[:space:]]*"docs/releases/0.5.1"' manifest.json &&
    [ ! -e docs/releases/0.4.0 ] &&
    [ ! -e docs/test-evidence/tic-0.4.0 ] &&
    grep -q 'd8fe814ad633bd06d6ead7815ad8f7d6d3db5324' docs/releases/0.1.0/README.md; then
   pass "current and archived release records are declared"
 else
-  fail "README and release archive must identify 0.5.1 and preserve earlier releases"
+  fail "README and release archive must identify 0.5.2 and preserve earlier releases"
 fi
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
@@ -581,7 +586,7 @@ else
   fail "adapter preservation lifecycle must be consistent across Shell, PowerShell, manifest, and docs"
 fi
 
-if grep -q 'git_workflow_advice_only' manifest.json &&
+if grep -q '"git_write_policy".*no_write_without_explicit_authorization' manifest.json &&
    grep -q 'git fetch, switch, add, commit, push, merge, tag' tools/git-advice.ps1 &&
    grep -q 'git fetch, switch, add, commit, push, merge, tag' tools/git-advice.sh; then
   pass "Git advice scripts are read-only by policy"
@@ -590,27 +595,27 @@ else
 fi
 
 if grep -q 'feature/<business-slug>' Skills/git-flow-operator.md &&
-   grep -q '默认.*SemVer' Skills/git-flow-operator.md &&
+   grep -q '使用 SemVer' Skills/git-flow-operator.md &&
    grep -q 'preserve-existing' Skills/git-flow-operator.md &&
-   grep -q '等待用户确认' Skills/git-flow-operator.md &&
+   grep -q '该授权已经充分' Skills/git-flow-operator.md &&
    grep -q 'version_format: semver' templates/ai-harness/project-adapter.md &&
    grep -q 'branch_strategy: project-defined' tools/bootstrap-project.sh &&
    grep -q 'feature_branch_policy' tools/git-advice.sh &&
    grep -q 'release_hotfix_version_policy' tools/git-advice.ps1 &&
    grep -q 'suggested_tag' tools/git-advice.sh; then
-  pass "Git strategy resolves project policy with SemVer defaults"
+  pass "Git strategy resolves project policy and reuses explicit authorization"
 else
-  fail "Git strategy must use project branch/version/tag policy with SemVer defaults and confirmation gates"
+  fail "Git strategy must use project policy, safe defaults, and non-redundant authorization"
 fi
 
-if grep -q 'git fetch --all --prune --tags' Skills/git-flow-operator.md &&
+if grep -q 'git fetch <authoritative-remote> --prune --tags' Skills/git-flow-operator.md &&
    grep -q 'git_branch_creation_remote_freshness_gate' manifest.json &&
    grep -q 'git_advice_reports_remote_freshness_gap' manifest.json &&
    grep -q 'refs/heads/<branch>' Skills/git-flow-operator.md &&
-   grep -q 'refs/remotes/\*/<branch>' Skills/git-flow-operator.md &&
+   grep -q 'refs/remotes/<remote>/<branch>' Skills/git-flow-operator.md &&
    grep -q '基线新鲜度' Skills/git-flow-operator.md &&
-   grep -q 'git fetch --all --prune --tags' Global-Rules/coding-rules.md &&
-   grep -q '检查基线与同名分支' templates/AGENTS.md &&
+   grep -q 'git fetch <authoritative-remote> --prune --tags' Global-Rules/coding-rules.md &&
+   grep -q '检查基线、同名分支' templates/AGENTS.md &&
    grep -q '不默认执行分支、提交、推送、合并、tag、发布' templates/codex-global/AGENTS.md &&
    grep -q 'remote_fetch_status' tools/git-advice.sh &&
    grep -q 'remote_fetch_status' tools/git-advice.ps1 &&
@@ -630,13 +635,13 @@ else
   fail "Git Flow branch creation must fetch, check base freshness, and inspect local/remote same-name branches"
 fi
 
-if grep -q 'Tag 后回灌门禁' Skills/git-flow-operator.md &&
+if grep -q '项目要求 release/hotfix tag 后回灌' Skills/git-flow-operator.md &&
    grep -q '项目集成分支回灌状态' Skills/git-flow-operator.md &&
-   grep -q '发版目录证据' Skills/git-flow-operator.md &&
+   grep -q '项目要求的发布证据' Skills/git-flow-operator.md &&
    grep -q '回灌未完成' Skills/git-flow-operator.md &&
    grep -q 'release/hotfix tag 后继续记录' Global-Rules/coding-rules.md &&
    grep -q 'project-required back-merge or closeout evidence' templates/codex-global/skills/tic-git-flow-operator/SKILL.md &&
-   grep -q 'release/hotfix 创建 tag 后.*继续处理回灌状态' Skills/git-flow-operator.md; then
+   grep -q '没有回灌政策的项目不发明该步骤' Skills/git-flow-operator.md; then
   pass "Git tag closeout requires project-defined back-merge or closeout evidence"
 else
   fail "Git tag closeout must keep project-defined back-merge or closeout as a completion gate"
@@ -756,10 +761,14 @@ if grep -q '"api-contract-freezer"[[:space:]]*:[[:space:]]*"contract-handoff"' m
    grep -q '"release-ops-handoff"[[:space:]]*:[[:space:]]*"release-handoff"' manifest.json &&
    grep -q '"release-train-handoff"[[:space:]]*:[[:space:]]*"release-handoff"' manifest.json &&
    grep -q 'candidate-rule-extractor' manifest.json &&
-   grep -q 'session-snapshot-manager' manifest.json; then
-  pass "skill lifecycle aliases and subflows are declared"
+   grep -q '"checklists"' manifest.json &&
+   grep -q 'prd-review-checklist' manifest.json &&
+   grep -q '"rule_templates"' manifest.json &&
+   grep -q 'session-snapshot-manager' manifest.json &&
+   grep -q '"compatibility_removal_target"[[:space:]]*:[[:space:]]*"0.6.0"' manifest.json; then
+  pass "skill lifecycle aliases, subflows, checklists, and rule templates are declared"
 else
-  fail "missing skill lifecycle aliases or subflows"
+  fail "missing skill lifecycle classification or compatibility removal target"
 fi
 
 if grep -q 'one_command_user_update' manifest.json &&
@@ -768,8 +777,8 @@ if grep -q 'one_command_user_update' manifest.json &&
    grep -q 'latest_semver_tag' tools/update.sh &&
    grep -q 'TargetRef' tools/update.ps1 &&
    grep -q -- '--channel current' USAGE.md &&
-   grep -q -- '--ref 0.5.1' USAGE.md &&
-   grep -q -- '--ref 0.5.1' docs/automation.md &&
+   grep -q -- '--ref 0.5.2' USAGE.md &&
+   grep -q -- '--ref 0.5.2' docs/automation.md &&
    grep -q 'install-codex-global.sh' tools/update.sh &&
    grep -q 'install.sh' tools/update.sh; then
   pass "stable, current, and explicit-ref update paths are declared"
@@ -787,7 +796,7 @@ fi
 codex_install_tmp="$(mktemp -d)"
 if bash tools/install-codex-global.sh --yes --rules-dir "$PACKAGE_ROOT" \
      --codex-home "$codex_install_tmp" >/dev/null &&
-   grep -q '规则版本：`0.5.1`' "$codex_install_tmp/AGENTS.md" &&
+   grep -q '规则版本：`0.5.2`' "$codex_install_tmp/AGENTS.md" &&
    grep -q 'TIC_CODEX_GLOBAL_BEGIN' "$codex_install_tmp/AGENTS.md" &&
    grep -q '<rules_dir>/Skills/collaboration-memory-maintainer.md' \
      "$codex_install_tmp/skills/tic-collaboration-memory-maintainer/SKILL.md" &&
@@ -877,6 +886,82 @@ if grep -Fxq '.omx/' .gitignore &&
   pass "agent runtime and personal collaboration memory are gitignored"
 else
   fail ".omx, .superpowers, .tic/agent-runs, and .tic/local must remain local-only"
+fi
+
+canonical_skill_files=(
+  Skills/task-decomposer.md
+  Skills/code-investigator.md
+  Skills/contract-handoff.md
+  Skills/shared-domain-arbiter.md
+  Skills/agent-session-protocol.md
+  Skills/e2e-verification.md
+  Skills/delivery-walkthrough.md
+  Skills/release-handoff.md
+  Skills/post-dev-prd-sync.md
+  Skills/changelog-writer.md
+  Skills/git-flow-operator.md
+  Skills/project-governance-bootstrap.md
+  Skills/project-adapter-maintainer.md
+  Skills/collaboration-memory-maintainer.md
+)
+
+legacy_skill_scan="$(mktemp)"
+grep -nE 'effective_tier|Effective tier|CP-[0-9]|CI → PM|PM → CI|PM 拆解|QA → DS|DS → main-prd|推荐链路|总控 Agent' \
+  "${canonical_skill_files[@]}" > "$legacy_skill_scan" || true
+if [ -s "$legacy_skill_scan" ]; then
+  fail "canonical skills retain legacy tier, phase, or role-pipeline language: $(head -8 "$legacy_skill_scan" | tr '\n' '; ')"
+else
+  pass "canonical skills are capability methods rather than a role or phase pipeline"
+fi
+rm -f "$legacy_skill_scan"
+
+oversized_skill_scan="$(mktemp)"
+for skill_file in "${canonical_skill_files[@]}"; do
+  skill_lines="$(wc -l < "$skill_file" | tr -d '[:space:]')"
+  if [ "$skill_lines" -gt 180 ]; then
+    printf '%s:%s\n' "$skill_file" "$skill_lines" >> "$oversized_skill_scan"
+  fi
+done
+if [ -s "$oversized_skill_scan" ]; then
+  fail "canonical skills exceed the 180-line progressive-disclosure budget: $(tr '\n' '; ' < "$oversized_skill_scan")"
+else
+  pass "canonical skills keep their primary instructions within the progressive-disclosure budget"
+fi
+rm -f "$oversized_skill_scan"
+
+wrapper_description_scan="$(mktemp)"
+grep -nE '^description: (Compatibility wrapper|Use before|Use after)|before non-trivial changes|needs to modify shared domains|requires .*user confirmation' \
+  templates/codex-global/skills/*/SKILL.md > "$wrapper_description_scan" || true
+if [ -s "$wrapper_description_scan" ]; then
+  fail "Codex wrapper descriptions over-trigger or encode workflow order: $(head -8 "$wrapper_description_scan" | tr '\n' '; ')"
+else
+  pass "Codex wrapper descriptions mirror activation facts without workflow ordering"
+fi
+rm -f "$wrapper_description_scan"
+
+wrapper_description_count="$(grep -h '^description: Use when ' templates/codex-global/skills/*/SKILL.md | wc -l | tr -d '[:space:]')"
+if [ "$wrapper_description_count" -eq "$codex_wrapper_count" ] &&
+   ! grep -R -nE 'continue with an evidence-based PRD update draft: collect|git fetch --all --prune --tags' \
+     templates/codex-global/skills Skills Global-Rules/coding-rules.md README.md USAGE.md >/dev/null 2>&1; then
+  pass "every global wrapper exposes a fact-shaped trigger and avoids legacy artifact or fetch-all fallbacks"
+else
+  fail "all global wrapper descriptions must start with a fact-shaped trigger and avoid legacy fallbacks"
+fi
+
+if scenario_matches explicit-git-release \
+     '"capabilities": \["git-flow-operator", "release-handoff"\]' \
+     '"additional_confirmation": false' &&
+   scenario_matches shared-file-single-owner \
+     '"capabilities": \[\]' &&
+   scenario_matches implementation-summary-enough \
+     '"capabilities": \[\]' &&
+   scenario_matches product-fact-without-prd-consumer \
+     '"capabilities": \[\]' &&
+   scenario_matches focused-code-investigation \
+     '"capabilities": \["code-investigator"\]'; then
+  pass "capability scenarios cover positive triggers and keyword-shaped non-triggers"
+else
+  fail "capability scenarios must prove exact triggers, non-triggers, and non-redundant Git authorization"
 fi
 
 if [ "$failures" -eq 0 ]; then
