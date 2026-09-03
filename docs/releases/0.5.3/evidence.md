@@ -2,12 +2,14 @@
 
 ## 当前状态
 
-- 状态：本地候选，尚未发布
-- 集成分支：`develop`（本地，尚未推送）
-- 基线：`origin/develop`
+- 状态：发布候选已准备，尚未推送
+- release 分支：`release/0.5.3`
+- 集成分支：`develop@e0d6e08`
+- 基线：`origin/develop@8213a65`
 - release owner：Team-Intelligence-Center
 - 候选 tag：`0.5.3`
-- 权威远端：`origin`
+- 发布远端：`gitee`、`github`
+- 明确排除：`origin`
 
 ## 行为验证
 
@@ -37,7 +39,9 @@
 - Git feature commit：`9249d54`（`feat(git-flow): 统一仓库协作与校验策略`）。
 - PRD feature commits：`98e5e28`、`639f156`。
 - Git feature 合入 develop：`bfaeebd`。
-- PRD feature 合入 develop：待当前合并提交完成后记录。
+- PRD feature 合入 develop：`c2139ce`。
+- SemVer 分支兼容修复：`813c28c`，合入 develop：`e0d6e08`。
 - feature push：未执行。
-- release branch、`master` 合入、annotated tag、`develop` 回灌：未执行。
+- release branch：已创建，准备提交。
+- `master` 合入、annotated tag、`develop` 回灌：未执行。
 - 当前记录不得被解释为已发布或已进入 stable 更新通道。
