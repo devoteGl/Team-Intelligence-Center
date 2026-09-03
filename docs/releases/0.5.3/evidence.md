@@ -29,7 +29,7 @@
 
 ## Git 与发布边界
 
-- feature commit：待最终自审后生成。
+- feature commit：`98e5e28`（`feat(prd): 恢复产品基线与PRD工作流`）。
 - feature push：未执行。
 - release branch、`master` 合入、annotated tag、`develop` 回灌：未执行。
 - 当前记录不得被解释为已发布或已进入 stable 更新通道。
