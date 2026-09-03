@@ -5,10 +5,10 @@
 
 ## 发布信息
 
-- 状态：发布候选已准备，待推送至 `gitee` 与 `github`
+- 状态：已发布至 `gitee` 与 `github`，并完成 `develop` 回灌
 - release 分支：`release/0.5.3`
 - release owner：Team-Intelligence-Center
-- 候选 tag：`0.5.3`
+- release tag：`0.5.3`
 - tag policy：无 `v` 前缀、annotated tag、preserve-existing
 - 发布分支：`master`
 - 集成分支：`develop`
