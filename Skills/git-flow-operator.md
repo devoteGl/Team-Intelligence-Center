@@ -25,15 +25,30 @@ related:
 ## 技能用途
 
 在执行 branch、merge、push、tag、back-merge 等动作前解析项目真实 Git 政策、
-目标引用和授权范围。它不强制所有项目采用 Git Flow。
+目标引用和授权范围。规划或执行任何 Git 写操作时，必须先读取
+`Global-Rules/git-rules.md`；项目 adapter 可以声明经过确认的例外。
 
 ## 解析顺序
 
 1. 用户明确要求和当前任务授权。
 2. 项目 `AGENTS.md`、adapter、贡献文档和发布政策。
 3. 当前 refs、tracking、remote、tag 与工作树事实。
-4. 没有项目政策时才使用最小默认：业务分支 `feature/<business-slug>`、版本
-   使用 SemVer、tag policy 为 `preserve-existing`。
+4. 没有项目政策时使用 `Global-Rules/git-rules.md` 的 `tic-gitflow-v1`，不得
+   根据当前所在分支临时发明流程。
+
+## 标准化门禁
+
+- 普通任务不得直接在 `master`、`develop` 上提交或推送；已有任务改动位于
+  长期分支时，先按标准迁移到类型分支。基线落后、分叉或改动混杂时请求决定。
+- 分支创建前运行 `tools/validate-branch-name.sh` 或 PowerShell 等价脚本。
+- commit 前使用显式路径暂存，核对完整 staged diff，并运行
+  `tools/validate-commit-msg.sh` 或 PowerShell 等价脚本。
+- commit message 使用必填、具体 scope 的中文 Conventional Commits；不得用
+  缺 scope、泛化 `project` scope、英文 subject 或 `merge(...)` 类型绕过。
+- 默认禁止 force push。例外只允许在用户明确授权具体任务 ref 后使用
+  `--force-with-lease`，且长期分支与已发布 tag 不适用。
+- submodule 按“子仓提交推送 → 父仓任务分支更新指针 → 父仓兼容性验证”执行，
+  不得为改写子仓 commit message 生成新的 submodule 指针提交。
 
 ## 安全执行
 
@@ -46,6 +61,8 @@ related:
 - 若远端、目标 ref、版本、覆盖行为无法唯一确定，或动作超出既有授权，暂停
   并请求补充决定。
 - 已存在或已 push 的 tag 遵循 `preserve-existing`，不得静默移动或覆盖。
+- 项目使用 `tic-gitflow-v1` 时，release/hotfix tag 为无 `v` 前缀、三位补零
+  版本的 annotated tag；历史例外不自动重写。
 - 每一步后用 `status`、`show-ref`、`merge-base`、远端 refs 等读取证据验证。
 
 ## 发布收口

@@ -26,6 +26,7 @@ API、共享文件、开发完成或大改动等关键词，不足以触发契�
 - [`Workflow/core.md`](Workflow/core.md)
 - [`Workflow/capability-schema.md`](Workflow/capability-schema.md)
 - [`Workflow/scenarios.json`](Workflow/scenarios.json)
+- [`Global-Rules/git-rules.md`](Global-Rules/git-rules.md)
 
 设计说明见
 [`docs/sdd/tic-0.5.2-skill-capability-convergence.md`](docs/sdd/tic-0.5.2-skill-capability-convergence.md)。
@@ -106,6 +107,8 @@ Loader 只负责发现项目规则和提供 `tic-*` wrapper，不复制规则本
 - 不默认创建 PRD、SDD、Walkthrough、Release Handoff 或 session artifact。
 - 不默认检索、提取或晋升 Collaboration Memory。
 - 不默认执行 Git 分支、提交、push、merge、tag 或发布。
+- Git 写操作获授权后使用统一类型分支、必填具体 scope 的中文 Conventional
+  Commit，并在写入前通过分支名和提交信息校验器。
 - 不默认安装 Git hooks、CodeGraph、浏览器 runner 或供应商工具。
 - UI 和关键旅程只在结论需要时使用真实界面或 E2E 证据。
 
@@ -140,7 +143,8 @@ bash tools/validate-pack.sh
 
 验证器覆盖版本一致性、Workflow 场景、Capability 契约、安装幂等、
 Project Adapter 与共享 memory 保留、全局 wrapper、Git 建议只读边界及
-Shell fixture。若本机存在 PowerShell，也会运行等价 fixture。
+分支名/提交信息校验器、Shell fixture。若本机存在 PowerShell，也会运行
+等价 fixture。
 
 ## 开源与贡献
 

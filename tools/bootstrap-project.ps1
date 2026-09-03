@@ -56,6 +56,11 @@ $BeginMarker = "<!-- TIC_LIGHT_AUTOMATION_BEGIN -->"
 $EndMarker = "<!-- TIC_LIGHT_AUTOMATION_END -->"
 $Stamp = Get-Date -Format "yyyyMMddHHmmss"
 $Planned = New-Object System.Collections.Generic.List[string]
+$LegacySkillManifest = if ($env:TIC_LEGACY_SKILL_MANIFEST) {
+    $env:TIC_LEGACY_SKILL_MANIFEST
+} else {
+    Join-Path $PackageRoot "tools/legacy-tic-skill-bundles.sha256"
+}
 
 function Get-ProjectRelativeRulesPath {
     $root = [System.IO.Path]::GetFullPath($ProjectRoot).TrimEnd([char[]]@('\', '/'))
@@ -104,6 +109,130 @@ function Backup-File {
     $backupDir = Split-Path -Parent $backup
     New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
     Copy-Item -LiteralPath $Target -Destination $backup -Force
+}
+
+function Backup-Path {
+    param([string]$Target)
+    $relative = $Target.Substring($ProjectRoot.Length).TrimStart([char[]]@('\', '/'))
+    $backup = Join-Path (Join-Path $ProjectRoot ".tic-backups") (Join-Path $Stamp $relative)
+    $backupDir = Split-Path -Parent $backup
+    New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+    Copy-Item -LiteralPath $Target -Destination $backup -Recurse -Force
+}
+
+function Get-NormalizedFileSha256 {
+    param([string]$Target)
+
+    $bytes = [System.IO.File]::ReadAllBytes($Target)
+    $normalized = New-Object byte[] $bytes.Length
+    $length = 0
+    for ($index = 0; $index -lt $bytes.Length; $index++) {
+        if ($bytes[$index] -eq 13 -and
+            (($index + 1 -lt $bytes.Length -and $bytes[$index + 1] -eq 10) -or
+             $index + 1 -eq $bytes.Length)) {
+            continue
+        }
+        $normalized[$length] = $bytes[$index]
+        $length++
+    }
+
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hashBytes = $sha256.ComputeHash($normalized, 0, $length)
+        return ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
+    } finally {
+        $sha256.Dispose()
+    }
+}
+
+function Test-LegacySkillBundle {
+    param(
+        [string]$SkillName,
+        [string]$SkillDir
+    )
+
+    if (-not (Test-Path -LiteralPath $LegacySkillManifest -PathType Leaf)) {
+        return $false
+    }
+
+    $entries = @(
+        foreach ($line in Get-Content -LiteralPath $LegacySkillManifest -Encoding UTF8) {
+            if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith("#")) {
+                continue
+            }
+            $parts = $line.Split('|')
+            if ($parts.Count -eq 4 -and $parts[0] -eq $SkillName) {
+                [pscustomobject]@{
+                    Bundle = $parts[1]
+                    Hash = $parts[2].ToLowerInvariant()
+                    RelativePath = $parts[3]
+                }
+            }
+        }
+    )
+    if ($entries.Count -eq 0) {
+        return $false
+    }
+
+    $actualFiles = @([System.IO.Directory]::GetFiles($SkillDir, "*", [System.IO.SearchOption]::AllDirectories))
+    $rootPrefix = [System.IO.Path]::GetFullPath($SkillDir).TrimEnd([char[]]@('\', '/')) + [System.IO.Path]::DirectorySeparatorChar
+    foreach ($bundleId in @($entries.Bundle | Sort-Object -Unique)) {
+        $bundleEntries = @($entries | Where-Object { $_.Bundle -eq $bundleId })
+        if ($actualFiles.Count -ne $bundleEntries.Count) {
+            continue
+        }
+
+        $matched = $true
+        foreach ($entry in $bundleEntries) {
+            $asset = [System.IO.Path]::GetFullPath((Join-Path $SkillDir $entry.RelativePath))
+            if (-not $asset.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase) -or
+                -not (Test-Path -LiteralPath $asset -PathType Leaf)) {
+                $matched = $false
+                break
+            }
+            $actualHash = Get-NormalizedFileSha256 -Target $asset
+            if ($actualHash -ne $entry.Hash) {
+                $matched = $false
+                break
+            }
+        }
+        if ($matched) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Remove-LegacyTicCodexSkill {
+    param([string]$SkillName)
+
+    $skillDir = Join-Path (Join-Path (Join-Path $ProjectRoot ".codex") "skills") $SkillName
+    $skillFile = Join-Path $skillDir "SKILL.md"
+    if (-not (Test-Path -LiteralPath $skillFile -PathType Leaf)) {
+        return
+    }
+
+    $content = Get-Content -LiteralPath $skillFile -Raw -Encoding UTF8
+    if (-not $content.Contains("name: $SkillName")) {
+        return
+    }
+
+    if (-not (Test-LegacySkillBundle -SkillName $SkillName -SkillDir $skillDir)) {
+        Add-Plan "preserve unrecognized or customized skill bundle .codex/skills/$SkillName"
+        return
+    }
+
+    Add-Plan "remove backed-up legacy TIC skill bundle .codex/skills/$SkillName"
+    if (-not $DryRun) {
+        Backup-Path $skillDir
+        Remove-Item -LiteralPath $skillDir -Recurse -Force
+    }
+}
+
+function Remove-LegacyTicCodexSkills {
+    Remove-LegacyTicCodexSkill -SkillName "release-train-handoff"
+    Remove-LegacyTicCodexSkill -SkillName "git-flow-operator"
 }
 
 function Merge-Agents {
@@ -481,17 +610,28 @@ verification:
     setup_command: ""
     cleanup_command: ""
     core_journeys: []
+git_policy:
+  profile: tic-gitflow-v1
+  authoritative_remote: origin
+  protected_branches: [master, develop]
+  direct_commit_policy: deny
+  direct_push_policy: deny
+  force_push_policy: deny
+  branch_name_policy: type-kebab-v1
+  commit_message_policy: conventional-chinese-v1
 release_ownership:
   owner_type: $ownerType # workspace | project | subproject | external
   owner_id: "$projectName"
   release_registry_root: "docs/releases"
   version_policy: independent # shared | independent | external
-  version_format: semver # semver | three-digit-patch | calendar | custom
-  branch_strategy: project-defined # trunk | gitflow | project-defined
-  feature_base: "待确认"
-  release_base: "待确认"
-  hotfix_base: "待确认"
-  tag_policy: "preserve-existing" # preserve-existing | no-v-prefix | v-prefix | custom
+  version_format: three-digit-patch # semver | three-digit-patch | calendar | custom
+  branch_strategy: gitflow # trunk | gitflow | project-defined
+  feature_base: develop
+  release_base: develop
+  hotfix_base: master
+  tag_policy: no-v-prefix # preserve-existing | no-v-prefix | v-prefix | custom
+  tag_type: annotated
+  back_merge_target: develop
   deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
 ````
 
@@ -676,6 +816,23 @@ function Ensure-GitignoreLocalConfig {
     }
 }
 
+function Add-GitDurabilityWarning {
+    if ($DryRun -or -not (Get-Command git -ErrorAction SilentlyContinue)) {
+        return
+    }
+
+    & git -C $ProjectRoot rev-parse --is-inside-work-tree *> $null
+    if ($LASTEXITCODE -ne 0) {
+        return
+    }
+
+    $statusOutput = @(& git -C $ProjectRoot status --short -- AGENTS.md .tic-rules.lock .codex/skills/release-train-handoff .codex/skills/git-flow-operator 2> $null)
+    if ($LASTEXITCODE -eq 0 -and $statusOutput.Count -gt 0) {
+        Add-Plan "WARNING: TIC entrypoint changes remain uncommitted; checkout or stash can restore legacy project-local skills until the project records these changes"
+    }
+}
+
+Remove-LegacyTicCodexSkills
 Merge-Agents
 Install-TemplateFile (Join-Path $PackageRoot "templates/docs/ai-rules-usage.md") (Join-Path $ProjectRoot "docs/ai-rules-usage.md")
 Install-TemplateFile (Join-Path $PackageRoot "templates/tool-rules/cursorrules.md") (Join-Path $ProjectRoot ".cursorrules")
@@ -691,6 +848,7 @@ Install-PreservedTemplateFile (Join-Path (Join-Path $PackageRoot "templates/ai-h
 Write-LockFile
 Write-LocalConfig
 Ensure-GitignoreLocalConfig
+Add-GitDurabilityWarning
 
 Write-Host "Team-Intelligence-Center bootstrap plan for ${ProjectRoot}:"
 foreach ($item in $Planned) {

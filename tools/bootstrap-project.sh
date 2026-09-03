@@ -10,6 +10,7 @@ FORCE=0
 REGENERATE_ADAPTER=0
 RULES_DIR=""
 STAMP="$(date +%Y%m%d%H%M%S)"
+LEGACY_SKILL_MANIFEST="${TIC_LEGACY_SKILL_MANIFEST:-$PACKAGE_ROOT/tools/legacy-tic-skill-bundles.sha256}"
 
 usage() {
   cat <<'USAGE'
@@ -124,6 +125,107 @@ backup_file() {
   local backup="$PROJECT_ROOT/.tic-backups/$STAMP/$rel"
   mkdir -p "$(dirname "$backup")"
   cp "$target" "$backup"
+}
+
+backup_path() {
+  local target="$1"
+  local rel="${target#$PROJECT_ROOT/}"
+  local backup="$PROJECT_ROOT/.tic-backups/$STAMP/$rel"
+  mkdir -p "$(dirname "$backup")"
+  if [ -d "$target" ]; then
+    cp -R "$target" "$backup"
+  else
+    cp "$target" "$backup"
+  fi
+}
+
+sha256_file() {
+  local target="$1"
+  if command -v shasum >/dev/null 2>&1; then
+    sed 's/\r$//' "$target" | shasum -a 256 | awk '{print $1}'
+  elif command -v sha256sum >/dev/null 2>&1; then
+    sed 's/\r$//' "$target" | sha256sum | awk '{print $1}'
+  elif command -v openssl >/dev/null 2>&1; then
+    sed 's/\r$//' "$target" | openssl dgst -sha256 | awk '{print $NF}'
+  else
+    return 1
+  fi
+}
+
+legacy_skill_bundle_matches() {
+  local skill_name="$1"
+  local skill_dir="$2"
+  local actual_count bundle_id expected_count matched
+  local entry_skill entry_bundle expected_hash relative_asset skill_asset actual_hash
+
+  [ -f "$LEGACY_SKILL_MANIFEST" ] || return 1
+  actual_count="$(find "$skill_dir" \( -type f -o -type l \) | wc -l | tr -d '[:space:]')"
+
+  while IFS= read -r bundle_id; do
+    [ -n "$bundle_id" ] || continue
+    expected_count="$(awk -F'|' -v skill="$skill_name" -v bundle="$bundle_id" \
+      '$1 == skill && $2 == bundle { count++ } END { print count + 0 }' \
+      "$LEGACY_SKILL_MANIFEST")"
+    [ "$actual_count" = "$expected_count" ] || continue
+
+    matched=1
+    while IFS='|' read -r entry_skill entry_bundle expected_hash relative_asset; do
+      case "$relative_asset" in
+        ""|/*|../*|*/../*)
+          matched=0
+          break
+          ;;
+      esac
+      skill_asset="$skill_dir/$relative_asset"
+      if [ ! -f "$skill_asset" ] || [ -L "$skill_asset" ]; then
+        matched=0
+        break
+      fi
+      actual_hash="$(sha256_file "$skill_asset")" || {
+        matched=0
+        break
+      }
+      if [ "$actual_hash" != "$expected_hash" ]; then
+        matched=0
+        break
+      fi
+    done < <(awk -F'|' -v skill="$skill_name" -v bundle="$bundle_id" \
+      '$1 == skill && $2 == bundle { print }' "$LEGACY_SKILL_MANIFEST")
+
+    if [ "$matched" -eq 1 ]; then
+      return 0
+    fi
+  done < <(awk -F'|' -v skill="$skill_name" \
+    '$1 == skill { print $2 }' "$LEGACY_SKILL_MANIFEST" | sort -u)
+
+  return 1
+}
+
+remove_legacy_tic_codex_skill() {
+  local skill_name="$1"
+  local skill_dir="$PROJECT_ROOT/.codex/skills/$skill_name"
+  local skill_file="$skill_dir/SKILL.md"
+
+  if [ ! -f "$skill_file" ] ||
+     ! grep -Fq "name: $skill_name" "$skill_file"; then
+    return
+  fi
+
+  if ! legacy_skill_bundle_matches "$skill_name" "$skill_dir"; then
+    plan "preserve unrecognized or customized skill bundle .codex/skills/$skill_name"
+    return
+  fi
+
+  plan "remove backed-up legacy TIC skill bundle .codex/skills/$skill_name"
+  if [ "$DRY_RUN" -eq 0 ]; then
+    backup_path "$skill_dir"
+    rm -rf "$skill_dir"
+  fi
+}
+
+migrate_legacy_tic_codex_skills() {
+  remove_legacy_tic_codex_skill "release-train-handoff"
+  remove_legacy_tic_codex_skill "git-flow-operator"
 }
 
 merge_agents() {
@@ -546,17 +648,28 @@ verification:
     setup_command: ""
     cleanup_command: ""
     core_journeys: []
+git_policy:
+  profile: tic-gitflow-v1
+  authoritative_remote: origin
+  protected_branches: [master, develop]
+  direct_commit_policy: deny
+  direct_push_policy: deny
+  force_push_policy: deny
+  branch_name_policy: type-kebab-v1
+  commit_message_policy: conventional-chinese-v1
 release_ownership:
   owner_type: $owner_type # workspace | project | subproject | external
   owner_id: "$project_name"
   release_registry_root: "docs/releases"
   version_policy: independent # shared | independent | external
-  version_format: semver # semver | three-digit-patch | calendar | custom
-  branch_strategy: project-defined # trunk | gitflow | project-defined
-  feature_base: "待确认"
-  release_base: "待确认"
-  hotfix_base: "待确认"
-  tag_policy: "preserve-existing" # preserve-existing | no-v-prefix | v-prefix | custom
+  version_format: three-digit-patch # semver | three-digit-patch | calendar | custom
+  branch_strategy: gitflow # trunk | gitflow | project-defined
+  feature_base: develop
+  release_base: develop
+  hotfix_base: master
+  tag_policy: no-v-prefix # preserve-existing | no-v-prefix | v-prefix | custom
+  tag_type: annotated
+  back_merge_target: develop
   deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
 \`\`\`
 
@@ -744,6 +857,24 @@ ensure_gitignore_local_config() {
   fi
 }
 
+report_git_durability() {
+  local status_output
+
+  if [ "$DRY_RUN" -eq 1 ] || ! command -v git >/dev/null 2>&1 ||
+     ! git -C "$PROJECT_ROOT" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+    return
+  fi
+
+  status_output="$(git -C "$PROJECT_ROOT" status --short -- \
+    AGENTS.md .tic-rules.lock \
+    .codex/skills/release-train-handoff \
+    .codex/skills/git-flow-operator 2>/dev/null || true)"
+  if [ -n "$status_output" ]; then
+    plan "WARNING: TIC entrypoint changes remain uncommitted; checkout or stash can restore legacy project-local skills until the project records these changes"
+  fi
+}
+
+migrate_legacy_tic_codex_skills
 merge_agents
 install_template_file "$PACKAGE_ROOT/templates/docs/ai-rules-usage.md" "$PROJECT_ROOT/docs/ai-rules-usage.md"
 install_template_file "$PACKAGE_ROOT/templates/tool-rules/cursorrules.md" "$PROJECT_ROOT/.cursorrules"
@@ -759,6 +890,7 @@ install_preserved_template_file "$PACKAGE_ROOT/templates/ai-harness/memory/team-
 write_lock
 write_local_config
 ensure_gitignore_local_config
+report_git_durability
 
 printf 'Team-Intelligence-Center bootstrap plan for %s:\n' "$PROJECT_ROOT"
 for item in "${planned[@]}"; do

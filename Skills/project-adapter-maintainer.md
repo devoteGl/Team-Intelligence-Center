@@ -49,5 +49,6 @@ related:
 6. 更新后用项目真实命令或结构核对关键字段。
 
 常见字段包括项目根、子项目、build/test/lint、E2E runner 与安全数据策略、
-artifact roots、PRD owner、Git 分支/tag 政策及发布登记位置；只维护项目实际
-使用的部分。
+artifact roots、PRD owner、Git profile、权威 remote、受保护分支、commit
+message、分支/tag/回灌政策及发布登记位置；只维护项目实际使用的部分。Git
+字段缺失时先与 `Global-Rules/git-rules.md` 对照，不从当前所在分支反推政策。

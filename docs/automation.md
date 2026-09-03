@@ -23,6 +23,7 @@
 | `Workflow/capability-schema.md` | `tic_capability.v1` 契约 |
 | `Workflow/scenarios.json` | 可执行的行为场景基线 |
 | `Global-Rules/coding-rules.md` | 工程行为和安全边界 |
+| `Global-Rules/git-rules.md` | Git 分支、提交、版本、tag 与回灌标准 |
 | `Skills/` | 可独立选择的能力 |
 | `templates/` | 项目入口、adapter、memory 和 wrapper |
 | `tools/` | 安装、更新、建议和验证脚本 |
@@ -127,10 +128,11 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh \
 
 项目安装不把本机绝对路径写进提交文件：
 
-1. `.tic-rules.lock` 可保存项目相对 `rules_path=`；
-2. 外部绝对路径写入 gitignored 的 `.tic-rules.local`；
-3. 全局 Loader 只提供 fallback；
-4. 项目 `AGENTS.md` 和 Project Adapter 始终优先。
+1. gitignored `.tic-rules.local` 明确声明 `rules_source=local_config`，且
+   `rules_dir=` 可访问并包含 `Workflow/core.md` 时，作为分支无关的本机覆盖；
+2. 否则 `.tic-rules.lock` 的项目相对 `rules_path=` 是提交态规则源；
+3. 无可用 lock 路径时，再读取 `.tic-rules.local` 的非空 `rules_dir=`；
+4. 全局 Loader 只提供 fallback；项目事实和 Project Adapter 始终优先。
 
 ## Workflow 自动化边界
 
@@ -220,10 +222,14 @@ promote、reconcile、audit 和 deprecate 由用户明确要求或已确认项�
 - 扫描默认和项目声明的 release registry root；
 - 输出建议命令。
 
+`tools/validate-branch-name.*` 和 `tools/validate-commit-msg.*` 分别校验
+`tic-gitflow-v1` 分支名与 `conventional-chinese-v1` 提交信息。校验器只读，
+可以由 Agent、commit-msg hook 或 CI 调用；TIC 默认不自动安装 Git hook。
+
 它们不执行 `git fetch, switch, add, commit, push, merge, tag`。
 
 实际 Git Flow 使用前应获得授权，并在创建分支前运行
-`git fetch --all --prune --tags`。已 push 的 release tag 默认不可移动，
+`git fetch <authoritative-remote> --prune --tags`。已 push 的 release tag 默认不可移动，
 tag 后仍需记录项目要求的回灌或收尾证据。
 
 ## 验证器
@@ -235,7 +241,7 @@ bash tools/validate-pack.sh
 验证器覆盖：
 
 - `VERSION` 与 manifest 一致；
-- Workflow Core 只声明三种当前模式；
+- Workflow Core 保持规划、授权、验证、Review 和事实持久化五维独立；
 - 场景 fixture 覆盖普通修改、共享契约、关键旅程、生产迁移、memory 和
   Git 写入；
 - 全部 Skills 满足 `tic_capability.v1`；
@@ -243,7 +249,7 @@ bash tools/validate-pack.sh
 - bootstrap 幂等且保留 lock、adapter 和 shared memory；
 - Codex 全局安装能渲染当前版本 Loader 和 wrapper；
 - Shell 更新兼容 Bash 3.2 的空参数路径；
-- Git 建议脚本保持只读。
+- Git 建议脚本保持只读，分支名和提交信息校验器覆盖统一策略。
 
 PowerShell 存在时运行等价 fixture；不存在时输出 warning，不把静态检查
 写成 runtime 通过。

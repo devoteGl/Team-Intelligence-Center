@@ -136,9 +136,11 @@ ai-harness/memory/
 
 项目入口按以下顺序解析规则源：
 
-1. 从当前目录向上查找 `.tic-rules.lock`；
-2. 使用其中非空的项目相对 `rules_path=`；
-3. 否则读取同级 `.tic-rules.local` 的本机 `rules_dir=`；
+1. 从当前目录向上定位项目根；若同级 `.tic-rules.local` 明确声明
+   `rules_source=local_config`，且非空 `rules_dir=` 可访问并包含
+   `Workflow/core.md`，优先使用该分支无关的本机规则源；
+2. 否则使用 `.tic-rules.lock` 中非空的项目相对 `rules_path=`；
+3. 否则读取 `.tic-rules.local` 的非空 `rules_dir=`；
 4. 再按项目 `AGENTS.md` 的说明解析；
 5. 显式调用 TIC 能力但仍未解析时，才使用全局 Loader 的 fallback。
 
@@ -298,11 +300,13 @@ ai-harness/memory/team-collaboration.md
 
 TIC 不默认执行 Git 写操作。用户明确要求具体 Git 结果时：
 
-1. 解析项目声明的分支、版本和 tag 策略；
+1. 读取 `Global-Rules/git-rules.md`、`Skills/git-flow-operator.md` 和项目
+   adapter，解析分支、commit、版本和 tag 策略；
 2. 对权威远端运行 `git fetch <authoritative-remote> --prune --tags`；
 3. 检查基线同步和本地/远端同名分支；
-4. 核对候选命令、目标和证据；
-5. 当前任务已经明确授权且目标唯一时直接执行；歧义、覆盖风险或范围扩大时
+4. 使用 `tools/validate-branch-name.*` 和 `tools/validate-commit-msg.*` 校验；
+5. 核对候选命令、目标和证据；普通任务不直接在长期分支提交或推送；
+6. 当前任务已经明确授权且目标唯一时直接执行；歧义、覆盖风险或范围扩大时
    再等待确认。
 
 已 push 的发布 tag 默认不可移动。release/hotfix tag 也不是自动完成态，

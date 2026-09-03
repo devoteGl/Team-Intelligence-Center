@@ -22,6 +22,19 @@ warn() {
   warnings=$((warnings + 1))
 }
 
+sha256_file() {
+  local target="$1"
+  if command -v shasum >/dev/null 2>&1; then
+    sed 's/\r$//' "$target" | shasum -a 256 | awk '{print $1}'
+  elif command -v sha256sum >/dev/null 2>&1; then
+    sed 's/\r$//' "$target" | sha256sum | awk '{print $1}'
+  elif command -v openssl >/dev/null 2>&1; then
+    sed 's/\r$//' "$target" | openssl dgst -sha256 | awk '{print $NF}'
+  else
+    return 1
+  fi
+}
+
 require_file() {
   if [ -f "$1" ]; then
     pass "file exists: $1"
@@ -51,6 +64,7 @@ require_file .github/ISSUE_TEMPLATE/bug_report.yml
 require_file .github/ISSUE_TEMPLATE/feature_request.yml
 require_file .github/ISSUE_TEMPLATE/config.yml
 require_file Global-Rules/coding-rules.md
+require_file Global-Rules/git-rules.md
 require_file Prompts/ai-prd-generator.rules.md
 require_file Prompts/ai-prd-editor.rules.md
 require_dir Workflow
@@ -129,9 +143,55 @@ require_file tools/install-codex-global.ps1
 require_file tools/install-codex-global.sh
 require_file tools/install.ps1
 require_file tools/install.sh
+require_file tools/legacy-tic-skill-bundles.sha256
 require_file tools/update.ps1
 require_file tools/update.sh
+require_file tools/validate-branch-name.ps1
+require_file tools/validate-branch-name.sh
+require_file tools/validate-commit-msg.ps1
+require_file tools/validate-commit-msg.sh
 require_file tools/validate-pack.sh
+
+if bash tools/validate-branch-name.sh feature/settlement-batch-approval >/dev/null &&
+   bash tools/validate-branch-name.sh release/4.4.405 >/dev/null &&
+   ! bash tools/validate-branch-name.sh feature/project >/dev/null 2>&1 &&
+   ! bash tools/validate-branch-name.sh feature/运营人员 >/dev/null 2>&1; then
+  pass "Git branch validator enforces tic-gitflow-v1"
+else
+  fail "Git branch validator must accept concrete type branches and reject generic or non-ASCII names"
+fi
+
+if bash tools/validate-commit-msg.sh --message \
+     'feat(settlement): 增加结算批次审批' >/dev/null &&
+   ! bash tools/validate-commit-msg.sh --message \
+     'feat: 发布财务平台首期完整基线' >/dev/null 2>&1 &&
+   ! bash tools/validate-commit-msg.sh --message \
+     'feat(project): 发布财务平台首期完整基线' >/dev/null 2>&1 &&
+   ! bash tools/validate-commit-msg.sh --message \
+     'fix(vip): expire pending orders by payment channel' >/dev/null 2>&1; then
+  pass "Git commit validator enforces scoped Chinese Conventional Commits"
+else
+  fail "Git commit validator must reject missing/generic scopes and English subjects"
+fi
+
+crlf_manifest_fixture="$(mktemp)"
+printf '%s\r\n' \
+  'interface:' \
+  '  display_name: "Release Train Handoff"' \
+  '  short_description: "全量多项目发版总控与交付包生成"' \
+  '  default_prompt: "Use $release-train-handoff to create a Chinese release train handoff package for a full or multi-project release."' \
+  > "$crlf_manifest_fixture"
+crlf_expected_hash="$(awk -F'|' \
+  '$1 == "release-train-handoff" && $4 == "agents/openai.yaml" { print $3 }' \
+  tools/legacy-tic-skill-bundles.sha256)"
+if crlf_actual_hash="$(sha256_file "$crlf_manifest_fixture")" &&
+   [ -n "$crlf_expected_hash" ] &&
+   [ "$crlf_actual_hash" = "$crlf_expected_hash" ]; then
+  pass "legacy production manifest hashes normalize CRLF text to LF"
+else
+  fail "legacy production manifest hashes must normalize CRLF text to LF"
+fi
+rm -f "$crlf_manifest_fixture"
 
 version_file="$(tr -d '[:space:]' < VERSION 2>/dev/null || true)"
 version_manifest="$(sed -n 's/.*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' manifest.json | head -1)"
@@ -389,7 +449,7 @@ else
   fail "legacy alias skills must stay thin redirects to canonical skills"
 fi
 
-for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/install-codex-global.sh tools/install.sh tools/update.sh tools/validate-pack.sh; do
+for script in tools/bootstrap-project.sh tools/codegraph-helper.sh tools/git-advice.sh tools/install-codex-global.sh tools/install.sh tools/update.sh tools/validate-branch-name.sh tools/validate-commit-msg.sh tools/validate-pack.sh; do
   if [ -x "$script" ]; then
     pass "script executable: $script"
   else
@@ -430,6 +490,104 @@ if command -v pwsh >/dev/null 2>&1; then
   else
     fail "PowerShell bootstrap must create and preserve shared memory"
   fi
+
+  powershell_legacy_project="$powershell_tmp/legacy-project"
+  mkdir -p \
+    "$powershell_legacy_project/.codex/skills/release-train-handoff/agents" \
+    "$powershell_legacy_project/.codex/skills/git-flow-operator"
+  printf '%s\r\n' '---' 'name: release-train-handoff' \
+    'description: Known legacy release train fixture.' '---' \
+    '# Release Train Handoff' > \
+    "$powershell_legacy_project/.codex/skills/release-train-handoff/SKILL.md"
+  printf 'legacy metadata\r\n' > \
+    "$powershell_legacy_project/.codex/skills/release-train-handoff/agents/openai.yaml"
+  printf '%s\n' '---' 'name: git-flow-operator' \
+    'description: Known legacy Git fixture.' '---' '# Git Flow Operator' > \
+    "$powershell_legacy_project/.codex/skills/git-flow-operator/SKILL.md"
+  powershell_project_manifest="$powershell_tmp/project-legacy.sha256"
+  for skill_name in release-train-handoff git-flow-operator; do
+    skill_dir="$powershell_legacy_project/.codex/skills/$skill_name"
+    find "$skill_dir" -type f -print | sort | while read -r skill_asset; do
+      relative_asset="${skill_asset#$skill_dir/}"
+      asset_hash="$(sha256_file "$skill_asset")"
+      printf '%s|fixture|%s|%s\n' \
+        "$skill_name" "$asset_hash" "$relative_asset"
+    done
+  done > "$powershell_project_manifest"
+  cp -R "$powershell_legacy_project/.codex/skills/release-train-handoff" \
+    "$powershell_tmp/expected-powershell-release-train"
+  printf 'CUSTOM_SENTINEL\n' > \
+    "$powershell_legacy_project/.codex/skills/git-flow-operator/CUSTOM_SENTINEL.md"
+
+  if TIC_LEGACY_SKILL_MANIFEST="$powershell_project_manifest" \
+       pwsh -NoProfile -File tools/bootstrap-project.ps1 -Yes -Force \
+         -RulesDir "$PACKAGE_ROOT" -ProjectRoot "$powershell_legacy_project" \
+         >/dev/null &&
+     TIC_LEGACY_SKILL_MANIFEST="$powershell_project_manifest" \
+       pwsh -NoProfile -File tools/bootstrap-project.ps1 -Yes -Force \
+         -RulesDir "$PACKAGE_ROOT" -ProjectRoot "$powershell_legacy_project" \
+         >/dev/null &&
+     [ ! -e "$powershell_legacy_project/.codex/skills/release-train-handoff" ] &&
+     grep -q 'CUSTOM_SENTINEL' \
+       "$powershell_legacy_project/.codex/skills/git-flow-operator/CUSTOM_SENTINEL.md" &&
+     powershell_project_backup="$(find "$powershell_legacy_project/.tic-backups" \
+       -type d -path '*/.codex/skills/release-train-handoff' | sed -n '1p')" &&
+     [ -n "$powershell_project_backup" ] &&
+     diff -qr "$powershell_tmp/expected-powershell-release-train" \
+       "$powershell_project_backup" >/dev/null; then
+    pass "PowerShell bootstrap removes exact CRLF legacy bundles and preserves customized skills"
+  else
+    fail "PowerShell bootstrap must safely migrate exact legacy skill bundles"
+  fi
+
+  powershell_codex_home="$powershell_tmp/codex-home"
+  mkdir -p \
+    "$powershell_codex_home/skills/release-ops-handoff/references" \
+    "$powershell_codex_home/skills/git-flow-operator"
+  printf '%s\r\n' '---' 'name: release-ops-handoff' \
+    'description: Known legacy release operations fixture.' '---' \
+    '# Release Ops Handoff' > \
+    "$powershell_codex_home/skills/release-ops-handoff/SKILL.md"
+  printf 'legacy template\r\n' > \
+    "$powershell_codex_home/skills/release-ops-handoff/references/handoff-package-template.md"
+  printf '%s\n' '---' 'name: git-flow-operator' \
+    'description: Known legacy global Git fixture.' '---' '# Git Flow Operator' > \
+    "$powershell_codex_home/skills/git-flow-operator/SKILL.md"
+  powershell_global_manifest="$powershell_tmp/global-legacy.sha256"
+  for skill_name in release-ops-handoff git-flow-operator; do
+    skill_dir="$powershell_codex_home/skills/$skill_name"
+    find "$skill_dir" -type f -print | sort | while read -r skill_asset; do
+      relative_asset="${skill_asset#$skill_dir/}"
+      asset_hash="$(sha256_file "$skill_asset")"
+      printf '%s|fixture|%s|%s\n' \
+        "$skill_name" "$asset_hash" "$relative_asset"
+    done
+  done > "$powershell_global_manifest"
+  cp -R "$powershell_codex_home/skills/release-ops-handoff" \
+    "$powershell_tmp/expected-powershell-release-ops"
+  printf 'CUSTOM_SENTINEL\n' > \
+    "$powershell_codex_home/skills/git-flow-operator/CUSTOM_SENTINEL.md"
+
+  if TIC_LEGACY_SKILL_MANIFEST="$powershell_global_manifest" \
+       pwsh -NoProfile -File tools/install-codex-global.ps1 -Yes -Force \
+         -RulesDir "$PACKAGE_ROOT" -CodexHome "$powershell_codex_home" \
+         >/dev/null &&
+     TIC_LEGACY_SKILL_MANIFEST="$powershell_global_manifest" \
+       pwsh -NoProfile -File tools/install-codex-global.ps1 -Yes -Force \
+         -RulesDir "$PACKAGE_ROOT" -CodexHome "$powershell_codex_home" \
+         >/dev/null &&
+     [ ! -e "$powershell_codex_home/skills/release-ops-handoff" ] &&
+     grep -q 'CUSTOM_SENTINEL' \
+       "$powershell_codex_home/skills/git-flow-operator/CUSTOM_SENTINEL.md" &&
+     powershell_global_backup="$(find "$powershell_codex_home/.tic-backups" \
+       -type d -path '*/skills/release-ops-handoff' | sed -n '1p')" &&
+     [ -n "$powershell_global_backup" ] &&
+     diff -qr "$powershell_tmp/expected-powershell-release-ops" \
+       "$powershell_global_backup" >/dev/null; then
+    pass "PowerShell global install removes exact CRLF legacy bundles and preserves customized skills"
+  else
+    fail "PowerShell global install must safely migrate exact legacy skill bundles"
+  fi
   rm -rf "$powershell_tmp"
 else
   warn "pwsh unavailable; PowerShell runtime fixture is partial and remains a long-term validation item"
@@ -446,6 +604,31 @@ if grep -q 'rules_path=' tools/bootstrap-project.sh &&
   pass "project install avoids committed absolute rules paths"
 else
   fail "project install must keep absolute rules paths out of committed templates"
+fi
+
+resolver_order_ok=1
+for resolver_doc in templates/codex-global/AGENTS.md templates/AGENTS.md \
+  USAGE.md docs/automation.md; do
+  local_line="$(grep -n 'rules_source=local_config' "$resolver_doc" | sed -n '1s/:.*//p')"
+  lock_line="$(grep -n 'rules_path=' "$resolver_doc" | sed -n '1s/:.*//p')"
+  if [ -z "$local_line" ] || [ -z "$lock_line" ] ||
+     [ "$local_line" -ge "$lock_line" ] ||
+     ! grep -q 'Workflow/core.md' "$resolver_doc"; then
+    resolver_order_ok=0
+  fi
+done
+for wrapper_file in templates/codex-global/skills/*/SKILL.md; do
+  local_line="$(grep -n 'rules_source=local_config' "$wrapper_file" | sed -n '1s/:.*//p')"
+  lock_line="$(grep -n 'rules_path=' "$wrapper_file" | sed -n '1s/:.*//p')"
+  if [ -z "$local_line" ] || [ -z "$lock_line" ] ||
+     [ "$local_line" -ge "$lock_line" ]; then
+    resolver_order_ok=0
+  fi
+done
+if [ "$resolver_order_ok" -eq 1 ]; then
+  pass "resolvers prefer an accessible explicit local_config before branch-controlled locks"
+else
+  fail "all resolver docs and wrappers must use local_config -> lock -> fallback order"
 fi
 
 bootstrap_tmp="$(mktemp -d)"
@@ -502,6 +685,90 @@ else
   fail "bootstrap must be commit-safe, idempotent, and preserve lock and shared memory"
 fi
 rm -rf "$bootstrap_tmp"
+
+legacy_skill_tmp="$(mktemp -d)"
+legacy_skill_project="$legacy_skill_tmp/sample-project"
+mkdir -p \
+  "$legacy_skill_project/.codex/skills/release-train-handoff/agents" \
+  "$legacy_skill_project/.codex/skills/release-train-handoff/references" \
+  "$legacy_skill_project/.codex/skills/git-flow-operator" \
+  "$legacy_skill_project/.codex/skills/project-owned-skill"
+cat > "$legacy_skill_project/.codex/skills/release-train-handoff/SKILL.md" <<'EOF'
+---
+name: release-train-handoff
+description: Use when planning or documenting full releases, release trains, multi-project or multi-service launch batches, or releases involving SQL, scripts, rollback coordination, smoke checklists, and release evidence.
+---
+
+# Release Train Handoff
+
+生成项目级“发版批次 / Release Train”交付包。
+EOF
+cat > "$legacy_skill_project/.codex/skills/git-flow-operator/SKILL.md" <<'EOF'
+---
+name: git-flow-operator
+description: Use when starting work or coordinating Git Flow across multiple repositories.
+---
+
+# Git Flow Operator
+
+涉及 release 文档、SQL、脚本、总冒烟、证据归档时，配合 `$release-train-handoff`。
+EOF
+printf 'legacy metadata\n' > \
+  "$legacy_skill_project/.codex/skills/release-train-handoff/agents/openai.yaml"
+printf 'legacy template\n' > \
+  "$legacy_skill_project/.codex/skills/release-train-handoff/references/release-structure-template.md"
+printf 'legacy git metadata\n' > \
+  "$legacy_skill_project/.codex/skills/git-flow-operator/agents-openai.yaml"
+printf '%s\n' '---' 'name: project-owned-skill' \
+  'description: Use when the project explicitly requests its custom release policy.' \
+  '---' '# Project-owned Skill' > \
+  "$legacy_skill_project/.codex/skills/project-owned-skill/SKILL.md"
+git -C "$legacy_skill_project" init -q
+git -C "$legacy_skill_project" add .codex
+git -C "$legacy_skill_project" \
+  -c user.name='TIC Test' -c user.email='tic-test@example.invalid' \
+  commit -qm 'test: add legacy skills'
+legacy_test_manifest="$legacy_skill_tmp/legacy-skill-manifest.sha256"
+for skill_name in release-train-handoff git-flow-operator; do
+  skill_dir="$legacy_skill_project/.codex/skills/$skill_name"
+  find "$skill_dir" -type f -print | sort | while read -r skill_asset; do
+    relative_asset="${skill_asset#$skill_dir/}"
+    asset_hash="$(sha256_file "$skill_asset")"
+    printf '%s|fixture|%s|%s\n' \
+      "$skill_name" "$asset_hash" "$relative_asset"
+  done
+done > "$legacy_test_manifest"
+cp -R "$legacy_skill_project/.codex/skills/release-train-handoff" \
+  "$legacy_skill_tmp/expected-release-train-handoff"
+printf 'CUSTOM_SENTINEL\n' > \
+  "$legacy_skill_project/.codex/skills/git-flow-operator/CUSTOM_SENTINEL.md"
+legacy_bootstrap_output="$legacy_skill_tmp/bootstrap-output.txt"
+
+if TIC_LEGACY_SKILL_MANIFEST="$legacy_test_manifest" \
+   bash tools/bootstrap-project.sh --yes --force --rules-dir "$PACKAGE_ROOT" \
+     "$legacy_skill_project" > "$legacy_bootstrap_output" &&
+   [ ! -e "$legacy_skill_project/.codex/skills/release-train-handoff" ] &&
+   grep -q 'CUSTOM_SENTINEL' \
+     "$legacy_skill_project/.codex/skills/git-flow-operator/CUSTOM_SENTINEL.md" &&
+   [ -f "$legacy_skill_project/.codex/skills/project-owned-skill/SKILL.md" ] &&
+   grep -R -q 'name: release-train-handoff' \
+     "$legacy_skill_project/.tic-backups" --include='SKILL.md' &&
+   release_train_backup="$(find "$legacy_skill_project/.tic-backups" -type d \
+     -path '*/.codex/skills/release-train-handoff' | sed -n '1p')" &&
+   [ -n "$release_train_backup" ] &&
+   diff -qr "$legacy_skill_tmp/expected-release-train-handoff" \
+     "$release_train_backup" >/dev/null &&
+   grep -q '^rules_source=local_config$' \
+     "$legacy_skill_project/.tic-rules.local" &&
+   grep -q "^rules_dir=$PACKAGE_ROOT$" \
+     "$legacy_skill_project/.tic-rules.local" &&
+   grep -q 'TIC entrypoint changes remain uncommitted' \
+     "$legacy_bootstrap_output"; then
+  pass "bootstrap removes exact legacy TIC bundles and preserves same-name customized skills"
+else
+  fail "bootstrap must remove only exact legacy TIC bundles and preserve customized skills"
+fi
+rm -rf "$legacy_skill_tmp"
 
 adapter_tmp="$(mktemp -d)"
 adapter_project="$adapter_tmp/workspace"
@@ -594,18 +861,20 @@ else
   fail "Git advice scripts or manifest do not record read-only policy"
 fi
 
-if grep -q 'feature/<business-slug>' Skills/git-flow-operator.md &&
-   grep -q '使用 SemVer' Skills/git-flow-operator.md &&
+if grep -q 'Global-Rules/git-rules.md' Skills/git-flow-operator.md &&
+   grep -q 'tic-gitflow-v1' Skills/git-flow-operator.md &&
    grep -q 'preserve-existing' Skills/git-flow-operator.md &&
    grep -q '该授权已经充分' Skills/git-flow-operator.md &&
-   grep -q 'version_format: semver' templates/ai-harness/project-adapter.md &&
-   grep -q 'branch_strategy: project-defined' tools/bootstrap-project.sh &&
-   grep -q 'feature_branch_policy' tools/git-advice.sh &&
+   grep -q 'version_format: three-digit-patch' templates/ai-harness/project-adapter.md &&
+   grep -q 'profile: tic-gitflow-v1' tools/bootstrap-project.sh &&
+   grep -q 'commit_message_policy: conventional-chinese-v1' tools/bootstrap-project.ps1 &&
+   grep -q 'task_branch_policy' tools/git-advice.sh &&
    grep -q 'release_hotfix_version_policy' tools/git-advice.ps1 &&
+   grep -q 'suggested_branch_policy_status' tools/git-advice.sh &&
    grep -q 'suggested_tag' tools/git-advice.sh; then
-  pass "Git strategy resolves project policy and reuses explicit authorization"
+  pass "Git strategy resolves the standardized profile and reuses explicit authorization"
 else
-  fail "Git strategy must use project policy, safe defaults, and non-redundant authorization"
+  fail "Git strategy must use the standardized profile, validators, and non-redundant authorization"
 fi
 
 if grep -q 'git fetch <authoritative-remote> --prune --tags' Skills/git-flow-operator.md &&
@@ -614,7 +883,8 @@ if grep -q 'git fetch <authoritative-remote> --prune --tags' Skills/git-flow-ope
    grep -q 'refs/heads/<branch>' Skills/git-flow-operator.md &&
    grep -q 'refs/remotes/<remote>/<branch>' Skills/git-flow-operator.md &&
    grep -q '基线新鲜度' Skills/git-flow-operator.md &&
-   grep -q 'git fetch <authoritative-remote> --prune --tags' Global-Rules/coding-rules.md &&
+   grep -q 'git fetch <authoritative-remote> --prune --tags' Global-Rules/git-rules.md &&
+   grep -q '普通任务不得直接在其上提交或推送' Global-Rules/git-rules.md &&
    grep -q '检查基线、同名分支' templates/AGENTS.md &&
    grep -q '不默认执行分支、提交、推送、合并、tag、发布' templates/codex-global/AGENTS.md &&
    grep -q 'remote_fetch_status' tools/git-advice.sh &&
@@ -639,7 +909,7 @@ if grep -q '项目要求 release/hotfix tag 后回灌' Skills/git-flow-operator.
    grep -q '项目集成分支回灌状态' Skills/git-flow-operator.md &&
    grep -q '项目要求的发布证据' Skills/git-flow-operator.md &&
    grep -q '回灌未完成' Skills/git-flow-operator.md &&
-   grep -q 'release/hotfix tag 后继续记录' Global-Rules/coding-rules.md &&
+   grep -q 'release/hotfix 合入 `master` 后回灌' Global-Rules/git-rules.md &&
    grep -q 'project-required back-merge or closeout evidence' templates/codex-global/skills/tic-git-flow-operator/SKILL.md &&
    grep -q '没有回灌政策的项目不发明该步骤' Skills/git-flow-operator.md; then
   pass "Git tag closeout requires project-defined back-merge or closeout evidence"
@@ -794,17 +1064,83 @@ else
 fi
 
 codex_install_tmp="$(mktemp -d)"
-if bash tools/install-codex-global.sh --yes --rules-dir "$PACKAGE_ROOT" \
+mkdir -p \
+  "$codex_install_tmp/skills/git-flow-operator" \
+  "$codex_install_tmp/skills/release-ops-handoff" \
+  "$codex_install_tmp/skills/release-train-handoff" \
+  "$codex_install_tmp/skills/project-owned-skill"
+cat > "$codex_install_tmp/skills/git-flow-operator/SKILL.md" <<'EOF'
+---
+name: git-flow-operator
+description: Use when starting work, creating feature/release/hotfix branches, or coordinating Git Flow.
+---
+
+# Git Flow Operator（分支与发版合并操作技能）
+
+- 服务角色：**PM / Tech Lead / Release Manager**
+EOF
+cat > "$codex_install_tmp/skills/release-ops-handoff/SKILL.md" <<'EOF'
+---
+name: release-ops-handoff
+description: Generate post-development release handoff packages that connect R&D completion to operations deployment and business operations usage.
+---
+
+# Release Ops Handoff
+EOF
+cat > "$codex_install_tmp/skills/release-train-handoff/SKILL.md" <<'EOF'
+---
+name: release-train-handoff
+description: Use when planning or documenting full releases, release trains, multi-project or multi-service launch batches.
+---
+
+# Release Train Handoff
+EOF
+printf '%s\n' '---' 'name: project-owned-skill' \
+  'description: Use when the user requests the project-owned workflow.' \
+  '---' '# Project-owned Skill' > \
+  "$codex_install_tmp/skills/project-owned-skill/SKILL.md"
+global_legacy_test_manifest="$codex_install_tmp/global-legacy-skill-manifest.sha256"
+for skill_name in git-flow-operator release-ops-handoff release-train-handoff; do
+  skill_dir="$codex_install_tmp/skills/$skill_name"
+  find "$skill_dir" -type f -print | sort | while read -r skill_asset; do
+    relative_asset="${skill_asset#$skill_dir/}"
+    asset_hash="$(sha256_file "$skill_asset")"
+    printf '%s|fixture|%s|%s\n' \
+      "$skill_name" "$asset_hash" "$relative_asset"
+  done
+done > "$global_legacy_test_manifest"
+cp -R "$codex_install_tmp/skills/release-ops-handoff" \
+  "$codex_install_tmp/expected-release-ops-handoff"
+cp -R "$codex_install_tmp/skills/release-train-handoff" \
+  "$codex_install_tmp/expected-release-train-handoff"
+printf 'CUSTOM_SENTINEL\n' > \
+  "$codex_install_tmp/skills/git-flow-operator/CUSTOM_SENTINEL.md"
+if TIC_LEGACY_SKILL_MANIFEST="$global_legacy_test_manifest" \
+   bash tools/install-codex-global.sh --yes --rules-dir "$PACKAGE_ROOT" \
      --codex-home "$codex_install_tmp" >/dev/null &&
    grep -q '规则版本：`0.5.2`' "$codex_install_tmp/AGENTS.md" &&
    grep -q 'TIC_CODEX_GLOBAL_BEGIN' "$codex_install_tmp/AGENTS.md" &&
    grep -q '<rules_dir>/Skills/collaboration-memory-maintainer.md' \
      "$codex_install_tmp/skills/tic-collaboration-memory-maintainer/SKILL.md" &&
    ! grep -q '{{TIC_RULES_DIR}}' \
-     "$codex_install_tmp/skills/tic-collaboration-memory-maintainer/SKILL.md"; then
-  pass "Codex global install renders the collaboration memory wrapper"
+     "$codex_install_tmp/skills/tic-collaboration-memory-maintainer/SKILL.md" &&
+   grep -q 'CUSTOM_SENTINEL' \
+     "$codex_install_tmp/skills/git-flow-operator/CUSTOM_SENTINEL.md" &&
+   [ ! -e "$codex_install_tmp/skills/release-ops-handoff" ] &&
+   [ ! -e "$codex_install_tmp/skills/release-train-handoff" ] &&
+   [ -f "$codex_install_tmp/skills/project-owned-skill/SKILL.md" ] &&
+   release_ops_backup="$(find "$codex_install_tmp/.tic-backups" -type d \
+     -path '*/skills/release-ops-handoff' | sed -n '1p')" &&
+   release_train_backup="$(find "$codex_install_tmp/.tic-backups" -type d \
+     -path '*/skills/release-train-handoff' | sed -n '1p')" &&
+   [ -n "$release_ops_backup" ] && [ -n "$release_train_backup" ] &&
+   diff -qr "$codex_install_tmp/expected-release-ops-handoff" \
+     "$release_ops_backup" >/dev/null &&
+   diff -qr "$codex_install_tmp/expected-release-train-handoff" \
+     "$release_train_backup" >/dev/null; then
+  pass "Codex global install renders wrappers and removes backed-up legacy TIC skills"
 else
-  fail "Codex global install must render the current loader and collaboration memory wrapper"
+  fail "Codex global install must render current wrappers and remove only known legacy TIC skills"
 fi
 rm -rf "$codex_install_tmp"
 
