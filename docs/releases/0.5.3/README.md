@@ -5,13 +5,15 @@
 
 ## 发布信息
 
-- 状态：本地候选，尚未发布
+- 状态：发布候选已准备，待推送至 `gitee` 与 `github`
+- release 分支：`release/0.5.3`
 - release owner：Team-Intelligence-Center
 - 候选 tag：`0.5.3`
 - tag policy：无 `v` 前缀、annotated tag、preserve-existing
 - 发布分支：`master`
 - 集成分支：`develop`
-- 权威远端：`origin`
+- 发布远端：`gitee`、`github`
+- 本次明确不推送：`origin`
 - 部署触发：tag push 后进入 stable 更新通道，不触发业务生产部署
 
 ## 主要变化
