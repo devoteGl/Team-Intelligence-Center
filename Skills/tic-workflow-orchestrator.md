@@ -16,6 +16,8 @@ artifacts:
 requires: []
 related:
   - task-decomposer
+  - prd-author
+  - prd-review-checklist
   - contract-handoff
   - e2e-verification
   - release-handoff
@@ -41,6 +43,10 @@ workflow_decision:
     authority:
       autonomous: []
       confirmation_required: []
+  product_baseline:
+    status: not-required | missing | draft | confirmed | superseded
+    owner: ""
+    source: ""
   decisions:
     planning_depth: inline | brief | living
     execution_authority: autonomous | confirmation-required
@@ -53,6 +59,10 @@ workflow_decision:
 
 五个维度必须分别给出事实依据。不得从文件数、技术关键词、预计耗时或某个
 外部 Skill 的总控声明推导整个任务的统一等级。
+
+新产品、业务域或重大用户旅程还要判断产品基线。缺少已确认基线且持久实现会
+冻结产品行为时，允许调查、原型和可逆技术探针；正式实现保持未授权，直到有权
+owner 确认用户、结果、主旅程、范围、非目标和验收。
 
 ## Capability 选择
 
@@ -90,6 +100,7 @@ OpenSpec 只在 `fact_persistence=openspec` 且存在长期消费者时使用。
 
 - [ ] 是否读取 `Workflow/core.md`。
 - [ ] 是否使用五字段任务契约。
+- [ ] 新产品是否记录产品基线状态、owner 和事实源。
 - [ ] 五个维度是否分别有事实依据。
 - [ ] 是否没有固定阶段或 Skill 调用链。
 - [ ] 每个额外 artifact 是否有消费者和唯一事实源。

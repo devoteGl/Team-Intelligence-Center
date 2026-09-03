@@ -67,6 +67,12 @@ require_file Global-Rules/coding-rules.md
 require_file Global-Rules/git-rules.md
 require_file Prompts/ai-prd-generator.rules.md
 require_file Prompts/ai-prd-editor.rules.md
+require_file Skills/prd-author.md
+require_file Skills/prd-review-checklist.md
+require_file Skills/post-dev-prd-sync.md
+require_file templates/codex-global/skills/tic-prd-author/SKILL.md
+require_file templates/codex-global/skills/tic-prd-review/SKILL.md
+require_file templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md
 require_dir Workflow
 require_file Workflow/core.md
 require_file Workflow/capability-schema.md
@@ -90,6 +96,8 @@ require_file docs/sdd/tic-0.5.0-workflow-core-redesign.md
 require_file docs/sdd/tic-0.5.0-collaboration-intelligence-loop.md
 require_file docs/sdd/tic-0.5.1-native-workflow-convergence.md
 require_file docs/sdd/tic-0.5.2-skill-capability-convergence.md
+require_file docs/sdd/tic-0.5.3-product-baseline-prd-workflow.md
+require_file docs/sdd/tic-0.5.3-git-workflow-standardization.md
 require_file docs/releases/0.1.0/README.md
 require_file docs/releases/0.2.0/README.md
 require_file docs/releases/0.2.1/README.md
@@ -107,6 +115,8 @@ require_file docs/releases/0.5.1/README.md
 require_file docs/releases/0.5.1/evidence.md
 require_file docs/releases/0.5.2/README.md
 require_file docs/releases/0.5.2/evidence.md
+require_file docs/releases/0.5.3/README.md
+require_file docs/releases/0.5.3/evidence.md
 require_file docs/test-evidence/tic-0.2.0/README.md
 require_file docs/test-evidence/tic-0.2.1/README.md
 require_file docs/test-evidence/tic-0.2.2/README.md
@@ -114,12 +124,14 @@ require_file docs/test-evidence/tic-0.3.0/README.md
 require_file docs/test-evidence/tic-0.5.0/README.md
 require_file docs/test-evidence/tic-0.5.1/README.md
 require_file docs/test-evidence/tic-0.5.2/README.md
+require_file docs/test-evidence/tic-0.5.3/README.md
 require_file docs/walkthroughs/tic-0.2.1-project-adapter-preservation.md
 require_file docs/walkthroughs/tic-0.2.2-bash32-update.md
 require_file docs/walkthroughs/tic-0.3.0-e2e-verification-standardization.md
 require_file docs/walkthroughs/tic-0.5.0-collaboration-intelligence-loop.md
 require_file docs/walkthroughs/tic-0.5.1-native-workflow-convergence.md
 require_file docs/walkthroughs/tic-0.5.2-skill-capability-convergence.md
+require_file docs/walkthroughs/tic-0.5.3-product-baseline-prd-workflow.md
 require_file Skills/project-adapter-maintainer.md
 require_file templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md
 require_file Skills/e2e-verification.md
@@ -269,6 +281,21 @@ if scenario_matches local-bug-fix \
    scenario_matches release-branch-push \
      '"execution_authority": "confirmation-required"' \
      '"review_level": "independent"' '"checkpoint": true' &&
+   scenario_matches greenfield-product-without-baseline \
+     '"planning_depth": "living"' '"review_level": "user-decision"' \
+     '"fact_persistence": "prd"' '"checkpoint": true' \
+     '"implementation_allowed": false' \
+     '"capabilities": \["prd-author", "prd-review-checklist"\]' &&
+   scenario_matches confirmed-product-baseline \
+     '"planning_depth": "living"' '"checkpoint": false' \
+     '"implementation_allowed": true' &&
+   scenario_matches local-ui-bug-with-stable-product \
+     '"planning_depth": "inline"' '"fact_persistence": "task-context"' \
+     '"capabilities": \[\]' &&
+   scenario_matches post-dev-spec-drift \
+     '"review_level": "user-decision"' '"checkpoint": true' \
+     '"promotion_allowed": false' \
+     '"capabilities": \["post-dev-prd-sync"\]' &&
    ! grep -Eq '"mode"[[:space:]]*:' Workflow/scenarios.json; then
   pass "workflow scenarios keep planning, authority, verification, review, and persistence independent"
 else
@@ -317,23 +344,58 @@ else
 fi
 rm -f "$template_stack_scan"
 
-if grep -q '当前版本为 `0.5.2`' README.md &&
+if grep -q '当前版本为 `0.5.3`' README.md &&
    grep -q '0.1.0.*0.2.0.*0.2.1' README.md &&
-   grep -q '`0.2.2`、`0.3.0`、`0.5.0`、`0.5.1` 已归档，当前版本为 `0.5.2`' README.md &&
-   grep -q '"previous_version_archive"[[:space:]]*:[[:space:]]*"docs/releases/0.5.1"' manifest.json &&
+   grep -q '`0.2.2`、`0.3.0`、`0.5.0`、`0.5.1`、`0.5.2` 已归档，当前版本为 `0.5.3`' README.md &&
+   grep -q '"previous_version_archive"[[:space:]]*:[[:space:]]*"docs/releases/0.5.2"' manifest.json &&
    [ ! -e docs/releases/0.4.0 ] &&
    [ ! -e docs/test-evidence/tic-0.4.0 ] &&
    grep -q 'd8fe814ad633bd06d6ead7815ad8f7d6d3db5324' docs/releases/0.1.0/README.md; then
   pass "current and archived release records are declared"
 else
-  fail "README and release archive must identify 0.5.2 and preserve earlier releases"
+  fail "README and release archive must identify 0.5.3 and preserve earlier releases"
 fi
 
 skill_count="$(find Skills -maxdepth 1 -type f -name '*.md' | wc -l | tr -d '[:space:]')"
-if [ "$skill_count" -ge 23 ]; then
-  pass "skill count >= 23 ($skill_count)"
+if [ "$skill_count" -ge 24 ]; then
+  pass "skill count >= 24 ($skill_count)"
 else
-  fail "expected at least 23 skill files, found $skill_count"
+  fail "expected at least 24 skill files, found $skill_count"
+fi
+
+if grep -q '确认产品基线前' Workflow/core.md &&
+   grep -q '可逆技术探针' Workflow/core.md &&
+   grep -q '角色、主旅程、信息架构和关键状态' Workflow/core.md &&
+   grep -q '大型新产品' templates/AGENTS.md &&
+   grep -q 'tic-prd-author' templates/AGENTS.md &&
+   grep -q '只拆调查、PRD、原型' Skills/task-decomposer.md &&
+   grep -q 'product_baseline:' Skills/tic-workflow-orchestrator.md; then
+  pass "greenfield product work requires a confirmed product and UI baseline before durable implementation"
+else
+  fail "greenfield product work must stop durable implementation until product and UI baselines are confirmed"
+fi
+
+if grep -q '^status: canonical$' Skills/prd-author.md &&
+   grep -q '大型新产品' Skills/prd-author.md &&
+   grep -q 'Prompts/ai-prd-generator.rules.md' Skills/prd-author.md &&
+   grep -q '保持 `DRAFT`' Skills/prd-author.md &&
+   grep -q '规格漂移' Skills/post-dev-prd-sync.md &&
+   grep -q '不得用已交付代码反向改写产品意图' Skills/post-dev-prd-sync.md &&
+   grep -q '产品基线' Skills/prd-review-checklist.md; then
+  pass "PRD authoring, review, and post-development sync have distinct non-destructive contracts"
+else
+  fail "PRD authoring, review, and post-development sync must remain distinct and fail closed on drift"
+fi
+
+if grep -q '按需求形状选择章节' Prompts/ai-prd-generator.rules.md &&
+   grep -q '用户旅程' Prompts/ai-prd-generator.rules.md &&
+   grep -q '界面状态' Prompts/ai-prd-generator.rules.md &&
+   grep -q '验收标准' Prompts/ai-prd-generator.rules.md &&
+   ! grep -q '100% 遵循' Prompts/ai-prd-generator.rules.md &&
+   ! grep -q '自动生成前后端任务清单' Prompts/ai-prd-generator.rules.md; then
+  pass "PRD prompt is outcome-led, UI-aware, and avoids rigid implementation decomposition"
+else
+  fail "PRD prompt must define product outcomes and UI behavior without rigid FE/BE decomposition"
 fi
 
 if [ ! -e Skills/sdd-writer.md ] &&
@@ -609,8 +671,8 @@ fi
 resolver_order_ok=1
 for resolver_doc in templates/codex-global/AGENTS.md templates/AGENTS.md \
   USAGE.md docs/automation.md; do
-  local_line="$(grep -n 'rules_source=local_config' "$resolver_doc" | sed -n '1s/:.*//p')"
-  lock_line="$(grep -n 'rules_path=' "$resolver_doc" | sed -n '1s/:.*//p')"
+  local_line="$(grep -n 'rules_source=local_config' "$resolver_doc" | sed -n '1s/:.*//p' || true)"
+  lock_line="$(grep -n 'rules_path=' "$resolver_doc" | sed -n '1s/:.*//p' || true)"
   if [ -z "$local_line" ] || [ -z "$lock_line" ] ||
      [ "$local_line" -ge "$lock_line" ] ||
      ! grep -q 'Workflow/core.md' "$resolver_doc"; then
@@ -618,8 +680,8 @@ for resolver_doc in templates/codex-global/AGENTS.md templates/AGENTS.md \
   fi
 done
 for wrapper_file in templates/codex-global/skills/*/SKILL.md; do
-  local_line="$(grep -n 'rules_source=local_config' "$wrapper_file" | sed -n '1s/:.*//p')"
-  lock_line="$(grep -n 'rules_path=' "$wrapper_file" | sed -n '1s/:.*//p')"
+  local_line="$(grep -n 'rules_source=local_config' "$wrapper_file" | sed -n '1s/:.*//p' || true)"
+  lock_line="$(grep -n 'rules_path=' "$wrapper_file" | sed -n '1s/:.*//p' || true)"
   if [ -z "$local_line" ] || [ -z "$lock_line" ] ||
      [ "$local_line" -ge "$lock_line" ]; then
     resolver_order_ok=0
@@ -1047,8 +1109,8 @@ if grep -q 'one_command_user_update' manifest.json &&
    grep -q 'latest_semver_tag' tools/update.sh &&
    grep -q 'TargetRef' tools/update.ps1 &&
    grep -q -- '--channel current' USAGE.md &&
-   grep -q -- '--ref 0.5.2' USAGE.md &&
-   grep -q -- '--ref 0.5.2' docs/automation.md &&
+   grep -q -- '--ref 0.5.3' USAGE.md &&
+   grep -q -- '--ref 0.5.3' docs/automation.md &&
    grep -q 'install-codex-global.sh' tools/update.sh &&
    grep -q 'install.sh' tools/update.sh; then
   pass "stable, current, and explicit-ref update paths are declared"
@@ -1057,7 +1119,7 @@ else
 fi
 
 codex_wrapper_count="$(find templates/codex-global/skills -mindepth 2 -maxdepth 2 -type f -name 'SKILL.md' | wc -l | tr -d '[:space:]')"
-if [ "$codex_wrapper_count" -ge 15 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'tic-workflow-orchestrator' templates/codex-global/skills/tic-workflow-orchestrator/SKILL.md && grep -q 'tic-contract-handoff' templates/codex-global/skills/tic-contract-handoff/SKILL.md && grep -q 'tic-release-handoff' templates/codex-global/skills/tic-release-handoff/SKILL.md && grep -q 'tic-shared-domain-arbiter' templates/codex-global/skills/tic-shared-domain-arbiter/SKILL.md && grep -q 'project-adapter-maintainer' templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md && grep -q '<rules_dir>/Skills/e2e-verification.md' templates/codex-global/skills/tic-e2e-verification/SKILL.md && grep -q '<rules_dir>/Skills/collaboration-memory-maintainer.md' templates/codex-global/skills/tic-collaboration-memory-maintainer/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
+if [ "$codex_wrapper_count" -ge 17 ] && grep -q 'codex_global_loader' manifest.json && grep -q '优先遵守当前项目' templates/codex-global/AGENTS.md && grep -q 'rules_path=' templates/codex-global/AGENTS.md && grep -q '.tic-rules.local' templates/codex-global/AGENTS.md && grep -q 'Do not copy TIC Skills' templates/codex-global/skills/tic-post-dev-prd-sync/SKILL.md && grep -q '<rules_dir>/Skills/prd-author.md' templates/codex-global/skills/tic-prd-author/SKILL.md && grep -q '<rules_dir>/Skills/prd-review-checklist.md' templates/codex-global/skills/tic-prd-review/SKILL.md && grep -q 'tic-delivery-walkthrough' templates/codex-global/skills/tic-delivery-walkthrough/SKILL.md && grep -q 'tic-git-flow-operator' templates/codex-global/skills/tic-git-flow-operator/SKILL.md && grep -q 'tic-workflow-orchestrator' templates/codex-global/skills/tic-workflow-orchestrator/SKILL.md && grep -q 'tic-contract-handoff' templates/codex-global/skills/tic-contract-handoff/SKILL.md && grep -q 'tic-release-handoff' templates/codex-global/skills/tic-release-handoff/SKILL.md && grep -q 'tic-shared-domain-arbiter' templates/codex-global/skills/tic-shared-domain-arbiter/SKILL.md && grep -q 'project-adapter-maintainer' templates/codex-global/skills/tic-project-adapter-maintainer/SKILL.md && grep -q '<rules_dir>/Skills/e2e-verification.md' templates/codex-global/skills/tic-e2e-verification/SKILL.md && grep -q '<rules_dir>/Skills/collaboration-memory-maintainer.md' templates/codex-global/skills/tic-collaboration-memory-maintainer/SKILL.md && grep -q 'TIC_CODEX_GLOBAL_BEGIN' tools/install-codex-global.sh; then
   pass "Codex global loader is wrapper-only and project-first"
 else
   fail "Codex global loader must stay wrapper-only and project-first"
@@ -1118,8 +1180,12 @@ printf 'CUSTOM_SENTINEL\n' > \
 if TIC_LEGACY_SKILL_MANIFEST="$global_legacy_test_manifest" \
    bash tools/install-codex-global.sh --yes --rules-dir "$PACKAGE_ROOT" \
      --codex-home "$codex_install_tmp" >/dev/null &&
-   grep -q '规则版本：`0.5.2`' "$codex_install_tmp/AGENTS.md" &&
+   grep -q '规则版本：`0.5.3`' "$codex_install_tmp/AGENTS.md" &&
    grep -q 'TIC_CODEX_GLOBAL_BEGIN' "$codex_install_tmp/AGENTS.md" &&
+   grep -q '<rules_dir>/Skills/prd-author.md' \
+     "$codex_install_tmp/skills/tic-prd-author/SKILL.md" &&
+   grep -q '<rules_dir>/Skills/prd-review-checklist.md' \
+     "$codex_install_tmp/skills/tic-prd-review/SKILL.md" &&
    grep -q '<rules_dir>/Skills/collaboration-memory-maintainer.md' \
      "$codex_install_tmp/skills/tic-collaboration-memory-maintainer/SKILL.md" &&
    ! grep -q '{{TIC_RULES_DIR}}' \
@@ -1226,6 +1292,7 @@ fi
 
 canonical_skill_files=(
   Skills/task-decomposer.md
+  Skills/prd-author.md
   Skills/code-investigator.md
   Skills/contract-handoff.md
   Skills/shared-domain-arbiter.md

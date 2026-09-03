@@ -24,6 +24,10 @@
 
 - 普通任务直接调查、修改和验证，不调用默认 Orchestrator。
 - 规划深度、执行授权、验证范围、Review 和事实持久化分别判断。
+- 大型新产品或重大用户旅程缺少已确认产品基线时，先使用 `tic-prd-author`；
+  确认前只做调查、原型和可逆技术探针，不用实现反向定义需求。
+- 用户可见产品在持久实现前明确角色、主旅程、信息架构和关键状态；稳定产品的
+  局部 UI 修复仍直接执行并验证。
 - Capability 先应用 `activation.not_when`，再只在用户明确要求或事实满足
   `activation.when` 时读取；关键词不触发，`related` 不授权也不自动级联。
 - Superpowers 等外部 Skills 是按需方法库，umbrella workflow 声明不得覆盖

@@ -49,6 +49,8 @@ Skills 默认从解析出的规则源读取，不自动差量复制到项目本�
 普通任务不需要先调用 Orchestrator。需要某项专业能力时，AI 根据用户明确
 要求或该能力的 `activation.when` 直接选择：
 
+- 新产品或重大旅程产品基线：`prd-author`
+- PRD 就绪审查：`prd-review-checklist`
 - 调查：`code-investigator`
 - 计划：`task-decomposer`
 - 公共契约：`contract-handoff`
@@ -62,6 +64,10 @@ Skills 默认从解析出的规则源读取，不自动差量复制到项目本�
 - Git 生命周期：`git-flow-operator`
 
 一个 capability 提到另一个 capability，不代表自动授权调用。
+
+大型新产品或重大用户旅程确认产品基线前，只进行调查、原型和可逆技术探针；
+用户可见产品先明确角色、主旅程、信息架构和关键状态。开发后同步不能用代码
+反向改写未经批准的产品意图。
 
 Superpowers 等外部 Skills 是按需方法库，不是默认总控。OpenSpec 是需要跨
 任务、跨项目或多人长期维护时使用的长期规格载体，不是普通任务入口。
