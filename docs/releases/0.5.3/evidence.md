@@ -2,12 +2,13 @@
 
 ## 当前状态
 
-- 状态：发布候选已准备，尚未推送
+- 状态：已发布至 `gitee` 与 `github`，并完成 `develop` 回灌
 - release 分支：`release/0.5.3`
-- 集成分支：`develop@e0d6e08`
+- 发布提交：`master@cd16a69`
+- 集成分支：`develop@fc982ca`
 - 基线：`origin/develop@8213a65`
 - release owner：Team-Intelligence-Center
-- 候选 tag：`0.5.3`
+- release tag：`0.5.3`
 - 发布远端：`gitee`、`github`
 - 明确排除：`origin`
 
@@ -42,6 +43,11 @@
 - PRD feature 合入 develop：`c2139ce`。
 - SemVer 分支兼容修复：`813c28c`，合入 develop：`e0d6e08`。
 - feature push：未执行。
-- release branch：已创建，准备提交。
-- `master` 合入、annotated tag、`develop` 回灌：未执行。
-- 当前记录不得被解释为已发布或已进入 stable 更新通道。
+- release 准备：`fc362a4`。
+- `master` 发布提交：`cd16a693fc9f6cdbbd2dfa8bb3f295e36063d953`。
+- annotated tag 对象：`77fdef05548ea171231d33448fc03a647b7cfe58`；解引用到
+  `cd16a693fc9f6cdbbd2dfa8bb3f295e36063d953`。
+- `develop` 回灌：`fc982cab05173c53e2bd5eab6614209d8b7cb26c`。
+- `gitee`：`master`、`develop`、`0.5.3` 与上述引用一致，均为 `0/0`。
+- `github`：`master`、`develop`、`0.5.3` 与上述引用一致，均为 `0/0`。
+- `origin` 保持 `master@2c470be`、`develop@8213a65`，未创建 `0.5.3` tag。
