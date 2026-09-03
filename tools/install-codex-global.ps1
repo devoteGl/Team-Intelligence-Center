@@ -51,6 +51,11 @@ $BeginMarker = "<!-- TIC_CODEX_GLOBAL_BEGIN -->"
 $EndMarker = "<!-- TIC_CODEX_GLOBAL_END -->"
 $Stamp = Get-Date -Format "yyyyMMddHHmmss"
 $Planned = New-Object System.Collections.Generic.List[string]
+$LegacySkillManifest = if ($env:TIC_LEGACY_SKILL_MANIFEST) {
+    $env:TIC_LEGACY_SKILL_MANIFEST
+} else {
+    Join-Path $PackageRoot "tools/legacy-tic-skill-bundles.sha256"
+}
 
 function Add-Plan {
     param([string]$Item)
@@ -72,6 +77,131 @@ function Backup-File {
     $backupDir = Split-Path -Parent $backup
     New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
     Copy-Item -LiteralPath $Target -Destination $backup -Force
+}
+
+function Backup-Path {
+    param([string]$Target)
+    $relative = $Target.Substring($CodexHome.Length).TrimStart([char[]]@('\', '/'))
+    $backup = Join-Path (Join-Path $CodexHome ".tic-backups") (Join-Path (Join-Path "codex-global" $Stamp) $relative)
+    $backupDir = Split-Path -Parent $backup
+    New-Item -ItemType Directory -Force -Path $backupDir | Out-Null
+    Copy-Item -LiteralPath $Target -Destination $backup -Recurse -Force
+}
+
+function Get-NormalizedFileSha256 {
+    param([string]$Target)
+
+    $bytes = [System.IO.File]::ReadAllBytes($Target)
+    $normalized = New-Object byte[] $bytes.Length
+    $length = 0
+    for ($index = 0; $index -lt $bytes.Length; $index++) {
+        if ($bytes[$index] -eq 13 -and
+            (($index + 1 -lt $bytes.Length -and $bytes[$index + 1] -eq 10) -or
+             $index + 1 -eq $bytes.Length)) {
+            continue
+        }
+        $normalized[$length] = $bytes[$index]
+        $length++
+    }
+
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $hashBytes = $sha256.ComputeHash($normalized, 0, $length)
+        return ([System.BitConverter]::ToString($hashBytes)).Replace("-", "").ToLowerInvariant()
+    } finally {
+        $sha256.Dispose()
+    }
+}
+
+function Test-LegacySkillBundle {
+    param(
+        [string]$SkillName,
+        [string]$SkillDir
+    )
+
+    if (-not (Test-Path -LiteralPath $LegacySkillManifest -PathType Leaf)) {
+        return $false
+    }
+
+    $entries = @(
+        foreach ($line in Get-Content -LiteralPath $LegacySkillManifest -Encoding UTF8) {
+            if ([string]::IsNullOrWhiteSpace($line) -or $line.StartsWith("#")) {
+                continue
+            }
+            $parts = $line.Split('|')
+            if ($parts.Count -eq 4 -and $parts[0] -eq $SkillName) {
+                [pscustomobject]@{
+                    Bundle = $parts[1]
+                    Hash = $parts[2].ToLowerInvariant()
+                    RelativePath = $parts[3]
+                }
+            }
+        }
+    )
+    if ($entries.Count -eq 0) {
+        return $false
+    }
+
+    $actualFiles = @([System.IO.Directory]::GetFiles($SkillDir, "*", [System.IO.SearchOption]::AllDirectories))
+    $rootPrefix = [System.IO.Path]::GetFullPath($SkillDir).TrimEnd([char[]]@('\', '/')) + [System.IO.Path]::DirectorySeparatorChar
+    foreach ($bundleId in @($entries.Bundle | Sort-Object -Unique)) {
+        $bundleEntries = @($entries | Where-Object { $_.Bundle -eq $bundleId })
+        if ($actualFiles.Count -ne $bundleEntries.Count) {
+            continue
+        }
+
+        $matched = $true
+        foreach ($entry in $bundleEntries) {
+            $asset = [System.IO.Path]::GetFullPath((Join-Path $SkillDir $entry.RelativePath))
+            if (-not $asset.StartsWith($rootPrefix, [System.StringComparison]::OrdinalIgnoreCase) -or
+                -not (Test-Path -LiteralPath $asset -PathType Leaf)) {
+                $matched = $false
+                break
+            }
+            $actualHash = Get-NormalizedFileSha256 -Target $asset
+            if ($actualHash -ne $entry.Hash) {
+                $matched = $false
+                break
+            }
+        }
+        if ($matched) {
+            return $true
+        }
+    }
+
+    return $false
+}
+
+function Remove-LegacyGlobalTicSkill {
+    param([string]$SkillName)
+
+    $skillDir = Join-Path (Join-Path $CodexHome "skills") $SkillName
+    $skillFile = Join-Path $skillDir "SKILL.md"
+    if (-not (Test-Path -LiteralPath $skillFile -PathType Leaf)) {
+        return
+    }
+
+    $content = Get-Content -LiteralPath $skillFile -Raw -Encoding UTF8
+    if (-not $content.Contains("name: $SkillName")) {
+        return
+    }
+
+    if (-not (Test-LegacySkillBundle -SkillName $SkillName -SkillDir $skillDir)) {
+        Add-Plan "preserve unrecognized or customized global skill bundle skills/$SkillName"
+        return
+    }
+
+    Add-Plan "remove backed-up legacy global TIC skill bundle skills/$SkillName"
+    if (-not $DryRun) {
+        Backup-Path $skillDir
+        Remove-Item -LiteralPath $skillDir -Recurse -Force
+    }
+}
+
+function Remove-LegacyGlobalTicSkills {
+    Remove-LegacyGlobalTicSkill -SkillName "git-flow-operator"
+    Remove-LegacyGlobalTicSkill -SkillName "release-ops-handoff"
+    Remove-LegacyGlobalTicSkill -SkillName "release-train-handoff"
 }
 
 function Merge-GlobalAgents {
@@ -145,6 +275,7 @@ if (-not $DryRun -and -not $Yes) {
     }
 }
 
+Remove-LegacyGlobalTicSkills
 Merge-GlobalAgents
 Install-SkillWrappers
 

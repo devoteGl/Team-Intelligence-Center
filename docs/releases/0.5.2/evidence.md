@@ -11,7 +11,16 @@
 
 ## Git 与回灌证据
 
-发布完成后回填 master 落点、tag object、远端 refs、develop 回灌和祖先关系。
+- `master` 发布提交：`2c470bea357d8d76d2fd0f41cca9e8da677d62a9`
+- `0.5.2` tag 落点：`2c470bea357d8d76d2fd0f41cca9e8da677d62a9`
+- `origin/master`：`2c470bea357d8d76d2fd0f41cca9e8da677d62a9`
+- `develop` 回灌提交：`515e6b4ab79360de3cd9175e3b45ed7dd9b9ef94`
+- `origin/develop`：包含上述回灌提交及发布后证据提交
+- `origin` annotated tag 对象：`20f632abb8a820f573d62fc1df2410883fc79c97`
+- `origin` tag 解引用：`2c470bea357d8d76d2fd0f41cca9e8da677d62a9`
+- `git merge-base --is-ancestor 0.5.2^{commit} develop`：退出码 `0`
+- 远端 `release/*`：无；`release/0.5.2` 未推送
+- push：`master`、`develop` 和 `0.5.2` 通过一次 atomic push 完成
 
 ## 功能验证
 
@@ -21,3 +30,5 @@
 - Review：完整 diff 自审，重点检查激活边界、自动级联、Git 授权和 artifact
   ownership。
 - 安装：临时 Codex Home 渲染以及本机全局 Loader/wrapper 同步。
+- PowerShell：本机无 `pwsh`，运行时 fixture 未执行；静态检查通过并保留为
+  非阻断 warning。

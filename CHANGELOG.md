@@ -2,6 +2,31 @@
 
 本文件记录 Team-Intelligence-Center 公开版本。版本详情见 `docs/releases/<version>/README.md`。
 
+## 0.5.3 - 2026-09-03
+
+### Added
+
+- 新增 `tic-gitflow-v1` 仓库级 Git 标准，统一长期分支、任务分支、中文
+  Conventional Commit、三位补零版本、annotated tag、回灌与 submodule 顺序。
+- 新增 Shell / PowerShell 分支名和 commit message 校验器。
+- 新增 canonical `prd-author`，为大型新产品、业务域和重大用户旅程建立可确认
+  产品基线，并提供 `tic-prd-author` 全局 wrapper。
+- 新增 `tic-prd-review` wrapper，使 PRD Review Checklist 可直接发现和调用。
+- 新增 greenfield、已确认基线、稳定产品 UI Bug 和开发后规格漂移行为场景。
+
+### Changed
+
+- Git 建议、adapter 模板和 bootstrap 默认值改为同一标准，并显式禁止普通任务
+  直接提交或推送 `master`、`develop`。
+- PRD 生成提示词改为按需求形状组合的产品基线参考，不再强制固定八章或自动
+  拆成 FE/BE 任务。
+- 用户可见产品在持久实现前明确角色、主旅程、信息架构和关键状态；PRD 确认前
+  只允许调查、原型和可逆技术探针。
+- PRD Review 增加实现反推需求、技术能力膨胀、局部测试冒充产品闭环等破坏性检查。
+- 开发后 PRD Sync 只同步已批准行为；无批准证据的实现差异转为规格漂移待决。
+
+[版本详情](docs/releases/0.5.3/README.md)
+
 ## 0.5.2 - 2026-08-10
 
 ### Changed

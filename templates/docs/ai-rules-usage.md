@@ -49,6 +49,8 @@ Skills 默认从解析出的规则源读取，不自动差量复制到项目本�
 普通任务不需要先调用 Orchestrator。需要某项专业能力时，AI 根据用户明确
 要求或该能力的 `activation.when` 直接选择：
 
+- 新产品或重大旅程产品基线：`prd-author`
+- PRD 就绪审查：`prd-review-checklist`
 - 调查：`code-investigator`
 - 计划：`task-decomposer`
 - 公共契约：`contract-handoff`
@@ -62,6 +64,10 @@ Skills 默认从解析出的规则源读取，不自动差量复制到项目本�
 - Git 生命周期：`git-flow-operator`
 
 一个 capability 提到另一个 capability，不代表自动授权调用。
+
+大型新产品或重大用户旅程确认产品基线前，只进行调查、原型和可逆技术探针；
+用户可见产品先明确角色、主旅程、信息架构和关键状态。开发后同步不能用代码
+反向改写未经批准的产品意图。
 
 Superpowers 等外部 Skills 是按需方法库，不是默认总控。OpenSpec 是需要跨
 任务、跨项目或多人长期维护时使用的长期规格载体，不是普通任务入口。
@@ -96,15 +102,23 @@ Memory 不默认参与每个任务。只有用户明确要求，或候选经验�
 ## Git 与发布
 
 AI 不默认执行分支、提交、推送、合并、tag 或发布。明确要求后，AI 应读取
-项目策略，刷新远端引用，检查基线和同名分支，展示目标与命令并等待确认。
+`Global-Rules/git-rules.md`、`Skills/git-flow-operator.md` 和项目 adapter，
+刷新远端引用并检查基线、同名分支与影响。目标已由当前请求唯一授权时不重复
+确认；只有歧义、覆盖风险或范围扩大时暂停。
+
+新提交使用 `tic-gitflow-v1`：普通任务进入类型分支，长期分支不直接提交或
+推送；commit message 使用必填具体 scope 的中文 Conventional Commits，并在
+写入前通过规则源中的分支和提交信息校验脚本。
 
 创建发布材料不等于已经授权发布。生产、迁移、回滚和 Git 状态变更必须保留
 原生或可审计的原始输出。
 
 ## 规则来源
 
-可提交文件不保存个人绝对路径。优先读取 `.tic-rules.lock` 的非空
-`rules_path=`；否则读取 gitignored 的 `.tic-rules.local` 中的
+可提交文件不保存个人绝对路径。若 gitignored `.tic-rules.local` 明确声明
+`rules_source=local_config`，且非空 `rules_dir=` 可访问并包含
+`Workflow/core.md`，优先使用该分支无关的本机规则源；否则读取
+`.tic-rules.lock` 的非空 `rules_path=`，再回退到 `.tic-rules.local` 的
 `rules_dir=`。
 
 项目完整决策规则位于规则源的 `Workflow/core.md`；capability metadata

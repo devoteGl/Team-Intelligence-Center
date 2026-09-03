@@ -1,11 +1,11 @@
-# Team-Intelligence-Center 0.5.2 轻量自动化设计
+# Team-Intelligence-Center 0.5.3 轻量自动化设计
 
 ## 目标
 
 自动化层只负责安装、更新、发现规则源和验证规则包，不把研发方法固化成
 一条强制流水线。
 
-0.5.2 的边界是：
+0.5.3 的边界是：
 
 - `Workflow/core.md` 提供 outcome-driven 的五维独立决策；
 - `Skills/*.md` 提供可独立选择的 Capability；
@@ -23,6 +23,7 @@
 | `Workflow/capability-schema.md` | `tic_capability.v1` 契约 |
 | `Workflow/scenarios.json` | 可执行的行为场景基线 |
 | `Global-Rules/coding-rules.md` | 工程行为和安全边界 |
+| `Global-Rules/git-rules.md` | Git 分支、提交、版本、tag 与回灌标准 |
 | `Skills/` | 可独立选择的能力 |
 | `templates/` | 项目入口、adapter、memory 和 wrapper |
 | `tools/` | 安装、更新、建议和验证脚本 |
@@ -33,7 +34,8 @@
 
 - 为每个任务调用 Orchestrator；
 - 串联 Capability；
-- 创建 PRD、SDD、Walkthrough、Release Handoff 或 session artifact；
+- 为普通任务创建 PRD、SDD、Walkthrough、Release Handoff 或 session artifact；
+- 在产品基线确认前自动开始会冻结产品行为的持久实现；
 - 检索或提取 Collaboration Memory；
 - 安装 Git hooks、CodeGraph、Playwright 或供应商工具；
 - 执行分支、提交、push、merge、tag、发布或生产操作；
@@ -108,7 +110,7 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh \
 
 ```bash
 bash /path/to/Team-Intelligence-Center/tools/update.sh \
-  --ref 0.5.2 \
+  --ref 0.5.3 \
   --project /path/to/project
 ```
 
@@ -127,10 +129,11 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh \
 
 项目安装不把本机绝对路径写进提交文件：
 
-1. `.tic-rules.lock` 可保存项目相对 `rules_path=`；
-2. 外部绝对路径写入 gitignored 的 `.tic-rules.local`；
-3. 全局 Loader 只提供 fallback；
-4. 项目 `AGENTS.md` 和 Project Adapter 始终优先。
+1. gitignored `.tic-rules.local` 明确声明 `rules_source=local_config`，且
+   `rules_dir=` 可访问并包含 `Workflow/core.md` 时，作为分支无关的本机覆盖；
+2. 否则 `.tic-rules.lock` 的项目相对 `rules_path=` 是提交态规则源；
+3. 无可用 lock 路径时，再读取 `.tic-rules.local` 的非空 `rules_dir=`；
+4. 全局 Loader 只提供 fallback；项目事实和 Project Adapter 始终优先。
 
 ## Workflow 自动化边界
 
@@ -159,6 +162,8 @@ fact_persistence     task-context / openspec / prd / runbook / release-record
 额外 artifact 必须有明确消费者和用途：
 
 - 异步 reviewer 或 QA 需要复核时生成 Walkthrough；
+- 大型新产品或重大用户旅程缺少已确认基线时生成 PRD 草稿；
+- 产品 owner 需要判断基线是否可实现时执行 PRD Review；
 - 产品维护者需要同步长期行为事实时生成 PRD 草稿；
 - 发布 owner 需要部署和回滚材料时生成 Release Handoff；
 - 跨任务或审计接力确实需要时生成 session artifacts；
@@ -173,6 +178,7 @@ fact_persistence     task-context / openspec / prd / runbook / release-record
 - 静态文档结论使用结构、链接和 schema 检查；
 - 代码行为结论使用项目原生测试；
 - UI 结论在可运行时使用真实界面证据；
+- 用户可见新产品在实现前明确角色、主旅程、信息架构和关键状态；
 - 局部测试不足以证明关键旅程时启用 `e2e-verification`；
 - 认证、权限、资金、隐私、迁移和跨服务关键链路需要相称的高置信证据。
 
@@ -220,10 +226,14 @@ promote、reconcile、audit 和 deprecate 由用户明确要求或已确认项�
 - 扫描默认和项目声明的 release registry root；
 - 输出建议命令。
 
+`tools/validate-branch-name.*` 和 `tools/validate-commit-msg.*` 分别校验
+`tic-gitflow-v1` 分支名与 `conventional-chinese-v1` 提交信息。校验器只读，
+可以由 Agent、commit-msg hook 或 CI 调用；TIC 默认不自动安装 Git hook。
+
 它们不执行 `git fetch, switch, add, commit, push, merge, tag`。
 
 实际 Git Flow 使用前应获得授权，并在创建分支前运行
-`git fetch --all --prune --tags`。已 push 的 release tag 默认不可移动，
+`git fetch <authoritative-remote> --prune --tags`。已 push 的 release tag 默认不可移动，
 tag 后仍需记录项目要求的回灌或收尾证据。
 
 ## 验证器
@@ -235,7 +245,7 @@ bash tools/validate-pack.sh
 验证器覆盖：
 
 - `VERSION` 与 manifest 一致；
-- Workflow Core 只声明三种当前模式；
+- Workflow Core 保持规划、授权、验证、Review 和事实持久化五维独立；
 - 场景 fixture 覆盖普通修改、共享契约、关键旅程、生产迁移、memory 和
   Git 写入；
 - 全部 Skills 满足 `tic_capability.v1`；
@@ -243,7 +253,7 @@ bash tools/validate-pack.sh
 - bootstrap 幂等且保留 lock、adapter 和 shared memory；
 - Codex 全局安装能渲染当前版本 Loader 和 wrapper；
 - Shell 更新兼容 Bash 3.2 的空参数路径；
-- Git 建议脚本保持只读。
+- Git 建议脚本保持只读，分支名和提交信息校验器覆盖统一策略。
 
 PowerShell 存在时运行等价 fixture；不存在时输出 warning，不把静态检查
 写成 runtime 通过。

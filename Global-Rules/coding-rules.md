@@ -1,42 +1,8 @@
-# Git Commit Message 规范
+# Git 规则入口
 
-## 1. 格式要求
-
-每个提交信息必须包含一个类型、可选作用域和描述：
-
-```text
-<type>(<scope>): <subject>
-```
-
-重大变更可以使用：
-
-```text
-<type>(<scope>): <subject>
-
-<body>
-
-BREAKING CHANGE: <描述不兼容变更内容>
-```
-
-## 2. 类型
-
-- `feat`：新功能
-- `fix`：修复 Bug
-- `docs`：仅修改文档
-- `style`：不影响逻辑的格式调整
-- `refactor`：既不是修复也不是新功能的重构
-- `perf`：性能优化
-- `test`：测试相关
-- `chore`：构建或辅助工具
-- `ci`：CI/CD 配置
-- `revert`：回滚历史变更
-
-## 3. 内容
-
-- 使用简洁中文。
-- Subject 不超过 50 个字符。
-- 使用祈使句，结尾不加句号。
-- 常见 scope：`member`、`contact`、`ui`、`api`、`store`、`config`、`core`。
+Git 分支、commit message、长期分支保护、版本、tag、回灌和 submodule 顺序以
+`Global-Rules/git-rules.md` 为唯一事实源。本文件只维护通用工程边界，不复制
+第二套 Git 命名规范。
 
 ---
 
@@ -113,6 +79,8 @@ Capability 可以直接调用，不需要经过中心路由。先应用 `activat
 
 | 事实 | Capability |
 | --- | --- |
+| 新产品或重大用户旅程缺少已确认产品基线 | `prd-author` |
+| 产品 owner 需要审查已有 PRD 或确认产品基线 | `prd-review-checklist` |
 | 代码现状、调用路径或影响面未知 | `code-investigator` |
 | 用户要求计划，或无法安全地边调查边执行 | `task-decomposer` |
 | 公共接口存在多个消费者 | `contract-handoff` |
@@ -128,6 +96,10 @@ Capability 可以直接调用，不需要经过中心路由。先应用 `activat
 
 `related` 只用于发现，不授权调用。不得自动级联 Capability，也不得输出
 未选择能力的全量跳过清单。
+
+大型新产品或重大用户旅程确认基线前，可以调查、制作原型和运行可逆技术探针；
+不得通过正式 API、Schema、菜单、状态或领域模型让技术实现先于产品决定。用户
+可见产品先明确角色、主旅程、信息架构和关键状态。稳定产品的普通修复不进入该门禁。
 
 ## 4. 用户确认边界
 
@@ -203,7 +175,8 @@ Memory 是显式能力，不默认进入每个任务的开始或收尾。
 
 用户明确要求 Git 生命周期操作时：
 
-1. 读取项目 branch、version 和 tag 策略。
+1. 读取 `Global-Rules/git-rules.md`、项目 adapter 和仓库实际 branch、version、
+   tag 策略。
 2. 分支创建前执行 `git fetch <authoritative-remote> --prune --tags`。
 3. 检查基线新鲜度和本地/远端同名分支。
 4. 核对目标、命令和风险；当前任务未授权或存在歧义时才等待确认。

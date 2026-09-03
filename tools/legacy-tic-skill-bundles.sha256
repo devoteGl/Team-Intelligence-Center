@@ -1,0 +1,12 @@
+# skill|bundle|sha256|relative_path
+# Text hashes are computed after normalizing CRLF line endings to LF.
+release-train-handoff|legacy-v1|0d9bf85980d8584ee6fcf1fb7198dd558ce7dcf908a6490b2f2dc4df9d797f67|SKILL.md
+release-train-handoff|legacy-v1|2557ae1eeb476c3a42a34e30ebad8ffcfc250184283007fe80243d52bd3883d8|agents/openai.yaml
+release-train-handoff|legacy-v1|3ecc4d7b718aefb650b23e7ea3eca28f2096921d0d8bf0dc11a386e00f88e7af|references/release-structure-template.md
+git-flow-operator|legacy-project-v1|cc50377c597e424f45b9703afc516e248f101112c4045d3c6b61ab4b1d2928a9|SKILL.md
+git-flow-operator|legacy-project-v1|421e8f7ce67085a4b1f494ed0ee63037c03a106c35e2370b7287ea29e6f8e5d0|agents/openai.yaml
+git-flow-operator|legacy-global-v1|2a0b9899e07b8f33899c0efdd54745a9681280995631ceef22d76a1d11931a5a|SKILL.md
+git-flow-operator|legacy-global-v1|421e8f7ce67085a4b1f494ed0ee63037c03a106c35e2370b7287ea29e6f8e5d0|agents/openai.yaml
+release-ops-handoff|legacy-v1|72b30fbce4b4184ed752fa31e5263a3cf3d30aad11581f406426afe7f48f639b|SKILL.md
+release-ops-handoff|legacy-v1|1aff8b66d0e5f9f28d76d1a895327c201adf176fee7e1a831a3d743f12788f86|agents/openai.yaml
+release-ops-handoff|legacy-v1|31bde265071f6cf6e5c4ebdcc699c29fdd4d2f09dc335e12eb926b48b2bb0804|references/handoff-package-template.md

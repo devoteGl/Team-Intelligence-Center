@@ -1,6 +1,6 @@
 # Team-Intelligence-Center 使用指南
 
-本指南面向规则包维护者和接入业务项目的团队。0.5.2 的默认模型是
+本指南面向规则包维护者和接入业务项目的团队。0.5.3 的默认模型是
 “结果优先、原生执行、五个维度独立判断”。
 
 ## 1. 先理解三个对象
@@ -136,9 +136,11 @@ ai-harness/memory/
 
 项目入口按以下顺序解析规则源：
 
-1. 从当前目录向上查找 `.tic-rules.lock`；
-2. 使用其中非空的项目相对 `rules_path=`；
-3. 否则读取同级 `.tic-rules.local` 的本机 `rules_dir=`；
+1. 从当前目录向上定位项目根；若同级 `.tic-rules.local` 明确声明
+   `rules_source=local_config`，且非空 `rules_dir=` 可访问并包含
+   `Workflow/core.md`，优先使用该分支无关的本机规则源；
+2. 否则使用 `.tic-rules.lock` 中非空的项目相对 `rules_path=`；
+3. 否则读取 `.tic-rules.local` 的非空 `rules_dir=`；
 4. 再按项目 `AGENTS.md` 的说明解析；
 5. 显式调用 TIC 能力但仍未解析时，才使用全局 Loader 的 fallback。
 
@@ -165,11 +167,11 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh \
   --project /path/to/project
 ```
 
-固定到 0.5.2：
+固定到 0.5.3：
 
 ```bash
 bash /path/to/Team-Intelligence-Center/tools/update.sh \
-  --ref 0.5.2 \
+  --ref 0.5.3 \
   --project /path/to/project
 ```
 
@@ -209,6 +211,8 @@ Loader 只做规则发现和 wrapper 路由：
 
 | 需要解决的问题 | 选择的 Capability |
 | --- | --- |
+| 新产品或重大用户旅程缺少已确认产品基线 | `prd-author` |
+| 需要审查 PRD 或决定是否可进入正式实现 | `prd-review-checklist` |
 | 用户要求追踪现有行为，或关键实现事实阻塞决策 | `code-investigator` |
 | 需要把复杂目标拆成独立结果和 ownership | `task-decomposer` |
 | 共享契约跨实现边界，独立消费者需要兼容语义 | `contract-handoff` |
@@ -230,6 +234,15 @@ Loader 只做规则发现和 wrapper 路由：
 
 只有行为需要长期契约、多方对齐或项目本身要求时，才创建或更新 OpenSpec、
 SDD、PRD。项目已有事实源时继续使用该事实源。
+
+大型新产品、业务域或重大用户旅程是例外：当持久实现会冻结产品行为且产品基线
+尚未确认时，先使用 `prd-author` 明确 owner、用户、结果、主旅程、范围、非目标
+和验收。确认前只允许调查、原型和可逆技术探针。用户可见产品还应先明确角色、
+信息架构和关键状态。稳定产品的局部 Bug、UI 修复和纯重构不进入该门禁。
+
+PRD Review 判断产品基线是否足以支持实现；开发后 PRD Sync 只同步已有批准证据
+的交付。实现与 PRD 冲突且没有批准记录时，应报告规格漂移并等待产品决定，不能
+用代码反向改写 PRD。
 
 ### 验证
 
@@ -298,11 +311,13 @@ ai-harness/memory/team-collaboration.md
 
 TIC 不默认执行 Git 写操作。用户明确要求具体 Git 结果时：
 
-1. 解析项目声明的分支、版本和 tag 策略；
+1. 读取 `Global-Rules/git-rules.md`、`Skills/git-flow-operator.md` 和项目
+   adapter，解析分支、commit、版本和 tag 策略；
 2. 对权威远端运行 `git fetch <authoritative-remote> --prune --tags`；
 3. 检查基线同步和本地/远端同名分支；
-4. 核对候选命令、目标和证据；
-5. 当前任务已经明确授权且目标唯一时直接执行；歧义、覆盖风险或范围扩大时
+4. 使用 `tools/validate-branch-name.*` 和 `tools/validate-commit-msg.*` 校验；
+5. 核对候选命令、目标和证据；普通任务不直接在长期分支提交或推送；
+6. 当前任务已经明确授权且目标唯一时直接执行；歧义、覆盖风险或范围扩大时
    再等待确认。
 
 已 push 的发布 tag 默认不可移动。release/hotfix tag 也不是自动完成态，
@@ -327,7 +342,7 @@ artifact 不是跨任务协作本身；它只在接手者确实需要时存在�
 
 ## 13. 从旧配置迁移
 
-旧版任务档位和流程下限不再控制 0.5.2 的执行。迁移时：
+旧版任务档位和流程下限不再控制 0.5.3 的执行。迁移时：
 
 1. 把旧档位拆成规划、授权、验证、Review 和事实持久化五个独立判断；
 2. 把原来的全局最小流程约束改写成具体受保护动作；
