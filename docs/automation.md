@@ -1,11 +1,11 @@
-# Team-Intelligence-Center 0.5.2 轻量自动化设计
+# Team-Intelligence-Center 0.5.3 轻量自动化设计
 
 ## 目标
 
 自动化层只负责安装、更新、发现规则源和验证规则包，不把研发方法固化成
 一条强制流水线。
 
-0.5.2 的边界是：
+0.5.3 的边界是：
 
 - `Workflow/core.md` 提供 outcome-driven 的五维独立决策；
 - `Skills/*.md` 提供可独立选择的 Capability；
@@ -33,7 +33,8 @@
 
 - 为每个任务调用 Orchestrator；
 - 串联 Capability；
-- 创建 PRD、SDD、Walkthrough、Release Handoff 或 session artifact；
+- 为普通任务创建 PRD、SDD、Walkthrough、Release Handoff 或 session artifact；
+- 在产品基线确认前自动开始会冻结产品行为的持久实现；
 - 检索或提取 Collaboration Memory；
 - 安装 Git hooks、CodeGraph、Playwright 或供应商工具；
 - 执行分支、提交、push、merge、tag、发布或生产操作；
@@ -108,7 +109,7 @@ bash /path/to/Team-Intelligence-Center/tools/update.sh \
 
 ```bash
 bash /path/to/Team-Intelligence-Center/tools/update.sh \
-  --ref 0.5.2 \
+  --ref 0.5.3 \
   --project /path/to/project
 ```
 
@@ -159,6 +160,8 @@ fact_persistence     task-context / openspec / prd / runbook / release-record
 额外 artifact 必须有明确消费者和用途：
 
 - 异步 reviewer 或 QA 需要复核时生成 Walkthrough；
+- 大型新产品或重大用户旅程缺少已确认基线时生成 PRD 草稿；
+- 产品 owner 需要判断基线是否可实现时执行 PRD Review；
 - 产品维护者需要同步长期行为事实时生成 PRD 草稿；
 - 发布 owner 需要部署和回滚材料时生成 Release Handoff；
 - 跨任务或审计接力确实需要时生成 session artifacts；
@@ -173,6 +176,7 @@ fact_persistence     task-context / openspec / prd / runbook / release-record
 - 静态文档结论使用结构、链接和 schema 检查；
 - 代码行为结论使用项目原生测试；
 - UI 结论在可运行时使用真实界面证据；
+- 用户可见新产品在实现前明确角色、主旅程、信息架构和关键状态；
 - 局部测试不足以证明关键旅程时启用 `e2e-verification`；
 - 认证、权限、资金、隐私、迁移和跨服务关键链路需要相称的高置信证据。
 

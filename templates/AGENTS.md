@@ -31,6 +31,16 @@
 
 只暂停需要确认的具体动作，不阻塞安全调查与准备。
 
+## 产品基线与 UI
+
+大型新产品、业务域或重大用户旅程在缺少已确认产品基线时，使用
+`tic-prd-author` 明确用户、结果、主旅程、范围、非目标和验收。确认前可继续
+调查、原型和可逆技术探针，不开始会冻结 API、Schema、菜单、状态或领域模型的
+持久实现。
+
+用户可见产品在实现前明确角色、主旅程、信息架构和关键状态；重大产品方向由
+有权 owner 确认。稳定产品内的 Bug、局部 UI 修复和纯重构继续直接实现并验证。
+
 ## Capability 与外部方法
 
 Capability 先检查 `activation.not_when`，再仅在用户明确要求或事实满足
@@ -42,6 +52,8 @@ OpenSpec 是跨任务、跨项目或多人长期维护的长期规格事实源�
 
 常用 TIC capability：
 
+- 新产品或重大旅程缺少产品基线：`prd-author`
+- 产品 owner 需要审查已有 PRD：`prd-review-checklist`
 - 事实与影响面未知：`code-investigator`
 - 公共契约有多个消费者：`contract-handoff`
 - 并发修改存在 ownership 冲突：`shared-domain-arbiter`

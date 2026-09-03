@@ -146,6 +146,64 @@
       "reason": "行为已改变但项目没有 PRD owner 或长期 PRD 消费者"
     },
     {
+      "id": "greenfield-product-without-baseline",
+      "planning_depth": "living",
+      "execution_authority": "autonomous",
+      "verification_scope": "e2e",
+      "review_level": "user-decision",
+      "fact_persistence": "prd",
+      "checkpoint": true,
+      "implementation_allowed": false,
+      "capabilities": ["prd-author", "prd-review-checklist"],
+      "mandatory_artifacts": ["confirmed-product-baseline"],
+      "allowed_before_confirmation": [
+        "discovery",
+        "prototype",
+        "reversible-technical-spike",
+        "prd-draft"
+      ],
+      "reason": "新产品将通过持久接口和数据模型冻结用户行为，但用户、主旅程、范围和验收尚未确认"
+    },
+    {
+      "id": "confirmed-product-baseline",
+      "planning_depth": "living",
+      "execution_authority": "autonomous",
+      "verification_scope": "e2e",
+      "review_level": "independent",
+      "fact_persistence": "prd",
+      "checkpoint": false,
+      "implementation_allowed": true,
+      "capabilities": [],
+      "mandatory_artifacts": [],
+      "reason": "有权 owner 已确认用户、主旅程、范围、非目标和验收，后续本地实现保持在该基线内"
+    },
+    {
+      "id": "local-ui-bug-with-stable-product",
+      "planning_depth": "inline",
+      "execution_authority": "autonomous",
+      "verification_scope": "targeted",
+      "review_level": "self",
+      "fact_persistence": "task-context",
+      "checkpoint": false,
+      "implementation_allowed": true,
+      "capabilities": [],
+      "mandatory_artifacts": [],
+      "reason": "稳定产品的局部 UI 缺陷不改变角色、旅程、范围或产品决定"
+    },
+    {
+      "id": "post-dev-spec-drift",
+      "planning_depth": "brief",
+      "execution_authority": "autonomous",
+      "verification_scope": "targeted",
+      "review_level": "user-decision",
+      "fact_persistence": "prd",
+      "checkpoint": true,
+      "promotion_allowed": false,
+      "capabilities": ["post-dev-prd-sync"],
+      "mandatory_artifacts": [],
+      "reason": "已交付行为与已确认 PRD 冲突且没有批准证据，只能报告漂移和候选决策"
+    },
+    {
       "id": "explicit-git-release",
       "planning_depth": "brief",
       "execution_authority": "confirmation-required",

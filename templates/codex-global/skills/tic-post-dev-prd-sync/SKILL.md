@@ -1,6 +1,6 @@
 ---
 name: tic-post-dev-prd-sync
-description: Use when product maintainers need an evidence-based PRD update for delivered behavior; never promotes inferred rules automatically.
+description: Use when product maintainers need to sync preapproved delivered behavior into an existing PRD or surface unapproved specification drift.
 ---
 
 # TIC Post Dev PRD Sync Wrapper
@@ -14,4 +14,4 @@ When invoked:
 4. Read and follow `<rules_dir>/Skills/post-dev-prd-sync.md`.
 5. Do not copy TIC Skills into project-local or global skills.
 
-If the target TIC Skill is missing, report that and return only a consumer-scoped draft based on currently available delivery evidence; do not invent artifact roots or promote inferred rules.
+If the target TIC Skill is missing, report that and return only a consumer-scoped draft based on currently available delivery evidence; do not invent artifact roots, create an initial product baseline, or promote inferred rules.

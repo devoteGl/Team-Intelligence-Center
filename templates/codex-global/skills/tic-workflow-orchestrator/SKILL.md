@@ -18,6 +18,6 @@ When invoked:
 
 If the target TIC capability is missing, produce only a lightweight decision
 summary containing outcome, boundaries, done criteria, verification, authority,
-planning depth, execution authority, verification scope, review level, fact
-persistence, and pending confirmations. Do not generate a task tier, fixed
+product baseline status, planning depth, execution authority, verification scope,
+review level, fact persistence, and pending confirmations. Do not generate a task tier, fixed
 capability graph, skipped-capability inventory, or mandatory external workflow.

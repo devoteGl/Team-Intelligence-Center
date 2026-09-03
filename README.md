@@ -3,9 +3,9 @@
 面向软件项目的轻量 AI 协作规则包：用一个小型 Workflow Core 约束动作边界，
 用可独立选择的 Capability 承载调查、契约、验证、交接和项目记忆。
 
-> Public preview：当前版本为 `0.5.2`。
+> Public preview：当前版本为 `0.5.3`。
 
-## 0.5.2 的核心变化
+## 0.5.3 的核心变化
 
 TIC 不再用一个综合模式同时决定计划、风险和验证。默认行为变成：
 
@@ -17,9 +17,10 @@ TIC 不再用一个综合模式同时决定计划、风险和验证。默认行�
 6. 没有新鲜验证证据不得声称完成；
 7. 每次交付做 diff 自审，高影响变更按需独立 Review。
 
-0.5.2 进一步删除 Skills 正文中的固定角色、阶段、全量报告和能力自动级联。出现
-API、共享文件、开发完成或大改动等关键词，不足以触发契约、仲裁、走查或
-代码调查。明确授权过的 Git 结果也不再要求第二次确认。
+0.5.3 修复 0.5.2 试运行暴露的产品链缺口：普通任务仍直接执行；大型新产品、
+业务域或重大用户旅程在缺少已确认产品基线时，先形成 PRD 草稿和 UI/旅程基线。
+确认前只做调查、原型和可逆技术探针，不让 API、Schema、菜单或领域模型反向
+定义需求。PRD Author、PRD Review 和开发后 PRD Sync 各自承担独立责任。
 
 权威定义见：
 
@@ -28,7 +29,7 @@ API、共享文件、开发完成或大改动等关键词，不足以触发契�
 - [`Workflow/scenarios.json`](Workflow/scenarios.json)
 
 设计说明见
-[`docs/sdd/tic-0.5.2-skill-capability-convergence.md`](docs/sdd/tic-0.5.2-skill-capability-convergence.md)。
+[`docs/sdd/tic-0.5.3-product-baseline-prd-workflow.md`](docs/sdd/tic-0.5.3-product-baseline-prd-workflow.md)。
 
 ## 五个独立维度
 
@@ -54,12 +55,14 @@ API、共享文件、开发完成或大改动等关键词，不足以触发契�
 
 | 能力 | 用途 |
 | --- | --- |
+| `prd-author` | 新产品、重大旅程或显式 PRD 请求需要形成可确认产品基线时使用 |
+| `prd-review-checklist` | 产品 owner 审查 PRD 是否足以支持正式实现时使用 |
 | `code-investigator` | 用户要求追踪现有行为，或关键未知事实阻塞当前决策时调查 |
 | `contract-handoff` | 共享契约跨实现边界且存在独立消费者时对齐语义 |
 | `shared-domain-arbiter` | 并发 owner 在同一共享域发生真实冲突时裁决 ownership |
 | `e2e-verification` | 局部检查不足以证明关键旅程时补充端到端证据 |
 | `delivery-walkthrough` | 为明确的异步 review、QA 或使用者生成走查材料 |
-| `post-dev-prd-sync` | 产品维护者需要时生成有证据的 PRD 更新草稿 |
+| `post-dev-prd-sync` | 同步已批准且已交付行为；未批准的规格漂移只报告、不反写 PRD |
 | `release-handoff` | 独立发布消费者需要部署、验证、监控或回滚信息时使用 |
 | `collaboration-memory-maintainer` | 显式维护可确认、可过期、可审计的协作记忆 |
 
@@ -103,7 +106,8 @@ Loader 只负责发现项目规则和提供 `tic-*` wrapper，不复制规则本
 
 - 项目 `AGENTS.md` 和 `ai-harness/project-adapter.md` 优先于通用模板。
 - 普通任务不需要先调用 Orchestrator。
-- 不默认创建 PRD、SDD、Walkthrough、Release Handoff 或 session artifact。
+- 普通任务不默认创建 PRD；大型新产品或重大用户旅程缺少产品基线时先生成草稿。
+- 不默认创建 SDD、Walkthrough、Release Handoff 或 session artifact。
 - 不默认检索、提取或晋升 Collaboration Memory。
 - 不默认执行 Git 分支、提交、push、merge、tag 或发布。
 - 不默认安装 Git hooks、CodeGraph、浏览器 runner 或供应商工具。
@@ -123,14 +127,14 @@ Loader 只负责发现项目规则和提供 `tic-*` wrapper，不复制规则本
 `0.1.0`、`0.2.0`、`0.2.1` 的历史记录均保存在
 [`docs/releases`](docs/releases)。
 
-`0.2.2`、`0.3.0`、`0.5.0`、`0.5.1` 已归档，当前版本为 `0.5.2`。
+`0.2.2`、`0.3.0`、`0.5.0`、`0.5.1`、`0.5.2` 已归档，当前版本为 `0.5.3`。
 
 0.4.0 从未作为公开版本发布；其开发中的 Collaboration Memory 工作已合并
 到 0.5.0，不保留虚构的发布记录。
 
 当前开发证据见
-[`docs/releases/0.5.2`](docs/releases/0.5.2) 和
-[`docs/test-evidence/tic-0.5.2`](docs/test-evidence/tic-0.5.2)。
+[`docs/releases/0.5.3`](docs/releases/0.5.3) 和
+[`docs/test-evidence/tic-0.5.3`](docs/test-evidence/tic-0.5.3)。
 
 ## 验证
 
