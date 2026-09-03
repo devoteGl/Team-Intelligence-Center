@@ -12,12 +12,12 @@ if ($Branch -in @("master", "develop")) {
 if ($Branch.Length -gt 80) {
     Write-Error "FAIL: branch name exceeds 80 characters"
 }
-if ($Branch -match '^(release|hotfix)/[0-9]+\.[0-9]+\.[0-9]{3}$') {
+if ($Branch -match '^(release|hotfix)/[0-9]+\.[0-9]+\.[0-9]+$') {
     Write-Host "PASS: version branch name $Branch"
     exit 0
 }
 if ($Branch -notmatch '^(feature|fix|docs|style|refactor|perf|test|chore|ci|revert)/[a-z0-9]+(-[a-z0-9]+)*$') {
-    Write-Error "FAIL: branch must use <type>/<lowercase-kebab-slug> or <release|hotfix>/<x.y.zzz>"
+    Write-Error "FAIL: branch must use <type>/<lowercase-kebab-slug> or <release|hotfix>/<x.y.z>"
 }
 
 $slug = $Branch.Split('/', 2)[1]

@@ -30,14 +30,14 @@ if [ "${#branch}" -gt 80 ]; then
 fi
 
 if printf '%s\n' "$branch" | grep -Eq \
-  '^(release|hotfix)/[0-9]+\.[0-9]+\.[0-9]{3}$'; then
+  '^(release|hotfix)/[0-9]+\.[0-9]+\.[0-9]+$'; then
   printf 'PASS: version branch name %s\n' "$branch"
   exit 0
 fi
 
 if ! printf '%s\n' "$branch" | grep -Eq \
   '^(feature|fix|docs|style|refactor|perf|test|chore|ci|revert)/[a-z0-9]+(-[a-z0-9]+)*$'; then
-  echo "FAIL: branch must use <type>/<lowercase-kebab-slug> or <release|hotfix>/<x.y.zzz>" >&2
+  echo "FAIL: branch must use <type>/<lowercase-kebab-slug> or <release|hotfix>/<x.y.z>" >&2
   exit 1
 fi
 

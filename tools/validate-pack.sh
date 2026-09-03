@@ -165,7 +165,9 @@ require_file tools/validate-commit-msg.sh
 require_file tools/validate-pack.sh
 
 if bash tools/validate-branch-name.sh feature/settlement-batch-approval >/dev/null &&
+   bash tools/validate-branch-name.sh release/0.5.3 >/dev/null &&
    bash tools/validate-branch-name.sh release/4.4.405 >/dev/null &&
+   ! bash tools/validate-branch-name.sh release/0.5 >/dev/null 2>&1 &&
    ! bash tools/validate-branch-name.sh feature/project >/dev/null 2>&1 &&
    ! bash tools/validate-branch-name.sh feature/运营人员 >/dev/null 2>&1; then
   pass "Git branch validator enforces tic-gitflow-v1"
