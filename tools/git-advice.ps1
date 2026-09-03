@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("feature", "feat", "release", "hotfix", "fix", "bug", "docs", "doc", "chore", "refactor")]
+    [ValidateSet("feature", "feat", "release", "hotfix", "fix", "bug", "docs", "doc", "style", "chore", "refactor", "perf", "test", "ci", "revert")]
     [string]$Type = "feature",
     [Parameter(ValueFromRemainingArguments = $true)]
     [string[]]$Task
@@ -70,23 +70,48 @@ switch ($Type) {
         break
     }
     { $_ -in @("fix", "bug") } {
-        $branchPrefix = "feature"
+        $branchPrefix = "fix"
         $commitType = "fix"
         break
     }
     { $_ -in @("docs", "doc") } {
-        $branchPrefix = "feature"
+        $branchPrefix = "docs"
         $commitType = "docs"
         break
     }
+    "style" {
+        $branchPrefix = "style"
+        $commitType = "style"
+        break
+    }
     "chore" {
-        $branchPrefix = "feature"
+        $branchPrefix = "chore"
         $commitType = "chore"
         break
     }
     "refactor" {
-        $branchPrefix = "feature"
+        $branchPrefix = "refactor"
         $commitType = "refactor"
+        break
+    }
+    "perf" {
+        $branchPrefix = "perf"
+        $commitType = "perf"
+        break
+    }
+    "test" {
+        $branchPrefix = "test"
+        $commitType = "test"
+        break
+    }
+    "ci" {
+        $branchPrefix = "ci"
+        $commitType = "ci"
+        break
+    }
+    "revert" {
+        $branchPrefix = "revert"
+        $commitType = "revert"
         break
     }
     default {
@@ -205,8 +230,11 @@ function Get-MaxReleaseVersion {
 }
 
 function Get-NextReleaseVersion {
-    param([string]$Current)
+    param([string]$Current, [string]$Format)
     if ([string]::IsNullOrWhiteSpace($Current)) {
+        if ($Format -eq "three-digit-patch") {
+            return "1.0.000"
+        }
         return "1.0.0"
     }
     if ($Current -notmatch '^([0-9]+)\.([0-9]+)\.([0-9]+)$') {
@@ -216,6 +244,9 @@ function Get-NextReleaseVersion {
     $minor = [int]$Matches[2]
     $patch = [int]$Matches[3]
     $patch += 1
+    if ($Format -eq "three-digit-patch") {
+        return ("{0}.{1}.{2:D3}" -f $major, $minor, $patch)
+    }
     return ("{0}.{1}.{2}" -f $major, $minor, $patch)
 }
 
@@ -346,15 +377,23 @@ function Get-BaseSyncStatus {
     return "diverged"
 }
 
+$gitPolicyProfile = Get-ProjectPolicyValue "profile"
+if ([string]::IsNullOrWhiteSpace($gitPolicyProfile)) { $gitPolicyProfile = "tic-gitflow-v1" }
+$authoritativeRemote = Get-ProjectPolicyValue "authoritative_remote"
+if ([string]::IsNullOrWhiteSpace($authoritativeRemote)) { $authoritativeRemote = "origin" }
+$versionFormat = Get-ProjectPolicyValue "version_format"
+if ([string]::IsNullOrWhiteSpace($versionFormat)) { $versionFormat = "three-digit-patch" }
+$configuredTagPolicy = Get-ProjectPolicyValue "tag_policy"
+if ([string]::IsNullOrWhiteSpace($configuredTagPolicy)) { $configuredTagPolicy = "no-v-prefix" }
 $maxVersion = Get-MaxReleaseVersion
-$nextVersion = Get-NextReleaseVersion $maxVersion
+$nextVersion = Get-NextReleaseVersion $maxVersion $versionFormat
 $tagStyle = Get-VisibleTagStyle
 $releaseRegistryRoots = Get-ReleaseRegistryRoots
 $remoteFetchStatus = "not_run_by_git_advice"
-$remoteFetchRequired = "git fetch --all --prune --tags"
+$remoteFetchRequired = "git fetch $authoritativeRemote --prune --tags"
 
 $longLived = "no"
-if ($branch -in @("main", "master", "develop", "dev") -or $branch -like "release/*" -or $branch -like "hotfix/*") {
+if ($branch -in @("master", "develop")) {
     $longLived = "yes"
 }
 
@@ -366,16 +405,18 @@ if ($scope -eq "business-slug-required") {
 if ($branchPrefix -in @("release", "hotfix")) {
     $suggestedBranch = "$branchPrefix/$nextVersion"
     $suggestedTag = $nextVersion
-    if ($tagStyle -eq "legacy-v-prefix") {
+    if ($configuredTagPolicy -eq "v-prefix") {
         $suggestedTag = "v$nextVersion"
-    } elseif ($tagStyle -eq "mixed") {
+    } elseif ($configuredTagPolicy -eq "preserve-existing" -and $tagStyle -eq "legacy-v-prefix") {
+        $suggestedTag = "v$nextVersion"
+    } elseif ($configuredTagPolicy -eq "preserve-existing" -and $tagStyle -eq "mixed") {
         $suggestedTag = "needs-user-decision:mixed"
     }
 } else {
     $suggestedBranch = "$branchPrefix/$slug"
     $suggestedTag = "n/a"
 }
-$suggestedCommit = "$commitType($scope): describe change in Chinese"
+$suggestedCommit = "$commitType(<domain-or-module>): <中文祈使句>"
 
 $basePolicyKey = "feature_base"
 $expectedBase = "develop"
@@ -406,6 +447,14 @@ $suggestedBranchRemoteRefs = @(Get-RemoteBranchRefs $suggestedBranch)
 $suggestedBranchExistsRemote = if ($suggestedBranchRemoteRefs.Count -gt 0) { "yes" } else { "no" }
 $suggestedBranchRemoteRefsText = if ($suggestedBranchRemoteRefs.Count -gt 0) { $suggestedBranchRemoteRefs -join "," } else { "none" }
 $suggestedBranchDiverged = Get-BranchDivergenceStatus $suggestedBranch
+$branchValidator = Join-Path $PSScriptRoot "validate-branch-name.ps1"
+$suggestedBranchPolicyStatus = "fail"
+try {
+    & $branchValidator $suggestedBranch *> $null
+    if ($LASTEXITCODE -eq 0) { $suggestedBranchPolicyStatus = "pass" }
+} catch {
+    $suggestedBranchPolicyStatus = "fail"
+}
 
 Write-Host "TIC Git Advice"
 Write-Host "repo: $repoRoot"
@@ -417,6 +466,12 @@ if ([string]::IsNullOrWhiteSpace($upstream)) {
 }
 Write-Host "changed_files: $changedCount"
 Write-Host "long_lived_branch: $longLived"
+Write-Host "git_policy_profile: $gitPolicyProfile"
+Write-Host "authoritative_remote: $authoritativeRemote"
+Write-Host "direct_commit_to_master_develop: deny"
+Write-Host "direct_push_to_master_develop: deny"
+Write-Host "force_push_policy: deny-by-default"
+Write-Host "commit_message_policy: conventional-chinese-v1"
 Write-Host "remote_fetch_status: $remoteFetchStatus"
 Write-Host "remote_fetch_required: $remoteFetchRequired"
 Write-Host "expected_base_branch: $expectedBase"
@@ -427,9 +482,9 @@ if ([string]::IsNullOrWhiteSpace($baseUpstream)) {
     Write-Host "base_upstream: $baseUpstream"
 }
 Write-Host "base_branch_sync_status: $baseBranchSyncStatus"
-Write-Host "feature_branch_policy: business slug or issue-business slug"
-Write-Host "release_hotfix_version_policy: semver by default; project policy wins"
-Write-Host "tag_policy: preserve existing project style"
+Write-Host "task_branch_policy: type/lowercase-kebab-slug"
+Write-Host "release_hotfix_version_policy: $versionFormat"
+Write-Host "tag_policy: $configuredTagPolicy"
 Write-Host "release_registry_roots: $($releaseRegistryRoots -join ',')"
 if ([string]::IsNullOrWhiteSpace($maxVersion)) {
     Write-Host "max_visible_release_version: none"
@@ -442,19 +497,20 @@ Write-Host "suggested_branch_exists_local: $suggestedBranchExistsLocal"
 Write-Host "suggested_branch_exists_remote: $suggestedBranchExistsRemote"
 Write-Host "suggested_branch_remote_refs: $suggestedBranchRemoteRefsText"
 Write-Host "suggested_branch_diverged: $suggestedBranchDiverged"
+Write-Host "suggested_branch_policy_status: $suggestedBranchPolicyStatus"
 Write-Host "suggested_tag: $suggestedTag"
 Write-Host "suggested_commit: $suggestedCommit"
-if ($branchPrefix -eq "feature") {
+if ($branchPrefix -notin @("release", "hotfix")) {
     Write-Host "branch_slug_status: $slugStatus"
 }
 Write-Host ""
 Write-Host "Read-only recommendations:"
-Write-Host "- Run git fetch --all --prune --tags before creating any feature/release/hotfix branch or trusting version/tag advice."
+Write-Host "- Run $remoteFetchRequired before creating any task/release/hotfix branch or trusting version/tag advice."
 if ($basePolicySource -eq "fallback:gitflow-candidate") {
     Write-Host "- No explicit project base was found; treat $expectedBase as a Git Flow candidate and confirm it before branch creation."
 }
 if ($longLived -eq "yes") {
-    Write-Host "- Prepare a branch creation confirmation card before code changes."
+    Write-Host "- Do not commit or push the task directly on $branch; move the task changes to the validated type branch before staging."
 }
 if ($baseBranchSyncStatus -ne "up-to-date") {
     $baseLabel = if ([string]::IsNullOrWhiteSpace($baseUpstream)) { "upstream" } else { $baseUpstream }
@@ -463,15 +519,10 @@ if ($baseBranchSyncStatus -ne "up-to-date") {
 if ($suggestedBranchExistsLocal -eq "yes" -or $suggestedBranchExistsRemote -eq "yes" -or $suggestedBranchDiverged -eq "yes") {
     Write-Host "- Suggested branch is already present or diverged locally/remotely; pause for user decision."
 }
-if ($branchPrefix -in @("release", "hotfix")) {
-    Write-Host "- Confirm the version-style branch and no-v tag candidate with the user before running git switch -c."
-} else {
-    Write-Host "- Confirm the business-named feature branch candidate with the user before running git switch -c."
+if ($branchPrefix -notin @("release", "hotfix") -and $slugStatus -eq "needs_business_slug") {
+    Write-Host "- Provide an issue id or short English business slug before creating the task branch."
 }
-if ($branchPrefix -eq "feature" -and $slugStatus -eq "needs_business_slug") {
-    Write-Host "- Provide an issue id or short English business slug before creating the feature branch."
-}
-if ($tagStyle -eq "mixed") {
+if ($configuredTagPolicy -eq "preserve-existing" -and $tagStyle -eq "mixed") {
     Write-Host "- Existing tags mix v-prefix and no-v styles; pause and ask the user to decide the tag policy."
 } elseif ($tagStyle -eq "legacy-v-prefix") {
     Write-Host "- Existing tags use v-prefix style; the suggested tag preserves that style."
@@ -480,6 +531,7 @@ if ($changedCount -gt 0) {
     Write-Host "- Review existing working tree changes before editing or staging."
     Write-Host "- Stage explicit paths only; avoid broad add commands."
 }
+Write-Host "- Validate the final branch with tools/validate-branch-name.* and every commit message with tools/validate-commit-msg.*."
 if (($statusLines -join "`n") -match '(^|\s)(\.env|.*\.local|\.DS_Store|\.omx/)') {
     Write-Host "- Local/runtime files are present; do not stage secrets, local config, or runtime state."
 }

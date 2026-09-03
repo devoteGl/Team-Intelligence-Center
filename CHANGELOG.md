@@ -2,6 +2,19 @@
 
 本文件记录 Team-Intelligence-Center 公开版本。版本详情见 `docs/releases/<version>/README.md`。
 
+## Unreleased
+
+### Added
+
+- 新增 `tic-gitflow-v1` 仓库级 Git 标准，统一长期分支、任务分支、中文
+  Conventional Commit、三位补零版本、annotated tag、回灌与 submodule 顺序。
+- 新增 Shell / PowerShell 分支名和 commit message 校验器。
+
+### Changed
+
+- Git 建议、adapter 模板和 bootstrap 默认值改为同一标准，并显式禁止普通任务
+  直接提交或推送 `master`、`develop`。
+
 ## 0.5.2 - 2026-08-10
 
 ### Changed

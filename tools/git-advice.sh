@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TASK_TYPE="feature"
 TASK_TEXT=""
 
 usage() {
   cat <<'USAGE'
 Usage:
-  bash tools/git-advice.sh [--type feature|release|hotfix|fix|docs|chore|refactor] [task description]
+  bash tools/git-advice.sh [--type feature|release|hotfix|fix|docs|style|refactor|perf|test|chore|ci|revert] [task description]
 
 This script is read-only. It does not create branches, stage files, commit, push, merge, or install hooks.
 USAGE
@@ -80,20 +81,40 @@ case "$TASK_TYPE" in
     commit_type="fix"
     ;;
   fix|bug)
-    branch_prefix="feature"
+    branch_prefix="fix"
     commit_type="fix"
     ;;
   docs|doc)
-    branch_prefix="feature"
+    branch_prefix="docs"
     commit_type="docs"
     ;;
+  style)
+    branch_prefix="style"
+    commit_type="style"
+    ;;
   chore)
-    branch_prefix="feature"
+    branch_prefix="chore"
     commit_type="chore"
     ;;
   refactor)
-    branch_prefix="feature"
+    branch_prefix="refactor"
     commit_type="refactor"
+    ;;
+  perf)
+    branch_prefix="perf"
+    commit_type="perf"
+    ;;
+  test)
+    branch_prefix="test"
+    commit_type="test"
+    ;;
+  ci)
+    branch_prefix="ci"
+    commit_type="ci"
+    ;;
+  revert)
+    branch_prefix="revert"
+    commit_type="revert"
     ;;
   feature|feat|*)
     branch_prefix="feature"
@@ -167,16 +188,24 @@ EOF
 }
 
 next_release_version() {
-  local current="$1" major minor patch
+  local current="$1" format="$2" major minor patch
   if [ -z "$current" ]; then
-    printf '1.0.0'
+    if [ "$format" = "three-digit-patch" ]; then
+      printf '1.0.000'
+    else
+      printf '1.0.0'
+    fi
     return
   fi
   IFS='.' read -r major minor patch <<EOF
 $current
 EOF
   patch=$((10#$patch + 1))
-  printf '%s.%s.%s' "$major" "$minor" "$patch"
+  if [ "$format" = "three-digit-patch" ]; then
+    printf '%s.%s.%03d' "$major" "$minor" "$patch"
+  else
+    printf '%s.%s.%s' "$major" "$minor" "$patch"
+  fi
 }
 
 visible_tag_style() {
@@ -283,16 +312,24 @@ base_sync_status() {
   fi
 }
 
+git_policy_profile="$(project_policy_value profile || true)"
+[ -n "$git_policy_profile" ] || git_policy_profile="tic-gitflow-v1"
+authoritative_remote="$(project_policy_value authoritative_remote || true)"
+[ -n "$authoritative_remote" ] || authoritative_remote="origin"
+version_format="$(project_policy_value version_format || true)"
+[ -n "$version_format" ] || version_format="three-digit-patch"
+configured_tag_policy="$(project_policy_value tag_policy || true)"
+[ -n "$configured_tag_policy" ] || configured_tag_policy="no-v-prefix"
 max_version="$(max_release_version)"
-next_version="$(next_release_version "$max_version")"
+next_version="$(next_release_version "$max_version" "$version_format")"
 tag_style="$(visible_tag_style)"
 release_roots="$(release_registry_roots | paste -sd ',' -)"
 remote_fetch_status="not_run_by_git_advice"
-remote_fetch_required="git fetch --all --prune --tags"
+remote_fetch_required="git fetch $authoritative_remote --prune --tags"
 
 long_lived="no"
 case "$branch" in
-  main|master|develop|dev|release/*|hotfix/*)
+  master|develop)
     long_lived="yes"
     ;;
 esac
@@ -304,16 +341,18 @@ fi
 if [ "$branch_prefix" = "release" ] || [ "$branch_prefix" = "hotfix" ]; then
   suggested_branch="$branch_prefix/$next_version"
   suggested_tag="$next_version"
-  if [ "$tag_style" = "legacy-v-prefix" ]; then
+  if [ "$configured_tag_policy" = "v-prefix" ]; then
     suggested_tag="v$next_version"
-  elif [ "$tag_style" = "mixed" ]; then
+  elif [ "$configured_tag_policy" = "preserve-existing" ] && [ "$tag_style" = "legacy-v-prefix" ]; then
+    suggested_tag="v$next_version"
+  elif [ "$configured_tag_policy" = "preserve-existing" ] && [ "$tag_style" = "mixed" ]; then
     suggested_tag="needs-user-decision:mixed"
   fi
 else
   suggested_branch="$branch_prefix/$slug"
   suggested_tag="n/a"
 fi
-suggested_commit="$commit_type($scope): describe change in Chinese"
+suggested_commit="$commit_type(<domain-or-module>): <中文祈使句>"
 
 base_policy_key="feature_base"
 expected_base="develop"
@@ -341,6 +380,11 @@ if [ -z "$suggested_branch_remote_refs" ]; then
 fi
 suggested_branch_exists_remote="$(branch_exists_remote "$suggested_branch")"
 suggested_branch_diverged="$(branch_divergence_status "$suggested_branch")"
+if bash "$SCRIPT_DIR/validate-branch-name.sh" "$suggested_branch" >/dev/null 2>&1; then
+  suggested_branch_policy_status="pass"
+else
+  suggested_branch_policy_status="fail"
+fi
 
 echo "TIC Git Advice"
 echo "repo: $repo_root"
@@ -352,15 +396,21 @@ else
 fi
 echo "changed_files: $changed_count"
 echo "long_lived_branch: $long_lived"
+echo "git_policy_profile: $git_policy_profile"
+echo "authoritative_remote: $authoritative_remote"
+echo "direct_commit_to_master_develop: deny"
+echo "direct_push_to_master_develop: deny"
+echo "force_push_policy: deny-by-default"
+echo "commit_message_policy: conventional-chinese-v1"
 echo "remote_fetch_status: $remote_fetch_status"
 echo "remote_fetch_required: $remote_fetch_required"
 echo "expected_base_branch: $expected_base"
 echo "base_policy_source: $base_policy_source"
 echo "base_upstream: ${base_upstream:-none}"
 echo "base_branch_sync_status: $base_branch_sync_status"
-echo "feature_branch_policy: business slug or issue-business slug"
-echo "release_hotfix_version_policy: semver by default; project policy wins"
-echo "tag_policy: preserve existing project style"
+echo "task_branch_policy: type/lowercase-kebab-slug"
+echo "release_hotfix_version_policy: $version_format"
+echo "tag_policy: $configured_tag_policy"
 echo "release_registry_roots: $release_roots"
 if [ -n "$max_version" ]; then
   echo "max_visible_release_version: $max_version"
@@ -373,19 +423,20 @@ echo "suggested_branch_exists_local: $suggested_branch_exists_local"
 echo "suggested_branch_exists_remote: $suggested_branch_exists_remote"
 echo "suggested_branch_remote_refs: $suggested_branch_remote_refs"
 echo "suggested_branch_diverged: $suggested_branch_diverged"
+echo "suggested_branch_policy_status: $suggested_branch_policy_status"
 echo "suggested_tag: $suggested_tag"
 echo "suggested_commit: $suggested_commit"
-if [ "$branch_prefix" = "feature" ]; then
+if [ "$branch_prefix" != "release" ] && [ "$branch_prefix" != "hotfix" ]; then
   echo "branch_slug_status: $slug_status"
 fi
 echo
 echo "Read-only recommendations:"
-echo "- Run git fetch --all --prune --tags before creating any feature/release/hotfix branch or trusting version/tag advice."
+echo "- Run $remote_fetch_required before creating any task/release/hotfix branch or trusting version/tag advice."
 if [ "$base_policy_source" = "fallback:gitflow-candidate" ]; then
   echo "- No explicit project base was found; treat $expected_base as a Git Flow candidate and confirm it before branch creation."
 fi
 if [ "$long_lived" = "yes" ]; then
-  echo "- Prepare a branch creation confirmation card before code changes."
+  echo "- Do not commit or push the task directly on $branch; move the task changes to the validated type branch before staging."
 fi
 if [ "$base_branch_sync_status" != "up-to-date" ]; then
   echo "- Resolve base branch sync status before creating a branch: $expected_base is $base_branch_sync_status against ${base_upstream:-upstream}."
@@ -393,15 +444,10 @@ fi
 if [ "$suggested_branch_exists_local" = "yes" ] || [ "$suggested_branch_exists_remote" = "yes" ] || [ "$suggested_branch_diverged" = "yes" ]; then
   echo "- Suggested branch is already present or diverged locally/remotely; pause for user decision."
 fi
-if [ "$branch_prefix" = "release" ] || [ "$branch_prefix" = "hotfix" ]; then
-  echo "- Confirm the version-style branch and no-v tag candidate with the user before running git switch -c."
-else
-  echo "- Confirm the business-named feature branch candidate with the user before running git switch -c."
+if [ "$branch_prefix" != "release" ] && [ "$branch_prefix" != "hotfix" ] && [ "$slug_status" = "needs_business_slug" ]; then
+  echo "- Provide an issue id or short English business slug before creating the task branch."
 fi
-if [ "$branch_prefix" = "feature" ] && [ "$slug_status" = "needs_business_slug" ]; then
-  echo "- Provide an issue id or short English business slug before creating the feature branch."
-fi
-if [ "$tag_style" = "mixed" ]; then
+if [ "$configured_tag_policy" = "preserve-existing" ] && [ "$tag_style" = "mixed" ]; then
   echo "- Existing tags mix v-prefix and no-v styles; pause and ask the user to decide the tag policy."
 elif [ "$tag_style" = "legacy-v-prefix" ]; then
   echo "- Existing tags use v-prefix style; the suggested tag preserves that style."
@@ -410,6 +456,7 @@ if [ "$changed_count" -gt 0 ]; then
   echo "- Review existing working tree changes before editing or staging."
   echo "- Stage explicit paths only; avoid broad add commands."
 fi
+echo "- Validate the final branch with tools/validate-branch-name.* and every commit message with tools/validate-commit-msg.*."
 if printf '%s\n' "$status" | grep -Eq '(^|\s)(\.env|.*\.local|\.DS_Store|\.omx/)'; then
   echo "- Local/runtime files are present; do not stage secrets, local config, or runtime state."
 fi

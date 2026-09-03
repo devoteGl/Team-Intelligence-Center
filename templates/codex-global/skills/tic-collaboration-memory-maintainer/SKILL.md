@@ -9,9 +9,11 @@ This is a Codex global wrapper for Team-Intelligence-Center.
 
 When invoked:
 
-1. Locate the current project's `.tic-rules.lock`; if it has a non-empty
-   `rules_path=`, resolve it relative to the project root.
-2. Otherwise read `.tic-rules.local` and use its `rules_dir=`.
+1. If `.tic-rules.local` explicitly sets `rules_source=local_config` with an
+   accessible `rules_dir=` containing `Workflow/core.md`, use that
+   branch-independent local source.
+2. Otherwise resolve `.tic-rules.lock` `rules_path=`, then `.tic-rules.local`
+   `rules_dir=`.
 3. If no project source exists, use fallback rules source:
    `{{TIC_RULES_DIR}}`.
 4. Read and follow

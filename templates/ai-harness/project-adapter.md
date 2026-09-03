@@ -44,17 +44,28 @@ verification:
     setup_command: ""
     cleanup_command: ""
     core_journeys: []
+git_policy:
+  profile: tic-gitflow-v1
+  authoritative_remote: origin
+  protected_branches: [master, develop]
+  direct_commit_policy: deny
+  direct_push_policy: deny
+  force_push_policy: deny
+  branch_name_policy: type-kebab-v1
+  commit_message_policy: conventional-chinese-v1
 release_ownership:
   owner_type: project # workspace | project | subproject | external
   owner_id: "待确认"
   release_registry_root: "docs/releases"
   version_policy: independent # shared | independent | external
-  version_format: semver # semver | three-digit-patch | calendar | custom
-  branch_strategy: project-defined # trunk | gitflow | project-defined
-  feature_base: "待确认"
-  release_base: "待确认"
-  hotfix_base: "待确认"
-  tag_policy: "preserve-existing" # preserve-existing | no-v-prefix | v-prefix | custom
+  version_format: three-digit-patch # semver | three-digit-patch | calendar | custom
+  branch_strategy: gitflow # trunk | gitflow | project-defined
+  feature_base: develop
+  release_base: develop
+  hotfix_base: master
+  tag_policy: no-v-prefix # preserve-existing | no-v-prefix | v-prefix | custom
+  tag_type: annotated
+  back_merge_target: develop
   deployment_trigger: "tag-push" # tag-push | manual-pipeline | external | 待确认
 ```
 

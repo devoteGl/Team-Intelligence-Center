@@ -4,8 +4,11 @@
 
 ## 规则源
 
-按 `.tic-rules.lock` 的非空 `rules_path=`（项目相对路径）、gitignored
-`.tic-rules.local` 的 `rules_dir=`、开发者 Loader 的顺序定位规则源。
+若 gitignored `.tic-rules.local` 明确声明 `rules_source=local_config`，且
+非空 `rules_dir=` 可访问并包含 `Workflow/core.md`，优先使用该分支无关的
+本机规则源；否则按
+`.tic-rules.lock` 的非空 `rules_path=`（项目相对路径）、`.tic-rules.local`
+的 `rules_dir=`、开发者 Loader 的顺序定位规则源。
 `Workflow/core.md` 是唯一 workflow 事实源。
 
 ## 默认协作
@@ -67,5 +70,9 @@ OpenSpec 是跨任务、跨项目或多人长期维护的长期规格事实源�
 不默认创建分支、提交、推送、合并、tag 或发布。用户在当前任务明确要求该
 结果即构成授权；目标可唯一解析时不重复确认。执行前仍需刷新权威远端引用，
 检查基线、同名分支、影响和恢复方式。
+
+规划或执行 Git 写操作时，必须读取规则源中的 `Global-Rules/git-rules.md`、
+`Skills/git-flow-operator.md` 和项目 adapter；分支与 commit message 通过对应
+校验脚本后才能写入。普通任务不得直接在受保护长期分支提交或推送。
 
 交付说明结果、修改范围、验证、Review、未测项、剩余风险和尚未授权的动作。
