@@ -5,7 +5,7 @@
 - 状态：已发布至 `gitee` 与 `github`，并完成 `develop` 回灌
 - release 分支：`release/0.5.3`
 - 发布提交：`master@cd16a69`
-- 集成分支：`develop@fc982ca`
+- 集成分支：`develop`，包含回灌提交 `fc982ca` 及其后的发布证据更新
 - 基线：`origin/develop@8213a65`
 - release owner：Team-Intelligence-Center
 - release tag：`0.5.3`
@@ -48,6 +48,6 @@
 - annotated tag 对象：`77fdef05548ea171231d33448fc03a647b7cfe58`；解引用到
   `cd16a693fc9f6cdbbd2dfa8bb3f295e36063d953`。
 - `develop` 回灌：`fc982cab05173c53e2bd5eab6614209d8b7cb26c`。
-- `gitee`：`master`、`develop`、`0.5.3` 与上述引用一致，均为 `0/0`。
-- `github`：`master`、`develop`、`0.5.3` 与上述引用一致，均为 `0/0`。
+- `gitee`：`master` 与 `0.5.3` 精确匹配上述引用；`develop` 包含回灌和证据更新。
+- `github`：`master` 与 `0.5.3` 精确匹配上述引用；`develop` 包含回灌和证据更新。
 - `origin` 保持 `master@2c470be`、`develop@8213a65`，未创建 `0.5.3` tag。
